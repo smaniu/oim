@@ -45,7 +45,7 @@ public:
   
   virtual double sq_error() {return 0.0;}
   
-  void set_round(double new_round) {round = new_round;}
+  void set_round(double new_round) {round += new_round;}
   
   unsigned long get_hits() {return hits;}
   

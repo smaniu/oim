@@ -112,6 +112,57 @@ void prior(int argc, const char * argv[]){
   strategy.perform(budget, k, update);
 }
 
+void explore(int argc, const char * argv[]){
+  std::string file_name_graph(argv[2]);
+  double alpha = atof(argv[3]);
+  double beta = atof(argv[4]);
+  std::ifstream file(file_name_graph);
+  Graph original_graph, model_graph;
+  unsigned long src, tgt;
+  double prob;
+  unsigned long edges = 0;
+  while(file >> src >> tgt >> prob){
+    std::shared_ptr<InfluenceDistribution>\
+    dst_original(new SingleInfluence(prob));
+    std::shared_ptr<InfluenceDistribution>\
+    dst_model(new BetaInfluence(alpha, beta, prob));
+    original_graph.add_edge(src, tgt, dst_original);
+    model_graph.add_edge(src, tgt, dst_model);
+    edges++;
+  }
+  //original_graph.finish_init();
+  //model_graph.finish_init();
+  
+  SampleManager::setInstance(model_graph);
+  model_graph.set_prior(alpha, beta);
+  model_graph.update_rounds(alpha+beta);
+  
+  unsigned int explore = atoi(argv[5]);
+  unsigned int budget = atoi(argv[6]);
+  unsigned int k = atoi(argv[7]);
+  double eps = 1.0;
+  std::vector<std::unique_ptr<Evaluator>> evals;
+  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
+  int samples = 1000;
+  bool update = true;
+  unsigned int learn = 0;
+  unsigned int int_explore = INFLUENCE_MED;
+  int inc = 0;
+  if(argc>8){
+    int orig_explore = atoi(argv[8]);
+    if(orig_explore>0) int_explore = orig_explore+2;
+  }
+  if(argc>9)
+    learn = atoi(argv[9]);
+  EpsilonGreedyStrategy strategy(model_graph, original_graph,
+                                 *evals.at(explore), *evals.at(explore),
+                                 samples, eps, inc);
+  strategy.perform(budget, k, update, learn, int_explore, int_explore);
+}
+
 void epsgreedy(int argc, const char * argv[]){
   std::string file_name_graph(argv[2]);
   double alpha = atof(argv[3]);
@@ -146,7 +197,7 @@ void epsgreedy(int argc, const char * argv[]){
   evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
-  int samples = 100;
+  int samples = 1000;
   bool update = true;
   unsigned int learn = 0;
   if(argc>10){
@@ -347,6 +398,7 @@ int main(int argc, const char * argv[])
   if(first_arg=="--benchmark") benchmark(argc, argv);
   else if(first_arg=="--spread") spread(argc, argv);
   else if(first_arg=="--egreedy") epsgreedy(argc, argv);
+  else if(first_arg=="--explore") explore(argc, argv);
   else if(first_arg=="--real") real(argc, argv);
   else if(first_arg=="--prior") prior(argc, argv);
   else if(first_arg=="--eg") expgr(argc, argv);

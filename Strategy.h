@@ -297,7 +297,7 @@ public:
         }
         model_g.update_edge_priors(alpha, beta);
       }
-      model_g.update_rounds((double)(stage+1));
+      model_g.update_rounds(1.0);
       t1 = get_timestamp();
       //printing results
       time_min += (t1-t0)/60000000.0L;
