@@ -26,6 +26,8 @@
 #define INFLUENCE_MED  0
 #define INFLUENCE_UPPER  1
 #define INFLUENCE_ADAPTIVE 2
+#define INFLUENCE_UCB 3
+#define INFLUENCE_THOMPSON 4
 
 class InfluenceDistribution{
 protected:
