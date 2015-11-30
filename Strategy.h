@@ -258,7 +258,7 @@ public:
         else if (learn==2) {
           // MLE with alpha = 1
 
-          cerr<< "Learning..."<<endl;
+          //cerr<< "Learning..."<<endl;
           for (trial_type tt:result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
             if (tt.trial == 0) {
@@ -491,7 +491,7 @@ public:
         else if (learn==2) {
           // MLE with alpha = 1
 
-          cerr<< "Learning..."<<endl;
+          //cerr<< "Learning..."<<endl;
 
           for (trial_type tt:result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
@@ -542,7 +542,7 @@ public:
 
       //printing results
 
-      std::cerr << stage << "\t" << real << "\t" << expected << "\t" <<\
+      //std::cerr << stage << "\t" << real << "\t" << expected << "\t" <<\
       hits << "\t" << misses << "\t" << totaltime << "\t" << round_time << "\t"\
       << sampling_time << "\t" << choosing_time << "\t" << selecting_time <<\
       "\t" << updating_time << "\t" << alpha << "\t" << beta << "\t" <<\
