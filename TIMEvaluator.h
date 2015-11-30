@@ -144,10 +144,10 @@ public:
     //ept=InfluenceHyperGraph();
     //puts("end InfluenceHyperGraph()");
 
-    for(auto item:seedSet)
-        cerr<< item << " ";
-    cerr<<totalR;
-    cerr<<endl;
+    //for(auto item:seedSet)
+    //    cerr<< item << " ";
+    //cerr<<totalR;
+    //cerr<<endl;
 
     sampling_time = (t1-t0)/60000000.0L;
     choosing_time = (t2-t1)/60000000.0L;
@@ -228,7 +228,7 @@ private:
 
   void buildSamples(int64 &R, const Graph& graph, Sampler& sampler, std::uniform_int_distribution<int>& dst){
 
-    cerr << "buildSamples R = " << R << endl;
+    //cerr << "buildSamples R = " << R << endl;
     totalR += R;
 
     if (R > MAX_R) R = MAX_R;
