@@ -294,7 +294,7 @@ private:
   void BuildSeedSet(){
 
     seedSet.clear();
-    vector<int> deg = vector<int>(n, 0);
+    vector<int> deg= vector<int>(n, 0);
     visit_local = vector<bool>(rr_sets.size(), false);
 
     for (int i = 0; i < graph_nodes.size(); ++i) {
