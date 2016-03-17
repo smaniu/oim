@@ -27,6 +27,8 @@
 #include "InfluenceDistribution.h"
 
 #include <boost/math/distributions.hpp>
+#include <random>
+#include <sys/time.h>
 #include <math.h>
 
 class BetaInfluence: public InfluenceDistribution{
@@ -37,6 +39,7 @@ private:
   double quartile_upper;
   double quartile_stdev;
   double original_mean;
+  std::default_random_engine gen;
   
 public:
   BetaInfluence(double alpha, double beta, double orig){
@@ -69,14 +72,17 @@ public:
   double sample(unsigned int interval){
     if(interval==INFLUENCE_MED) return quartile_med;
     else if(interval==INFLUENCE_UPPER) return quartile_upper;
-    else if(interval==INFLUENCE_ADAPTIVE){
-      double val = quartile_med+sqrt(3*log(round)/(alpha+beta));
+    else if(interval==INFLUENCE_UCB){
+      double val = quartile_med+sqrt(3.0*log(round)/(2.0*(alpha+beta)));
       return val<1?val:1.0;
     }
-    else{
-      double val = quartile_med+(double)(interval-4.0)*quartile_stdev;
-      val = val<1?val:1.0;
-      return val>0?val:0.0;
+    else if(interval==INFLUENCE_THOMPSON){
+      gen.seed(time(0));
+      std::gamma_distribution<double> a(alpha,1.0);
+      std::gamma_distribution<double> b(beta,1.0);
+      double x = a(gen);
+      double y = b(gen);
+      return x/(x+y);
     }
     return quartile_med;
   }

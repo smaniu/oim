@@ -23,7 +23,7 @@
 #ifndef oim_samplemanager_h
 #define oim_samplemanager_h
 
-#include <common.h>
+#include "common.h"
 #include "Sampler.h"
 #include "SpreadSampler.h"
 

@@ -26,6 +26,8 @@
 #define INFLUENCE_MED  0
 #define INFLUENCE_UPPER  1
 #define INFLUENCE_ADAPTIVE 2
+#define INFLUENCE_UCB 3
+#define INFLUENCE_THOMPSON 4
 
 class InfluenceDistribution{
 protected:
@@ -43,7 +45,7 @@ public:
   
   virtual double sq_error() {return 0.0;}
   
-  void set_round(double new_round) {round = new_round;}
+  void set_round(double new_round) {round += new_round;}
   
   unsigned long get_hits() {return hits;}
   

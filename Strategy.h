@@ -109,7 +109,9 @@ public:
       //printing results
       time_min += (t1-t0)/60000000.0L;
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<\
-      hits << "\t" << misses << "\t" << time_min << std::endl << std::flush;
+      hits << "\t" << misses << "\t" << time_min << "\t";
+      for(auto seed:seeds) std::cout << seed << ".";
+      std::cout << std::endl << std::flush;
     }
   }
 };
@@ -258,7 +260,7 @@ public:
         else if (learn==2) {
           // MLE with alpha = 1
 
-          cerr<< "Learning..."<<endl;
+          //cerr<< "Learning..."<<endl;
           for (trial_type tt:result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
             if (tt.trial == 0) {
@@ -297,13 +299,15 @@ public:
         }
         model_g.update_edge_priors(alpha, beta);
       }
-      model_g.update_rounds((double)(stage+1));
+      model_g.update_rounds(1.0);
       t1 = get_timestamp();
       //printing results
       time_min += (t1-t0)/60000000.0L;
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<\
-        hits << "\t" << misses << "\t" << time_min << "\t" << alpha << "\t" << beta << "\t" <<\
-        model_g.get_mse() << std::endl << std::flush;
+        hits << "\t" << misses << "\t" << time_min << "\t" << alpha << "\t"\
+        << beta << "\t" << model_g.get_mse() << "\t";
+      for(auto seed:seeds) std::cout << seed << ".";
+      std::cout << std::endl << std::flush;
     }
   }
 };
@@ -491,7 +495,7 @@ public:
         else if (learn==2) {
           // MLE with alpha = 1
 
-          cerr<< "Learning..."<<endl;
+          //cerr<< "Learning..."<<endl;
 
           for (trial_type tt:result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
@@ -542,16 +546,21 @@ public:
 
       //printing results
 
-      std::cerr << stage << "\t" << real << "\t" << expected << "\t" <<\
-      hits << "\t" << misses << "\t" << totaltime << "\t" << round_time << "\t" << sampling_time << "\t" << choosing_time << "\t" << selecting_time << "\t" << updating_time << "\t" << alpha << "\t" << beta << "\t" <<\
-      mse << "\t" << (int)cur_theta-4 << "\t" << reused_ratio << "\t" << memory << std::endl << std::flush;
+      //std::cerr << stage << "\t" << real << "\t" << expected << "\t" <<\
+      hits << "\t" << misses << "\t" << totaltime << "\t" << round_time << "\t"\
+      << sampling_time << "\t" << choosing_time << "\t" << selecting_time <<\
+      "\t" << updating_time << "\t" << alpha << "\t" << beta << "\t" <<\
+      mse << "\t" << (int)cur_theta-4 << "\t" << reused_ratio << "\t" << memory\
+      << std::endl << std::flush;
 
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<\
-      hits << "\t" << misses << "\t" << totaltime << "\t" << round_time << "\t" << sampling_time << "\t" << choosing_time << "\t" << selecting_time << "\t" << updating_time << "\t" << alpha << "\t" << beta << "\t" <<\
-      mse << "\t" << (int)cur_theta-4 << "\t" << reused_ratio << "\t" << memory << std::endl << std::flush;
-
-      
-
+      hits << "\t" << misses << "\t" << totaltime << "\t" << round_time << "\t"\
+      << sampling_time << "\t" << choosing_time << "\t" << selecting_time <<\
+      "\t" << updating_time << "\t" << alpha << "\t" << beta << "\t" <<\
+      mse << "\t" << (int)cur_theta-4 << "\t" << reused_ratio << "\t" <<\
+      memory << "\t";
+      for(auto seed:seeds) std::cout << seed << ".";
+      std::cout << std::endl << std::flush;
     }
   }
 };
