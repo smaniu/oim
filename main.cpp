@@ -1,16 +1,16 @@
 /*
  Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
- 
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,7 +39,7 @@
 #include "DiscountDegreeEvaluator.h"
 #include "Strategy.h"
 
-void real(int argc, const char * argv[]){
+void real(int argc, const char * argv[]) {
   std::string file_name_graph(argv[2]);
   std::ifstream file(file_name_graph);
   Graph original_graph;
@@ -47,8 +47,8 @@ void real(int argc, const char * argv[]){
   double prob;
   unsigned long edges = 0;
   while(file >> src >> tgt >> prob){
-    std::shared_ptr<InfluenceDistribution>\
-      dst_original(new SingleInfluence(prob));
+    std::shared_ptr<InfluenceDistribution> dst_original(
+        new SingleInfluence(prob));
     original_graph.add_edge(src, tgt, dst_original);
     edges++;
   }
@@ -68,15 +68,15 @@ void real(int argc, const char * argv[]){
   SpreadSampler s_exploit(INFLUENCE_MED);
   int samples = 100;
   int inc = 0;
-  if(argc>6)
+  if (argc > 6)
     inc = atoi(argv[6]);
-  if(argc>7)
+  if (argc > 7)
     samples = atoi(argv[7]);
   OriginalGraphStrategy strategy(original_graph, *evals.at(exploit), samples, inc);
   strategy.perform(budget, k);
 }
 
-void prior(int argc, const char * argv[]){
+void prior(int argc, const char * argv[]) {
   std::string file_name_graph(argv[2]);
   double alpha = atof(argv[3]);
   double beta = atof(argv[4]);
@@ -132,11 +132,11 @@ void explore(int argc, const char * argv[]){
   }
   //original_graph.finish_init();
   //model_graph.finish_init();
-  
+
   SampleManager::setInstance(model_graph);
   model_graph.set_prior(alpha, beta);
   model_graph.update_rounds(alpha+beta);
-  
+
   unsigned int explore = atoi(argv[5]);
   unsigned int budget = atoi(argv[6]);
   unsigned int k = atoi(argv[7]);
@@ -192,7 +192,7 @@ void epsgreedy(int argc, const char * argv[]){
   unsigned int budget = atoi(argv[7]);
   unsigned int k = atoi(argv[8]);
   double eps = atof(argv[9]);
-  std::vector<std::unique_ptr<Evaluator>> evals;  
+  std::vector<std::unique_ptr<Evaluator>> evals;
   evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
@@ -219,57 +219,68 @@ void epsgreedy(int argc, const char * argv[]){
     samples = atoi(argv[15]);
   EpsilonGreedyStrategy strategy(model_graph, original_graph,
                                  *evals.at(explore), *evals.at(exploit),
-                                samples, eps, inc);
+                                 samples, eps, inc);
   strategy.perform(budget, k, update, learn, int_exploit, int_explore);
 }
 
-void expgr(int argc, const char * argv[]){
+void expgr(int argc, const char * argv[]) {
+  bool update = true;
+  unsigned int learn = 0;
+  int inc = 0;
+
+  // Take parameters
   std::string file_name_graph(argv[2]);
   double alpha = atof(argv[3]);
   double beta = atof(argv[4]);
+  unsigned int exploit = atoi(argv[5]);
+  unsigned int budget = atoi(argv[6]);
+  unsigned int k = atoi(argv[7]);
+  if (argc > 8) {
+    unsigned int upd = atoi(argv[8]);
+    update = (upd == 1) ? true: false;
+  }
+  if (argc > 9)
+    learn = atoi(argv[9]);
+  if (argc > 10)
+    inc = atoi(argv[10]);
+
   std::ifstream file(file_name_graph);
   Graph original_graph, model_graph;
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
-    std::shared_ptr<InfluenceDistribution>\
-    dst_original(new SingleInfluence(prob));
-    std::shared_ptr<InfluenceDistribution>\
-    dst_model(new BetaInfluence(alpha, beta,prob));
+  while (file >> src >> tgt >> prob) {
+    std::shared_ptr<InfluenceDistribution> dst_original(
+        new SingleInfluence(prob));
+    std::shared_ptr<InfluenceDistribution> dst_model(
+        new BetaInfluence(alpha, beta,prob));
     original_graph.add_edge(src, tgt, dst_original);
     model_graph.add_edge(src, tgt, dst_model);
     edges++;
-  };
+  }
 
   SampleManager::setInstance(model_graph);
   model_graph.set_prior(alpha, beta);
 
-  unsigned int exploit = atoi(argv[5]);
-  unsigned int budget = atoi(argv[6]);
-  unsigned int k = atoi(argv[7]);
-  std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
-  bool update = true;
-  unsigned int learn = 0;
-  int inc = 0;
-  if(argc>8){
-    unsigned int upd = atoi(argv[8]);
-    update = upd==1?true:false;
+  std::unique_ptr<Evaluator> evaluator;
+  if (exploit == 0) {
+    evaluator = std::unique_ptr<Evaluator>(new CELFEvaluator());
+  } else if (exploit == 1) {
+    evaluator = std::unique_ptr<Evaluator>(new RandomEvaluator());
+  } else if (exploit == 2) {
+    evaluator = std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator());
+  } else if (exploit == 3) {
+    evaluator = std::unique_ptr<Evaluator>(new TIMEvaluator());
+  } else {
+    std::cerr << "Error: `exploit` must be in range 0..3" << std::endl;
+    exit(1);
   }
-  if(argc>9)
-    learn = atoi(argv[9]);
-  if(argc>10)
-    inc = atoi(argv[10]);
-  ExponentiatedGradientStrategy strategy(model_graph, original_graph,\
-                                         *evals.at(exploit), inc);
+  ExponentiatedGradientStrategy strategy(model_graph, original_graph,
+                                         *evaluator, inc);
   strategy.perform(budget, k, update, learn);
 }
 
-void zscore(int argc, const char * argv[]){
+void zscore(int argc, const char * argv[]) {
   std::string file_name_graph(argv[2]);
   double alpha = atof(argv[3]);
   double beta = atof(argv[4]);
@@ -356,7 +367,7 @@ void benchmark(int argc, const char * argv[]){
   std::cout << "time/sample/node " << time_msec << "ms" << std::endl;
 }
 
-void spread(int argc, const char * argv[]){
+void spread(int argc, const char * argv[]) {
   std::string file_name_graph(argv[2]);
   unsigned long alpha = atoi(argv[3]);
   unsigned long beta = atoi(argv[4]);
@@ -368,14 +379,14 @@ void spread(int argc, const char * argv[]){
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
-    std::shared_ptr<InfluenceDistribution>\
+  while(file >> src >> tgt >> prob) {
+    std::shared_ptr<InfluenceDistribution>
         dst(new BetaInfluence(alpha, beta, prob));
     graph.add_edge(src, tgt, dst);
     edges++;
   }
   int samples = 100;
-  if(argc>6)
+  if (argc > 6)
     samples = atoi(argv[6]);
   std::unordered_set<unsigned long> activated;
   PathSampler sampler(INFLUENCE_MED);
@@ -383,25 +394,24 @@ void spread(int argc, const char * argv[]){
   t0 = get_timestamp();
   evaluator_celf.select(graph, sampler, activated, k, samples);
   t1 = get_timestamp();
-  time_min_celf = (t1-t0)/60000000.0L;
+  time_min_celf = (t1 - t0) / 60000000.0L;
   RandomEvaluator evaluator_random;
   t0 = get_timestamp();
   evaluator_random.select(graph, sampler, activated, k, samples);
   t1 = get_timestamp();
   time_min_random = (t1-t0)/60000000.0L;
-  std::cout<<k<<"\t"<<time_min_celf<<"\t"<<time_min_random<<std::endl;
+  std::cout << k << "\t" << time_min_celf << "\t" <<
+    time_min_random <<std::endl;
 }
 
-int main(int argc, const char * argv[])
-{
+int main(int argc, const char * argv[]) {
   std::string first_arg(argv[1]);
-  if(first_arg=="--benchmark") benchmark(argc, argv);
-  else if(first_arg=="--spread") spread(argc, argv);
-  else if(first_arg=="--egreedy") epsgreedy(argc, argv);
-  else if(first_arg=="--explore") explore(argc, argv);
-  else if(first_arg=="--real") real(argc, argv);
-  else if(first_arg=="--prior") prior(argc, argv);
-  else if(first_arg=="--eg") expgr(argc, argv);
-  else if(first_arg=="--zsc") zscore(argc, argv);
+  if (first_arg == "--benchmark") benchmark(argc, argv);
+  else if (first_arg == "--spread") spread(argc, argv);
+  else if (first_arg == "--egreedy") epsgreedy(argc, argv);
+  else if (first_arg == "--explore") explore(argc, argv);
+  else if (first_arg == "--real") real(argc, argv);
+  else if (first_arg == "--prior") prior(argc, argv);
+  else if (first_arg == "--eg") expgr(argc, argv);
+  else if (first_arg == "--zsc") zscore(argc, argv);
 }
-
