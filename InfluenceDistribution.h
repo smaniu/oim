@@ -44,7 +44,7 @@ class InfluenceDistribution {
 
   virtual double sample(unsigned int) = 0;
 
-  virtual double sq_error() {return 0.0;}
+  virtual double sq_error() { return 0.0; }
 
   void set_round(double new_round) { round += new_round; }
 

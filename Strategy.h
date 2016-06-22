@@ -334,7 +334,7 @@ class ExponentiatedGradientStrategy {
 
  public:
   ExponentiatedGradientStrategy(Graph& model_graph, Graph& original_graph,
-                        Evaluator& eval_explore, bool INCREMENTAL)
+                                Evaluator& eval_explore, bool INCREMENTAL)
       : model_g(model_graph), original_g(original_graph),
         eval(eval_explore), INCREMENTAL(INCREMENTAL) {}
 
@@ -361,7 +361,7 @@ class ExponentiatedGradientStrategy {
     std::vector<trial_data> results;
     std::unordered_map<long long, int> edge_hit, edge_miss;
 
-    for (unsigned int stage=0; stage<budget; stage++) {
+    for (unsigned int stage=0; stage < budget; stage++) {
       if (INCREMENTAL)
         SampleManager::reset(stage);
 

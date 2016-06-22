@@ -35,21 +35,24 @@
 
 using namespace std;
 
-class SpreadSampler: public Sampler{
+class SpreadSampler: public Sampler {
  private:
   struct node_type{
     unsigned long id;
     unsigned long deg;
-    bool operator<(const node_type &a) const{
+    bool operator<(const node_type &a) const {
       return (deg < a.deg) ? true : ((deg > a.deg) ? false : id > a.id);
     }
   };
-  std::random_device rd;
-  std::mt19937 gen;
-  std::uniform_real_distribution<> dist;
+  // std::random_device rd;
+  // std::mt19937 gen;
+  // std::uniform_real_distribution<> dist;
+  boost::mt19937 gen;
+  boost::uniform_01<boost::mt19937> dist;
   double stdev;
  public:
-  SpreadSampler(unsigned int type) : Sampler(type), gen(rd()), dist(0, 1) {};
+  SpreadSampler(unsigned int type)
+      : Sampler(type), gen((int)time(0)), dist(gen) {};
 
   double sample(const Graph& graph,
                 const std::unordered_set<unsigned long>& activated,
@@ -108,7 +111,7 @@ class SpreadSampler: public Sampler{
         if (visited.find(edge.target) == visited.end()) {
           double dice_dst = edge.dist->sample(quantile);
           unsigned int act = 0;
-          double dice = dist(gen);
+          double dice = dist();
           if (dice < dice_dst) {
             visited.insert(edge.target);
             queue.push(edge.target);

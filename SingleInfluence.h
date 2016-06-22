@@ -32,9 +32,9 @@ class SingleInfluence: public InfluenceDistribution {
  public:
   SingleInfluence(double influence_value) : value(influence_value) {};
 
-  double mean() {return value;}
+  double mean() { return value; }
 
-  double sample(unsigned int interval) {return value;}
+  double sample(unsigned int interval) { return value; }
 };
 
 #endif /* defined(__oim__SingleInfluence__) */

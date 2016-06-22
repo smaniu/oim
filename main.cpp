@@ -253,7 +253,7 @@ void expgr(int argc, const char * argv[]) {
     std::shared_ptr<InfluenceDistribution> dst_original(
         new SingleInfluence(prob));
     std::shared_ptr<InfluenceDistribution> dst_model(
-        new BetaInfluence(alpha, beta,prob));
+        new BetaInfluence(alpha, beta, prob));
     original_graph.add_edge(src, tgt, dst_original);
     model_graph.add_edge(src, tgt, dst_model);
     edges++;

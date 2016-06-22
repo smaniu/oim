@@ -28,7 +28,7 @@
 #include "common.h"
 #include "Evaluator.h"
 
-class CELFEvaluator : public Evaluator{
+class CELFEvaluator : public Evaluator {
  public:
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,

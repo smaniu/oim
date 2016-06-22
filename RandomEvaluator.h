@@ -31,7 +31,7 @@
 #include <boost/random/uniform_int_distribution.hpp>
 
 class RandomEvaluator : public Evaluator {
-public:
+ public:
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
       const std::unordered_set<unsigned long>& activated, unsigned int k,

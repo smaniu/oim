@@ -45,46 +45,43 @@ extern double reused_ratio;
 
 typedef long long int64;
 
-class edge_type{
-public:
+class edge_type {
+ public:
   unsigned long source;
   unsigned long target;
   std::shared_ptr<InfluenceDistribution> dist;
-  edge_type(unsigned long src, unsigned long tgt,\
-            std::shared_ptr<InfluenceDistribution> dst) :\
-            source(src), target(tgt), dist(dst) {};
+  edge_type(unsigned long src, unsigned long tgt,
+            std::shared_ptr<InfluenceDistribution> dst)
+      : source(src), target(tgt), dist(dst) {};
 };
 
-typedef struct{
+typedef struct {
   unsigned long source;
   unsigned long target;
   unsigned int trial;
 } trial_type;
 
-struct celf_node_type{
+struct celf_node_type {
   unsigned long id;
   double spr;
-  bool operator<(const celf_node_type &a) const{
-    return spr<a.spr?true:(spr>a.spr?false:id>a.id);
+  bool operator<(const celf_node_type &a) const {
+    return (spr < a.spr) ? true : ((spr > a.spr) ? false : id > a.id);
   }
 };
 
 typedef unsigned long long timestamp_t;
 
-static timestamp_t get_timestamp ()
-{
+static timestamp_t get_timestamp () {
   struct timeval now;
   gettimeofday (&now, NULL);
   return  now.tv_usec + (timestamp_t)now.tv_sec * 1000000;
 }
 
-double sqr(double t)
-{
-    return t*t;
+double sqr(double t) {
+    return t * t;
 }
 
-void process_mem_usage(double& vm_usage, double& resident_set)
-{
+void process_mem_usage(double& vm_usage, double& resident_set) {
    using std::ios_base;
    using std::ifstream;
    using std::string;
@@ -119,6 +116,5 @@ void process_mem_usage(double& vm_usage, double& resident_set)
    vm_usage     = vsize / 1024.0;
    resident_set = rss * page_size_kb;
 }
-
 
 #endif

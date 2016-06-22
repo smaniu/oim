@@ -1,16 +1,16 @@
 /*
  Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
- 
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,20 +34,20 @@
 using namespace std;
 
 struct sample_type{
-  shared_ptr<vector<unsigned long> > sample;
+  shared_ptr<vector<unsigned long>> sample;
   int age; // this sample is generated at trial #age
   int lastUsedTrial;
   double alpha, beta; // this sample is generated under prior (alpha, beta)
 };
 
-class SampleManager{
-private:
-  std::random_device rd;
-  std::mt19937 gen;
-
+class SampleManager {
+ private:
   const Graph& graph;
   vector<sample_type> sample_pool;
   int pointer;
+
+  std::random_device rd;
+  std::mt19937 gen;
 
   SampleManager(const Graph& graph) : graph(graph), gen(rd()) {
     sample_pool.clear();
@@ -60,17 +60,15 @@ private:
     if (exploreInstance) delete exploreInstance;
   }
 
-
   static SampleManager* instance;
   static SampleManager* exploreInstance;
-  
+
   static int currentTrial;
   static bool explore;
   static vector<int> node_age;
   static double hit, miss, case1, case2, case3;
 
-public:
-
+ public:
   static void setInstance(const Graph& graph) {
     if (instance) delete instance;
     if (exploreInstance) delete exploreInstance;
@@ -100,7 +98,7 @@ public:
     if (explore && exploreInstance->sample_pool.size()) {
       exploreInstance->pointer = -1;
       //exploreInstance->pointer = rand() % ((int)exploreInstance->sample_pool.size());
-    } 
+    }
     if (!explore && instance->sample_pool.size()) {
       instance->pointer = -1;
       //instance->pointer = rand() % ((int)instance->sample_pool.size());
@@ -131,11 +129,10 @@ public:
   }
 
   // hardcoded for reverse set
-  shared_ptr<vector<unsigned long> > getSample(const vector<unsigned long>& graph_nodes,\
-                                   Sampler& sampler,\
-                                   const unordered_set<unsigned long>& activated,\
-                                   std::uniform_int_distribution<int>& dst) 
-  {
+  shared_ptr<vector<unsigned long>> getSample(
+      const vector<unsigned long>& graph_nodes, Sampler& sampler,
+      const unordered_set<unsigned long>& activated,
+      std::uniform_int_distribution<int>& dst) {
     bool goodSampleFlag = true;
     // check whether there is sample that can be reused
     do {
@@ -151,7 +148,7 @@ public:
         case2 += 1;
         break;
       }
-      for (auto node:*(sample.sample)) {
+      for (auto node : *(sample.sample)) {
         if (node_age[node] >= sample.age) {
           goodSampleFlag = false;
           case3 += 1;
@@ -171,11 +168,11 @@ public:
     unsigned long nd = graph_nodes[dst(gen)];
     seeds.insert(nd);
     sampler.trial(graph, activated, seeds, true);
-    
-    shared_ptr<vector<unsigned long> >sample (new vector<unsigned long>());
+
+    shared_ptr<vector<unsigned long>>sample (new vector<unsigned long>());
     sample->push_back(nd);
-    for(trial_type tt:sampler.get_trials()){
-      if(tt.trial==1){
+    for(trial_type tt : sampler.get_trials()) {
+      if (tt.trial == 1) {
         sample->push_back(tt.target);
       }
     }
@@ -193,7 +190,7 @@ public:
     new_sample.age = currentTrial;
     new_sample.lastUsedTrial = currentTrial;
     return new_sample.sample;
-  } 
+  }
 };
 
 SampleManager* SampleManager::instance = NULL;

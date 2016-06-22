@@ -68,12 +68,14 @@ class Graph {
   }
 
   void update_edge(unsigned long src, unsigned long tgt, unsigned int trial) {
-    if (adj_list.find(src) != adj_list.end())
-      for (edge_type edge : adj_list[src])
+    if (adj_list.find(src) != adj_list.end()) {
+      for (edge_type edge : adj_list[src]) {
         if (edge.target == tgt) {
           edge.dist->update(trial, 1.0 - trial);
           break;
         }
+      }
+    }
   }
 
   void update_edge_priors(double alpha, double beta) {
