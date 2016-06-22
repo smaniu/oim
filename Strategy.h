@@ -350,7 +350,7 @@ public:
                unsigned int learn=0){
     double p[3] = {0.333,0.333,0.333};
     double w[3] = {1.0,1.0,1.0};
-    unsigned int cur_theta = 3;
+    unsigned int cur_theta = THETA_OFFSET;
     double mu = log(300.0)/(3*budget);
     double tau = 12.0*mu/(3.0+mu);
     double lambda = tau/6.0;
@@ -388,7 +388,7 @@ public:
       int p2 = (int)(p[2]*1000.0);
       std::discrete_distribution<int> prob {static_cast<double>(p0),\
         static_cast<double>(p1), static_cast<double>(p2)};
-      cur_theta = prob(generator)+3;
+      cur_theta = prob(generator)+THETA_OFFSET;
 
       PathSampler exploit_p(cur_theta);
       
@@ -406,7 +406,7 @@ public:
       real += cur_real;
       //recalibrating
       for(int i=0;i<3;i++){
-        if(i==cur_theta-3)
+        if(i==cur_theta-THETA_OFFSET)
           w[i] = w[i]*exp(lambda*(cur_gain+mu)/p[i]);
         else
           w[i] = w[i]*exp(lambda*mu/p[i]);
@@ -557,7 +557,7 @@ public:
       hits << "\t" << misses << "\t" << totaltime << "\t" << round_time << "\t"\
       << sampling_time << "\t" << choosing_time << "\t" << selecting_time <<\
       "\t" << updating_time << "\t" << alpha << "\t" << beta << "\t" <<\
-      mse << "\t" << (int)cur_theta-4 << "\t" << reused_ratio << "\t" <<\
+      mse << "\t" << (int)cur_theta-THETA_OFFSET-1 << "\t" << reused_ratio << "\t" <<\
       memory << "\t";
       for(auto seed:seeds) std::cout << seed << ".";
       std::cout << std::endl << std::flush;
@@ -584,7 +584,7 @@ public:
   
   void perform(unsigned int budget, unsigned int k, bool update=true,\
                unsigned int learn=0){
-    unsigned int cur_theta = 5;
+    unsigned int cur_theta = THETA_OFFSET;
     SpreadSampler exploit_s(INFLUENCE_MED);
     SpreadSampler test_s(INFLUENCE_MED);
     std::unordered_set<unsigned long> activated;
@@ -611,9 +611,9 @@ public:
       //recalibrating
       double err = test_s.get_stdev();
       double stat = (cur_real-cur_expected)/err;
-      int theta_est = 4 + (int)(stat/2);
-      if(theta_est<3) theta_est = 3;
-      if(theta_est>5) theta_est = 5;
+      int theta_est = THETA_OFFSET + (int)(stat/2);
+      if(theta_est<THETA_OFFSET-2) theta_est = THETA_OFFSET-2;
+      if(theta_est>THETA_OFFSET) theta_est = THETA_OFFSET;
       cur_theta = theta_est;
       //updating the model graph
       for(unsigned long node:seeds) activated.insert(node);
@@ -679,7 +679,7 @@ public:
       time_min += (t1-t0)/60000000.0L;
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<\
       hits << "\t" << misses << "\t" << time_min << "\t" << beta << "\t" <<\
-      model_g.get_mse() << "\t" << (int)cur_theta-4 << std::endl << std::flush;
+      model_g.get_mse() << "\t" << (int)cur_theta-THETA_OFFSET-1 << std::endl << std::flush;
     }
   }
 };
