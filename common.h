@@ -38,6 +38,7 @@
 
 #include "InfluenceDistribution.h"
 
+#define THETA_OFFSET 5
 
 extern double sampling_time;
 extern double choosing_time;
