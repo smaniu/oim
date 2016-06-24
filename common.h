@@ -23,8 +23,6 @@
 #ifndef oim_common_h
 #define oim_common_h
 
-#define MAX_R 10000000
-
 #include <random>
 #include <sys/time.h>
 #include <boost/random.hpp>
@@ -38,6 +36,8 @@
 
 #include "InfluenceDistribution.h"
 
+#define THETA_OFFSET 5
+#define MAX_R 10000000
 
 extern double sampling_time;
 extern double choosing_time;

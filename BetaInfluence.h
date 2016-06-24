@@ -82,6 +82,11 @@ class BetaInfluence: public InfluenceDistribution {
       double x = a(gen);
       double y = b(gen);
       return x / (x + y);
+    } else { // Case where we shift the distributions by theta stdev (EG)
+      double val = quartile_med + (interval - (double)THETA_OFFSET - 1.0)
+          * quartile_stdev;
+      val = val < 1 ? val : 1.0;
+      return val > 0 ? val : 0.0;
     }
     return quartile_med;
   }
