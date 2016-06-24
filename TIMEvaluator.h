@@ -88,8 +88,8 @@ class TIMEvaluator : public Evaluator {
     n_max = 0;
     for (auto src : graph.get_nodes()) {
       if (activated.find(src) == activated.end()) {
-          if (src > n_max) n_max = src;
-          graph_nodes.push_back(src);
+        if (src > n_max) n_max = src;
+        graph_nodes.push_back(src);
       }
     }
 
@@ -104,27 +104,33 @@ class TIMEvaluator : public Evaluator {
     double ept;
 
     ept = EstimateEPT(graph, sampler_s, dst);
+    std::cerr << "Profiling 1: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
 
     //printf("ept = %.lf \n", ept);
 
     BuildSeedSet();
+    std::cerr << "Profiling 2: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
 
     BuildHyperGraph2(ep_step2, ept, graph, sampler_s, dst);
+    std::cerr << "Profiling 3: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
     ept = InfluenceHyperGraph();
+    std::cerr << "Profiling 4: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
     //printf("ept1 = %.lf \n", ept);
 
-    ept /= 1+ep_step2;
+    ept /= 1 + ep_step2;
     //printf("ept2 = %.lf \n", ept);
 
     BuildHyperGraph3(ep_step3, ept, graph, sampler_s, dst);
 
     t1 = get_timestamp();
+    std::cerr << "Sampling time: " << (t1 - t0) / 1000000 << "sec" << std::endl;
 
     //cerr << "start BuildSeedSet()" << endl;
     BuildSeedSet();
     //puts("end BuildSeedSet()");
 
     t2 = get_timestamp();
+    std::cerr << "Choice time: " << (t2 - t1) / 1000000 << "sec" << std::endl;
 
     //puts("start InfluenceHyperGraph()");
     //ept=InfluenceHyperGraph();
@@ -146,7 +152,7 @@ class TIMEvaluator : public Evaluator {
  private:
   double EstimateEPT(const Graph& graph, Sampler& sampler,
                      std::uniform_int_distribution<int>& dst) {
-    double ept=Estimate_KPT(graph, sampler, dst);
+    double ept = Estimate_KPT(graph, sampler, dst);
     ept /= 2;
     return ept;
   }
@@ -160,13 +166,13 @@ class TIMEvaluator : public Evaluator {
     double return_value = 1;
     int steps = 1;  // added for algorithm 2 line 1
     while (steps <= log(n) / log(2) - 1) {
-        int loop = (6 * log(n) + 6 * log(log(n)/ log(2))) * 1 / lb  ;
+        int loop = (6 * log(n) + 6 * log(log(n)/ log(2))) / lb;
         c = 0;
         lastR = loop;
 
-        for (int i=0; i < loop; i++) {
+        for (int i = 0; i < loop; i++) {
             std::shared_ptr<std::vector<unsigned long>>
-              rr(new std::vector<unsigned long>());
+                rr(new std::vector<unsigned long>());
             if (!INCREMENTAL) {
               std::unordered_set<unsigned long> seeds;
               unsigned long u = graph_nodes[dst(gen)];
@@ -196,9 +202,8 @@ class TIMEvaluator : public Evaluator {
 
             //printf("-- MgTu, pu, c = %lf , %lf, %lf\n", MgTu, pu, c);
 
-            c += 1 - pow((1-pu), k);
+            c += 1 - pow(1 - pu, k);
         }
-
         c /= loop;
         if (c > lb) { return_value = c * n; break; }
         lb /= 2;
@@ -206,7 +211,6 @@ class TIMEvaluator : public Evaluator {
     }
 
     //printf("Estimate_KPT -- R = %lld\n", lastR);
-
     buildSamples(lastR, graph, sampler, dst);
 
     return return_value;

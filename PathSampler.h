@@ -28,7 +28,7 @@
 #include <unordered_set>
 #include <random>
 #include <sys/time.h>
-# include <boost/heap/fibonacci_heap.hpp>
+#include <boost/heap/fibonacci_heap.hpp>
 
 #include "common.h"
 #include "Graph.h"
@@ -36,19 +36,22 @@
 
 class PathSampler : public Sampler {
  private:
-  struct node_type{
+  struct node_type {
     unsigned long id;
     double prob;
-    bool operator<(const node_type &a) const{
-      return prob<a.prob?true:(prob>a.prob?false:id>a.id);
+    bool operator<(const node_type &a) const {
+      return (prob < a.prob) ? true : ((prob > a.prob) ? false : id > a.id);
     }
   };
-  std::random_device rd;
-  std::uniform_real_distribution<> dist;
-  std::mt19937 gen;
+  // std::random_device rd;
+  // std::uniform_real_distribution<> dist;
+  // std::mt19937 gen;
+  boost::mt19937 gen;
+  boost::uniform_01<boost::mt19937> dist;
 
  public:
-  PathSampler(unsigned int type) : Sampler(type), dist(0,1), gen(rd()) {};
+  PathSampler(unsigned int type)
+      : Sampler(type), gen(((int)time(0))), dist(gen) {};
 
   double sample(const Graph& graph,
                 const std::unordered_set<unsigned long>& activated,
@@ -90,7 +93,7 @@ private:
     while (queue.size() > 0) {
       node_type node = queue.top();
       queue.pop();
-      if(trial){
+      if(trial) {
         trial_type tt;
         tt.source = node.id;
         tt.target = node.id;
@@ -110,12 +113,12 @@ private:
       boost::heap::fibonacci_heap<node_type>& queue,
       std::unordered_set<unsigned long>& visited,
       std::unordered_map<unsigned long,
-        boost::heap::fibonacci_heap<node_type>::handle_type>& queue_nodes,
+          boost::heap::fibonacci_heap<node_type>::handle_type>& queue_nodes,
       bool inv=false) {
 
-    if(graph.has_neighbours(node, inv)) {
-      for(auto edge:graph.get_neighbours(node, inv)){
-        if(visited.find(edge.target)==visited.end()){
+    if (graph.has_neighbours(node, inv)) {
+      for (auto edge : graph.get_neighbours(node, inv)) {
+        if (visited.find(edge.target) == visited.end()) {
           double dst_prob = edge.dist->sample(quantile);
           relax(node, edge.target, dst_prob, queue, queue_nodes);
         }
@@ -127,9 +130,9 @@ private:
       unsigned long src, unsigned long tgt, double dst,
       boost::heap::fibonacci_heap<node_type>& queue,
       std::unordered_map<unsigned long,
-        boost::heap::fibonacci_heap<node_type>::handle_type>& queue_nodes) {
+          boost::heap::fibonacci_heap<node_type>::handle_type>& queue_nodes) {
 
-    double new_prob = (*queue_nodes[src]).prob*dst;
+    double new_prob = (*queue_nodes[src]).prob * dst;
     if (queue_nodes.find(tgt) == queue_nodes.end()) {
       node_type node;
       node.id = tgt;
@@ -142,7 +145,7 @@ private:
         node.id = tgt;
         node.prob = new_prob;
         auto handle = queue_nodes[tgt];
-        queue.update(handle,node);
+        queue.update(handle, node);
       }
     }
   }

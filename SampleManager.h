@@ -115,7 +115,7 @@ class SampleManager {
 
     cerr << "number of nodes to be updated: " << trials.size() << endl;*/
 
-    for (auto node:trials) {
+    for (auto node : trials) {
       node_age[(int)node] = currentTrial;
     }
   }

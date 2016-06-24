@@ -26,7 +26,7 @@
 #include "common.h"
 #include "Graph.h"
 
-class Sampler{
+class Sampler {
  protected:
   unsigned int quantile;
   std::vector<trial_type> trials;

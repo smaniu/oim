@@ -77,8 +77,8 @@ class BetaInfluence: public InfluenceDistribution {
       return (val < 1) ? val : 1.0;
     } else if (interval == INFLUENCE_THOMPSON) {
       gen.seed(time(0));
-      std::gamma_distribution<double> a(alpha,1.0);
-      std::gamma_distribution<double> b(beta,1.0);
+      std::gamma_distribution<double> a(alpha, 1.0);
+      std::gamma_distribution<double> b(beta, 1.0);
       double x = a(gen);
       double y = b(gen);
       return x / (x + y);

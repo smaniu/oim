@@ -115,7 +115,7 @@ class OriginalGraphStrategy {
 
 class EpsilonGreedyStrategy {
  private:
-  struct trial_data{
+  struct trial_data {
     std::unordered_set<unsigned long> seeds;
     double spread;
     std::vector<trial_type> trials;
@@ -135,8 +135,8 @@ class EpsilonGreedyStrategy {
                         Evaluator& eval_explore, Evaluator& eval_exploit,
                         double number_samples, double eps, bool INCREMENTAL)
       : model_g(model_graph), original_g(original_graph),
-         explore_e(eval_explore), exploit_e(eval_exploit),
-         samples(number_samples), epsilon(eps), INCREMENTAL(INCREMENTAL)  {}
+        explore_e(eval_explore), exploit_e(eval_exploit),
+        samples(number_samples), epsilon(eps), INCREMENTAL(INCREMENTAL)  {}
 
   void perform(unsigned int budget, unsigned int k, bool update=true,
                unsigned int learn=0,
@@ -161,7 +161,7 @@ class EpsilonGreedyStrategy {
       t0 = get_timestamp();
       //selecting seeds using explore or exploit
       std::unordered_set<unsigned long> seeds;
-      double dice=dst();
+      double dice = dst();
 
       //cout<<"is explore? " << (bool)(dice < epsilon) << endl;
 
@@ -236,20 +236,20 @@ class EpsilonGreedyStrategy {
               }
               y += -(t+1)*x+(o+h)*avg_spread;
             }
-            xy += x*y;
-            xx += x*x;
+            xy += x * y;
+            xx += x * x;
           }
           beta = xy/xx;
           beta = beta > 0 ? beta : -beta;
         } else if (learn == 3) { //MLE learning
           double t = 0.0, a = 0.0;
-          for(trial_data res:results) {
+          for (trial_data res : results) {
             t += (double) res.trials.size();
-            for(trial_type tt:res.trials)
+            for (trial_type tt : res.trials)
               a += (double)tt.trial;
           }
           alpha += a;
-          beta += t-a;
+          beta += t - a;
           //beta = a>0?(t-a)/a:t;
         } else if (learn == 2) { // MLE with alpha = 1
           //cerr<< "Learning..."<<endl;
@@ -270,7 +270,7 @@ class EpsilonGreedyStrategy {
           for (auto item = edge_hit.begin(); item != edge_hit.end(); ++item) {
             a -= 1 / (alpha + item->second);
           }
-          auto fbeta = [&](double beta, double a){
+          auto fbeta = [&](double beta, double a) {
             double ret = 0.0;
             for (auto item = edge_miss.begin(); item != edge_miss.end(); ++item)
               ret += 1.0 / (beta + item->second);
@@ -294,11 +294,11 @@ class EpsilonGreedyStrategy {
       model_g.update_rounds(1.0);
       t1 = get_timestamp();
       //printing results
-      time_min += (t1-t0)/60000000.0L;
-      std::cout << stage << "\t" << real << "\t" << expected << "\t" <<\
-        hits << "\t" << misses << "\t" << time_min << "\t" << alpha << "\t"\
-        << beta << "\t" << model_g.get_mse() << "\t";
-      for(auto seed:seeds) std::cout << seed << ".";
+      time_min += (t1 - t0) / 60000000.0L;
+      std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
+          hits << "\t" << misses << "\t" << time_min << "\t" << alpha <<
+          "\t" << beta << "\t" << model_g.get_mse() << "\t";
+      for (auto seed : seeds) std::cout << seed << ".";
       std::cout << std::endl << std::flush;
     }
   }
@@ -361,7 +361,7 @@ class ExponentiatedGradientStrategy {
     std::vector<trial_data> results;
     std::unordered_map<long long, int> edge_hit, edge_miss;
 
-    for (unsigned int stage=0; stage < budget; stage++) {
+    for (unsigned int stage = 0; stage < budget; stage++) {
       if (INCREMENTAL)
         SampleManager::reset(stage);
 
@@ -371,12 +371,13 @@ class ExponentiatedGradientStrategy {
       std::default_random_engine generator((int)time(0));
       // trick for stupid GCC which expects std::discrete_distribution to be
       // templated by an integral type (clang doesn't)
-      int p0 = (int)(p[0]*1000.0);
-      int p1 = (int)(p[1]*1000.0);
-      int p2 = (int)(p[2]*1000.0);
+      int p0 = (int)(p[0] * 1000.0);
+      int p1 = (int)(p[1] * 1000.0);
+      int p2 = (int)(p[2] * 1000.0);
       std::discrete_distribution<int> prob {static_cast<double>(p0),
           static_cast<double>(p1), static_cast<double>(p2)};
       cur_theta = prob(generator) + 3;
+      std::cerr << "theta = " << cur_theta << std::endl;
 
       PathSampler exploit_p(cur_theta);
 
@@ -415,7 +416,7 @@ class ExponentiatedGradientStrategy {
         nodes_to_update.insert(node);
       }
       unsigned int hits = 0, misses = 0;
-      for (trial_type tt:exploit_s.get_trials()) {
+      for (trial_type tt : exploit_s.get_trials()) {
         nodes_to_update.insert(tt.target);
         if (tt.trial == 1) {
           hits++;
@@ -456,7 +457,7 @@ class ExponentiatedGradientStrategy {
                 o += 1.0;
                 t += (double)node.dist->get_hits() +
                   (double)node.dist->get_misses();
-                h += (double) node.dist->get_hits();
+                h += (double)node.dist->get_hits();
               }
               y += -(t + 1) * x + (o + h) * avg_spread;
             }
@@ -516,7 +517,7 @@ class ExponentiatedGradientStrategy {
         }
         model_g.update_edge_priors(alpha, beta);
       }
-      model_g.update_rounds((double)(stage+1));
+      model_g.update_rounds((double)(stage + 1));
 
       t2 = get_timestamp();
       updating_time = (t2 - t1) / 60000000.0L;
@@ -527,20 +528,20 @@ class ExponentiatedGradientStrategy {
 
       //printing results
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
-        hits << "\t" << misses << "\t" << totaltime << "\t" << round_time <<
-        "\t" << sampling_time << "\t" << choosing_time << "\t" <<
-        selecting_time << "\t" << updating_time << "\t" << alpha << "\t" <<
-        beta << "\t" << mse << "\t" << (int)cur_theta-4 << "\t" <<
-        reused_ratio << "\t" << memory << "\t";
+          hits << "\t" << misses << "\t" << totaltime << "\t" << round_time <<
+          "\t" << sampling_time << "\t" << choosing_time << "\t" <<
+          selecting_time << "\t" << updating_time << "\t" << alpha << "\t" <<
+          beta << "\t" << mse << "\t" << (int)cur_theta-4 << "\t" <<
+          reused_ratio << "\t" << memory << "\t";
       for (auto seed : seeds) std::cout << seed << ".";
       std::cout << std::endl << std::flush;
     }
   }
 };
 
-class ZScoresStrategy{
+class ZScoresStrategy {
  private:
-  struct trial_data{
+  struct trial_data {
     std::unordered_set<unsigned long> seeds;
     double spread;
     std::vector<trial_type> trials;
@@ -552,8 +553,8 @@ class ZScoresStrategy{
 
  public:
   ZScoresStrategy(Graph& model_graph, Graph& original_graph,
-                  Evaluator& eval_explore):
-    model_g(model_graph), original_g(original_graph), eval(eval_explore) {}
+                  Evaluator& eval_explore)
+      : model_g(model_graph), original_g(original_graph), eval(eval_explore) {}
 
   void perform(unsigned int budget, unsigned int k, bool update=true,
                unsigned int learn=0) {
@@ -568,7 +569,7 @@ class ZScoresStrategy{
     double time_min = 0;
     double beta = 1;
     std::vector<trial_data> results;
-    for(unsigned int stage=0; stage<budget; stage++){
+    for (unsigned int stage = 0; stage < budget; stage++) {
       timestamp_t t0, t1;
       t0 = get_timestamp();
       PathSampler exploit_p(cur_theta);
@@ -583,80 +584,77 @@ class ZScoresStrategy{
       real += cur_real;
       //recalibrating
       double err = test_s.get_stdev();
-      double stat = (cur_real-cur_expected)/err;
-      int theta_est = 4 + (int)(stat/2);
-      if(theta_est<3) theta_est = 3;
-      if(theta_est>5) theta_est = 5;
+      double stat = (cur_real - cur_expected) / err;
+      int theta_est = 4 + (int)(stat / 2);
+      if (theta_est < 3) theta_est = 3;
+      if (theta_est > 5) theta_est = 5;
       cur_theta = theta_est;
       //updating the model graph
-      for(unsigned long node:seeds) activated.insert(node);
-      unsigned int hits=0, misses=0;
-      for(trial_type tt:exploit_s.get_trials()){
-        if(tt.trial==1){
+      for (unsigned long node : seeds) activated.insert(node);
+      unsigned int hits = 0, misses = 0;
+      for (trial_type tt : exploit_s.get_trials()) {
+        if (tt.trial == 1) {
           hits++;
           activated.insert(tt.target);
-        }
-        else{
+        } else {
           misses++;
         }
         if(update) model_g.update_edge(tt.source, tt.target, tt.trial);
       }
       //TODO learning the graph
-      if(learn>0){
+      if (learn > 0) {
         trial_data result;
-        for(unsigned long seed:seeds) result.seeds.insert(seed);
+        for (unsigned long seed : seeds) result.seeds.insert(seed);
         result.spread = cur_real;
-        for(trial_type tt:exploit_s.get_trials()) result.trials.push_back(tt);
+        for (trial_type tt : exploit_s.get_trials())
+          result.trials.push_back(tt);
         results.push_back(result);
         //linear regression learning
-        if(learn==1){
-          double total_spread=0.0, total_seeds=0.0;
-          for(trial_data res:results){
+        if (learn == 1) {
+          double total_spread = 0.0, total_seeds = 0.0;
+          for (trial_data res : results) {
             total_spread += res.spread;
             total_seeds += (double) res.seeds.size();
           }
           double avg_spread = total_spread / total_seeds;
           double xy = 0.0, xx = 0.0;
-          for(trial_data res:results){
-            double x = res.spread-1;
+          for (trial_data res : results) {
+            double x = res.spread - 1;
             double y = 0.0;
-            for(unsigned long seed:res.seeds){
+            for (unsigned long seed : res.seeds) {
               double o = 0.0, t = 0.0, h = 0.0;
-              for(auto node:model_g.get_neighbours(seed)){
-                o = o + 1.0;
-                t = t + (double) node.dist->get_hits() +\
-                (double) node.dist->get_misses();
-                h = h + (double) node.dist->get_hits();
+              for (auto node : model_g.get_neighbours(seed)) {
+                o += 1.0;
+                t += (double)node.dist->get_hits() +
+                    (double) node.dist->get_misses();
+                h += (double) node.dist->get_hits();
               }
-              y += (t+1)*x+(o+h)*avg_spread;
+              y += (t + 1) * x + (o + h) * avg_spread;
             }
-            xy += x*y;
-            xx += x*x;
+            xy += x * y;
+            xx += x * x;
           }
-          beta = xy/xx;
-        }
-        //MLE learning
-        else if(learn==2){
+          beta = xy / xx;
+        } else if (learn == 2) { //MLE learning
           double t = 0.0, a = 0.0;
-          for(trial_data res:results){
-            t += (double) res.trials.size();
-            for(trial_type tt:res.trials) a += (double)tt.trial;
+          for (trial_data res : results) {
+            t += (double)res.trials.size();
+            for (trial_type tt:res.trials) a += (double)tt.trial;
           }
-          beta = a>0?(t-a)/a:t;
+          beta = (a > 0) ? (t - a) / a : t;
         }
         model_g.update_edge_priors(1.0, beta);
       }
-      model_g.update_rounds((double)(stage+1));
+      model_g.update_rounds((double)(stage + 1));
       t1 = get_timestamp();
       //printing results
-      time_min += (t1-t0)/60000000.0L;
-      std::cout << stage << "\t" << real << "\t" << expected << "\t" <<\
-      hits << "\t" << misses << "\t" << time_min << "\t" << beta << "\t" <<\
-      model_g.get_mse() << "\t" << (int)cur_theta-4 << std::endl << std::flush;
+      time_min += (t1 - t0)/60000000.0L;
+      std::cout << stage << "\t" << real << "\t" << expected <<
+          "\t" << hits << "\t" << misses << "\t" << time_min <<
+          "\t" << beta << "\t" << model_g.get_mse() << "\t" <<
+          (int)cur_theta-4 << std::endl << std::flush;
     }
   }
 };
-
-
 
 #endif /* defined(__oim__Strategy__) */
