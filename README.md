@@ -26,7 +26,7 @@ The following methods are currently supported:
 
 1. *epsilon-greedy*, which is run as follows:
 
-        ./oim --oim <graph> <alpha> <beta> <exploit> <explore> <trials> <k>
+        ./oim --egreedy <graph> <alpha> <beta> <exploit> <explore> <trials> <k>
         <epsilon> <update> <update_type> [<samples>]
 
 2. *exponentiated gradient*, which is run as follows:
