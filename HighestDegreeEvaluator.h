@@ -30,13 +30,6 @@
 
 class HighestDegreeEvaluator : public Evaluator {
  private:
-  struct node_type{
-    unsigned long id;
-    unsigned long deg;
-    bool operator<(const node_type &a) const {
-      return deg < a.deg ? true : (deg > a.deg ? false : id > a.id);
-    }
-  };
   static std::unordered_set<unsigned long> seedSets;
 
  public:
@@ -49,9 +42,9 @@ class HighestDegreeEvaluator : public Evaluator {
         const std::unordered_set<unsigned long>& activated,
         unsigned int k, unsigned long samples) {
     std::unordered_set<unsigned long> set;
-    boost::heap::fibonacci_heap<node_type> queue;
-    for(unsigned long node:graph.get_nodes()){
-      node_type nstruct;
+    boost::heap::fibonacci_heap<NodeType> queue;
+    for (unsigned long node : graph.get_nodes()) {
+      NodeType nstruct;
       nstruct.id = node;
       nstruct.deg = 0;
       if(graph.has_neighbours(node))
@@ -59,7 +52,7 @@ class HighestDegreeEvaluator : public Evaluator {
       queue.push(nstruct);
     }
     while (set.size() < k && !queue.empty()) {
-      node_type nstruct = queue.top();
+      NodeType nstruct = queue.top();
       //if(activated.find(nstruct.id)==activated.end())
       if (seedSets.find(nstruct.id) == seedSets.end()) {
         // guarantee no duplicate nodes in the seed set for all trials

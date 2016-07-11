@@ -29,14 +29,6 @@
 #include <boost/heap/fibonacci_heap.hpp>
 
 class DiscountDegreeEvaluator : public Evaluator {
- private:
-  struct NodeType {
-    unsigned long id;
-    double deg;
-    bool operator<(const NodeType &a) const{
-      return deg < a.deg ? true : (deg > a.deg ? false : id > a.id);
-    }
-  };
  public:
   std::unordered_set<unsigned long> select(
         const Graph& graph, Sampler& sampler,

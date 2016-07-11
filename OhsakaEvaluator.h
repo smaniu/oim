@@ -43,7 +43,7 @@
 
 typedef std::unordered_map<unsigned long, unsigned long> cc_map;
 typedef std::unordered_map<unsigned int, std::unordered_set<unsigned long>>
-  cc_node_map;
+    cc_node_map;
 
 class OhsakaEvaluator : public Evaluator {
  private:
@@ -84,7 +84,7 @@ public:
     std::unordered_set<unsigned long> set;
 
     //sample the graphs and create DAGs and supporting structures
-    for (int i = 0; i < samples; i++) {
+    for (unsigned int i = 0; i < samples; i++) {
       tarjan(sampler,graph); //samples and creates the DAG at the same time
       unsigned long max_node = 0;
       unsigned long max_val = 0;
@@ -130,7 +130,8 @@ public:
       for (auto v : graph.get_nodes()) {
         if (activated.find(v) == activated.end()) {
           float tot_val = 0;
-          for (int i = 0; i < samples; i++) tot_val += gain(i, v, set);
+          for (unsigned int i = 0; i < samples; i++)
+            tot_val += gain(i, v, set);
           tot_val = tot_val / (float)samples;
           if (tot_val >= val_max) {
             val_max = tot_val;
@@ -139,7 +140,7 @@ public:
         }
       }
       set.insert(t);
-      for (int i = 0; i < samples; i++) update_dag(i, t);
+      for (unsigned int i = 0; i < samples; i++) update_dag(i, t);
     }
     return set;
   }
@@ -236,7 +237,7 @@ public:
       }
     }
   }
-  
+
   float gain(int i, unsigned long node,
              std::unordered_set<unsigned long>& set) {
     unsigned long v = cc[i][node];

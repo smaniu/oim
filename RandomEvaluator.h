@@ -38,16 +38,15 @@ class RandomEvaluator : public Evaluator {
       unsigned long samples) {
     boost::mt19937 gen((int)time(0));
     std::vector<unsigned long> reservoir;
-    int index = 0;
+    unsigned int index = 0;
     for (unsigned long node : graph.get_nodes()) {
       if (activated.find(node) == activated.end()) {
         if (index < k) {
           reservoir.push_back(node);
-        }
-        else{
+        } else {
           boost::random::uniform_int_distribution<> dist(0, index);
-          int dice = dist(gen);
-          if(dice < k) reservoir[dice] = node;
+          unsigned int dice = dist(gen);
+          if (dice < k) reservoir[dice] = node;
         }
         index++;
       }
