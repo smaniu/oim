@@ -41,6 +41,12 @@
 
 //TODO: abstract Strategy class
 
+struct TrialData {
+  std::unordered_set<unsigned long> seeds;
+  double spread;
+  std::vector<trial_type> trials;
+};
+
 class OriginalGraphStrategy {
  private:
   Graph& original_g;
@@ -115,19 +121,12 @@ class OriginalGraphStrategy {
 
 class EpsilonGreedyStrategy {
  private:
-  struct trial_data {
-    std::unordered_set<unsigned long> seeds;
-    double spread;
-    std::vector<trial_type> trials;
-  };
-
   Graph& model_g;
   Graph& original_g;
   Evaluator& explore_e;
   Evaluator& exploit_e;
   unsigned long samples;
   double epsilon;
-
   bool INCREMENTAL;
 
  public:
@@ -153,22 +152,18 @@ class EpsilonGreedyStrategy {
     double time_min = 0;
     double alpha = model_g.alpha_prior;
     double beta = model_g.beta_prior;
-    std::vector<trial_data> results;
+    std::vector<TrialData> results;
     std::unordered_map<long long, int> edge_hit, edge_miss;
 
-    for(unsigned int stage=0; stage<budget; stage++){
+    for (unsigned int stage = 0; stage < budget; stage++) {
       timestamp_t t0, t1;
       t0 = get_timestamp();
       //selecting seeds using explore or exploit
       std::unordered_set<unsigned long> seeds;
       double dice = dst();
 
-      //cout<<"is explore? " << (bool)(dice < epsilon) << endl;
-
-//======================================================================
       if (INCREMENTAL)
         SampleManager::reset(stage, (bool)(dice < epsilon));
-//======================================================================
 
       if (dice < epsilon) {
         explore_e.setIncremental(INCREMENTAL);
@@ -185,54 +180,52 @@ class EpsilonGreedyStrategy {
       //updating the model graph
       std::unordered_set<unsigned long> nodes_to_update;
 
-      for (unsigned long node:seeds) {
+      for (unsigned long node : seeds) {
         activated.insert(node);
         nodes_to_update.insert(node);
       }
-      unsigned int hits=0, misses=0;
-      for (trial_type tt:exploit_s.get_trials()){
+      unsigned int hits = 0, misses = 0;
+      for (trial_type tt : exploit_s.get_trials()) {
         nodes_to_update.insert(tt.target);
-        if (tt.trial==1){
+        if (tt.trial ==1 ) {
           hits++;
           activated.insert(tt.target);
-        } else{
+        } else {
           misses++;
         }
         if (update) model_g.update_edge(tt.source, tt.target, tt.trial);
       }
 
-//======================================================================
       if (INCREMENTAL) {
         SampleManager::update_node_age(nodes_to_update);
       }
-//======================================================================
 
       //TODO learning the graph
       if (learn > 0) {
-        trial_data result;
-        for(unsigned long seed:seeds) result.seeds.insert(seed);
+        TrialData result;
+        for (unsigned long seed : seeds) result.seeds.insert(seed);
         result.spread = cur_real;
         for(trial_type tt:exploit_s.get_trials()) result.trials.push_back(tt);
         results.push_back(result);
         //linear regression learning
         if (learn == 1) {
-          double total_spread=0.0, total_seeds=0.0;
-          for (trial_data res : results) {
+          double total_spread = 0.0, total_seeds = 0.0;
+          for (TrialData res : results) {
             total_spread += res.spread;
             total_seeds += (double) res.seeds.size();
           }
           double avg_spread = total_spread / total_seeds;
           double xy = 0.0, xx = 0.0;
-          for(trial_data res:results){
-            double x = res.spread-1;
+          for (TrialData res : results){
+            double x = res.spread - 1;
             double y = 0.0;
             for (unsigned long seed : res.seeds) {
               double o = 0.0, t = 0.0, h = 0.0;
               for (auto node : model_g.get_neighbours(seed)) {
-                o = o + 1.0;
-                t = t + (double)node.dist->get_hits() +
+                o += 1.0;
+                t += (double)node.dist->get_hits() +
                     (double)node.dist->get_misses();
-                h = h + (double) node.dist->get_hits();
+                h += (double) node.dist->get_hits();
               }
               y += -(t + 1) * x + (o + h) * avg_spread;
             }
@@ -243,7 +236,7 @@ class EpsilonGreedyStrategy {
           beta = beta > 0 ? beta : -beta;
         } else if (learn == 3) { //MLE learning
           double t = 0.0, a = 0.0;
-          for (trial_data res : results) {
+          for (TrialData res : results) {
             t += (double) res.trials.size();
             for (trial_type tt : res.trials)
               a += (double)tt.trial;
@@ -322,21 +315,16 @@ double disp_mem_usage() {
 
 class ExponentiatedGradientStrategy {
  private:
-  struct trial_data {
-    std::unordered_set<unsigned long> seeds;
-    double spread;
-    std::vector<trial_type> trials;
-  };
-  Graph& model_g;
-  Graph& original_g;
-  Evaluator& eval;
-  bool INCREMENTAL;
+  Graph& model_g_;
+  Graph& original_g_;
+  Evaluator& eval_;
+  bool incremental_;
 
  public:
   ExponentiatedGradientStrategy(Graph& model_graph, Graph& original_graph,
-                                Evaluator& eval_explore, bool INCREMENTAL)
-      : model_g(model_graph), original_g(original_graph),
-        eval(eval_explore), INCREMENTAL(INCREMENTAL) {}
+                                Evaluator& eval_explore, bool incremental)
+      : model_g_(model_graph), original_g_(original_graph),
+        eval_(eval_explore), incremental_(incremental) {}
 
   void perform(unsigned int budget, unsigned int k, bool update=true,
                unsigned int learn=0) {
@@ -358,11 +346,11 @@ class ExponentiatedGradientStrategy {
     double alpha = 1;
     double beta = 1;
     double memory = 0;
-    std::vector<trial_data> results;
+    std::vector<TrialData> results;
     std::unordered_map<long long, int> edge_hit, edge_miss;
 
     for (unsigned int stage = 0; stage < budget; stage++) {
-      if (INCREMENTAL)
+      if (incremental_)
         SampleManager::reset(stage);
 
       timestamp_t t0, t1, t2;
@@ -381,19 +369,19 @@ class ExponentiatedGradientStrategy {
       PathSampler exploit_p(cur_theta);
 
       SpreadSampler explore_s(cur_theta);
-      eval.setIncremental(INCREMENTAL);
+      eval_.setIncremental(incremental_);
 
       //selecting seeds using explore or exploit
       std::unordered_set<unsigned long> seeds;
-      seeds = eval.select(model_g, exploit_p, activated, k, 100);
+      seeds = eval_.select(model_g_, exploit_p, activated, k, 100);
       //evaluating the expected and real spread on the seeds
-      double cur_expected = explore_s.sample(model_g, activated, seeds, 100);
+      double cur_expected = explore_s.sample(model_g_, activated, seeds, 100);
       expected += cur_expected;
-      double cur_real = exploit_s.trial(original_g, activated, seeds);
+      double cur_real = exploit_s.trial(original_g_, activated, seeds);
       double cur_gain = 1.0 - std::abs(cur_real-cur_expected)/cur_expected;
       real += cur_real;
       //recalibrating
-      for (int i = 0; i < 3; i++) {
+      for (unsigned int i = 0; i < 3; i++) {
         if (i == cur_theta - THETA_OFFSET)
           w[i] = w[i] * exp(lambda * (cur_gain + mu) / p[i]);
         else
@@ -423,15 +411,15 @@ class ExponentiatedGradientStrategy {
         } else {
           misses++;
         }
-        if(update) model_g.update_edge(tt.source, tt.target, tt.trial);
+        if(update) model_g_.update_edge(tt.source, tt.target, tt.trial);
       }
 
-      if (INCREMENTAL)
+      if (incremental_)
         SampleManager::update_node_age(nodes_to_update);
 
       //TODO learning the graph
       if (learn > 0) {
-        trial_data result;
+        TrialData result;
         for (unsigned long seed : seeds)
           result.seeds.insert(seed);
         result.spread = cur_real;
@@ -440,22 +428,22 @@ class ExponentiatedGradientStrategy {
         results.push_back(result);
         //linear regression learning
         if (learn == 1) {
-          double total_spread=0.0, total_seeds=0.0;
-          for(trial_data res : results) {
+          double total_spread = 0.0, total_seeds = 0.0;
+          for(TrialData res : results) {
             total_spread += res.spread;
             total_seeds += (double) res.seeds.size();
           }
           double avg_spread = total_spread / total_seeds;
           double xy = 0.0, xx = 0.0;
-          for (trial_data res : results) {
+          for (TrialData res : results) {
             double x = res.spread - 1;
             double y = 0.0;
             for(unsigned long seed : res.seeds) {
               double o = 0.0, t = 0.0, h = 0.0;
-              for (auto node : model_g.get_neighbours(seed)) {
+              for (auto node : model_g_.get_neighbours(seed)) {
                 o += 1.0;
                 t += (double)node.dist->get_hits() +
-                  (double)node.dist->get_misses();
+                    (double)node.dist->get_misses();
                 h += (double)node.dist->get_hits();
               }
               y += -(t + 1) * x + (o + h) * avg_spread;
@@ -467,17 +455,14 @@ class ExponentiatedGradientStrategy {
           beta = (beta > 0) ? beta : -beta;
         } else if (learn == 3) { //MLE learning
           double t = 0.0, a = 0.0;
-          for (trial_data res : results) {
+          for (TrialData res : results) {
             t += (double)res.trials.size();
             for (trial_type tt : res.trials) a += (double)tt.trial;
           }
           alpha += a;
           beta += t - a;
-          //beta = a>0?(t-a)/a:t;
         }
         else if (learn == 2) { // MLE with alpha = 1
-          //cerr<< "Learning..."<<endl;
-
           for (trial_type tt : result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
             if (tt.trial == 0) {
@@ -514,16 +499,16 @@ class ExponentiatedGradientStrategy {
             else beta_L = beta;
           }
         }
-        model_g.update_edge_priors(alpha, beta);
+        model_g_.update_edge_priors(alpha, beta);
       }
-      model_g.update_rounds((double)(stage + 1));
+      model_g_.update_rounds((double)(stage + 1));
 
       t2 = get_timestamp();
       updating_time = (t2 - t1) / 60000000.0L;
       round_time = (t2 - t0) / 60000000.0L;
       totaltime += round_time;
       memory = disp_mem_usage();
-      double mse = model_g.get_mse();
+      double mse = model_g_.get_mse();
 
       //printing results
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
@@ -540,12 +525,6 @@ class ExponentiatedGradientStrategy {
 
 class ZScoresStrategy {
  private:
-  struct trial_data {
-    std::unordered_set<unsigned long> seeds;
-    double spread;
-    std::vector<trial_type> trials;
-  };
-
   Graph& model_g;
   Graph& original_g;
   Evaluator& eval;
@@ -567,7 +546,7 @@ class ZScoresStrategy {
     double real = 0;
     double time_min = 0;
     double beta = 1;
-    std::vector<trial_data> results;
+    std::vector<TrialData> results;
     for (unsigned int stage = 0; stage < budget; stage++) {
       timestamp_t t0, t1;
       t0 = get_timestamp();
@@ -602,7 +581,7 @@ class ZScoresStrategy {
       }
       //TODO learning the graph
       if (learn > 0) {
-        trial_data result;
+        TrialData result;
         for (unsigned long seed : seeds) result.seeds.insert(seed);
         result.spread = cur_real;
         for (trial_type tt : exploit_s.get_trials())
@@ -611,13 +590,13 @@ class ZScoresStrategy {
         //linear regression learning
         if (learn == 1) {
           double total_spread = 0.0, total_seeds = 0.0;
-          for (trial_data res : results) {
+          for (TrialData res : results) {
             total_spread += res.spread;
             total_seeds += (double) res.seeds.size();
           }
           double avg_spread = total_spread / total_seeds;
           double xy = 0.0, xx = 0.0;
-          for (trial_data res : results) {
+          for (TrialData res : results) {
             double x = res.spread - 1;
             double y = 0.0;
             for (unsigned long seed : res.seeds) {
@@ -636,7 +615,7 @@ class ZScoresStrategy {
           beta = xy / xx;
         } else if (learn == 2) { //MLE learning
           double t = 0.0, a = 0.0;
-          for (trial_data res : results) {
+          for (TrialData res : results) {
             t += (double)res.trials.size();
             for (trial_type tt:res.trials) a += (double)tt.trial;
           }
