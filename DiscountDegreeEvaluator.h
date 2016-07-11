@@ -1,16 +1,16 @@
 /*
  Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
- 
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,48 +28,50 @@
 
 #include <boost/heap/fibonacci_heap.hpp>
 
-class DiscountDegreeEvaluator : public Evaluator{
-private:
-  struct node_type{
+class DiscountDegreeEvaluator : public Evaluator {
+ private:
+  struct node_type {
     unsigned long id;
     double deg;
     bool operator<(const node_type &a) const{
-      return deg<a.deg?true:(deg>a.deg?false:id>a.id);
+      return deg < a.deg ? true : (deg > a.deg ? false : id > a.id);
     }
   };
-public:
-  
-  std::unordered_set<unsigned long> select(const Graph& graph,
-                                           Sampler& sampler,
-                            const std::unordered_set<unsigned long>& activated,
-                                           unsigned int k,
-                                           unsigned long samples){
+ public:
+  std::unordered_set<unsigned long> select(
+        const Graph& graph, Sampler& sampler,
+        const std::unordered_set<unsigned long>& activated,
+        unsigned int k, unsigned long samples) {
     std::unordered_set<unsigned long> set;
     unsigned int quantile = sampler.get_quantile();
     boost::heap::fibonacci_heap<node_type> queue;
-    std::unordered_map<unsigned long,\
-      boost::heap::fibonacci_heap<node_type>::handle_type> queue_nodes;
-    for(unsigned long node:graph.get_nodes()){
+    std::unordered_map<unsigned long,
+        boost::heap::fibonacci_heap<node_type>::handle_type> queue_nodes;
+    for (unsigned long node:graph.get_nodes()) {
       node_type nstruct;
         nstruct.id = node;
-        nstruct.deg = activated.find(node)==activated.end()?1.0f:0.0f;
-        if(graph.has_neighbours(node))
-          for(auto edge:graph.get_neighbours(node))
-            if(activated.find(edge.target)==activated.end())
+        nstruct.deg = activated.find(node) == activated.end() ? 1.0f : 0.0f;
+        if (graph.has_neighbours(node)) {
+          for(auto edge:graph.get_neighbours(node)) {
+            if(activated.find(edge.target)==activated.end()) {
               nstruct.deg += edge.dist->sample(quantile);
+            }
+          }
+        }
         queue_nodes[node] = queue.push(nstruct);
     }
-    while(set.size()<k&&(!queue.empty())){
+    while (set.size() < k && (!queue.empty())) {
       node_type nstruct = queue.top();
       set.insert(nstruct.id);
-      for(auto edge:graph.get_neighbours(nstruct.id))
-        if(activated.find(edge.target)==activated.end()&&\
-           set.find(edge.target)==set.end()){
+      for (auto edge : graph.get_neighbours(nstruct.id)) {
+        if (activated.find(edge.target) == activated.end() &&
+            set.find(edge.target) == set.end()) {
           node_type newnstruct = *queue_nodes[edge.target];
           newnstruct.id = edge.target;
-          newnstruct.deg = newnstruct.deg*(1.0f-edge.dist->sample(quantile));
-          queue.update(queue_nodes[edge.target],newnstruct);
+          newnstruct.deg = newnstruct.deg*(1.0f - edge.dist->sample(quantile));
+          queue.update(queue_nodes[edge.target], newnstruct);
         }
+      }
       queue.pop();
     }
     queue_nodes.clear();
