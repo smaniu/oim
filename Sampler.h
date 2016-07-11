@@ -28,11 +28,11 @@
 
 class Sampler {
  protected:
-  unsigned int quantile;
-  std::vector<trial_type> trials;
+  unsigned int quantile_;
+  std::vector<trial_type> trials_;
 
  public:
-  Sampler(unsigned int type) : quantile(type) {};
+  Sampler(unsigned int type) : quantile_(type) {};
 
   virtual double sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,
@@ -44,9 +44,9 @@ class Sampler {
                        const std::unordered_set<unsigned long>& seeds,
                        bool inv=false) = 0;
 
-  std::vector<trial_type>& get_trials() { return trials; }
+  std::vector<trial_type>& get_trials() { return trials_; }
 
-  unsigned int get_quantile() { return quantile; }
+  unsigned int get_quantile() { return quantile_; }
 
 };
 

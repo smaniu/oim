@@ -35,24 +35,15 @@
 
 using namespace std;
 
-class SpreadSampler: public Sampler {
+class SpreadSampler : public Sampler {
  private:
-  struct node_type{
-    unsigned long id;
-    unsigned long deg;
-    bool operator<(const node_type &a) const {
-      return (deg < a.deg) ? true : ((deg > a.deg) ? false : id > a.id);
-    }
-  };
-  // std::random_device rd;
-  // std::mt19937 gen;
-  // std::uniform_real_distribution<> dist;
-  boost::mt19937 gen;
-  boost::uniform_01<boost::mt19937> dist;
-  double stdev;
+  boost::mt19937 gen_;
+  boost::uniform_01<boost::mt19937> dist_;
+  double stdev_;
+
  public:
   SpreadSampler(unsigned int type)
-      : Sampler(type), gen((int)time(0)), dist(gen) {};
+      : Sampler(type), gen_((int)time(0)), dist_(gen_) {};
 
   double sample(const Graph& graph,
                 const std::unordered_set<unsigned long>& activated,
@@ -68,16 +59,16 @@ class SpreadSampler: public Sampler {
     return perform_sample(graph, activated, seeds, 1, true, inv);
   }
 
-  double get_stdev() { return stdev; }
+  double get_stdev() { return stdev_; }
 
  private:
   double perform_sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,
                         const std::unordered_set<unsigned long>& seeds,
                         unsigned long samples, bool trial, bool inv=false) {
-    trials.clear();
+    trials_.clear();
     double spread = 0;
-    stdev = 0;
+    stdev_ = 0;
 
     for (unsigned long sample = 1; sample <= samples; sample++) {
       double reached_round = 0;
@@ -96,9 +87,9 @@ class SpreadSampler: public Sampler {
       }
       double os = spread;
       spread += (reached_round - os) / (double)sample;
-      stdev += (reached_round - os) * (reached_round - spread);
+      stdev_ += (reached_round - os) * (reached_round - spread);
     }
-    stdev = sqrt(stdev/(double)(samples-1));
+    stdev_ = sqrt(stdev_ / (double)(samples - 1));
     return spread;
   }
 
@@ -106,12 +97,12 @@ class SpreadSampler: public Sampler {
                              std::queue<unsigned long>& queue,
                              std::unordered_set<unsigned long>& visited,
                              bool trial, bool inv=false) {
-    if (graph.has_neighbours(node,inv)) {
-      for(auto edge : graph.get_neighbours(node,inv)) {
+    if (graph.has_neighbours(node, inv)) {
+      for (auto edge : graph.get_neighbours(node, inv)) {
         if (visited.find(edge.target) == visited.end()) {
-          double dice_dst = edge.dist->sample(quantile);
+          double dice_dst = edge.dist->sample(quantile_);
           unsigned int act = 0;
-          double dice = dist();
+          double dice = dist_();
           if (dice < dice_dst) {
             visited.insert(edge.target);
             queue.push(edge.target);
@@ -122,7 +113,7 @@ class SpreadSampler: public Sampler {
             tt.source = node;
             tt.target = edge.target;
             tt.trial = act;
-            trials.push_back(tt);
+            trials_.push_back(tt);
           }
         }
       }

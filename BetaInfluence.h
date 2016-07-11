@@ -33,74 +33,75 @@
 
 class BetaInfluence: public InfluenceDistribution {
  private:
-  double alpha_prior, beta_prior;
-  double alpha, beta;
-  double quartile_med;
-  double quartile_upper;
-  double quartile_stdev;
-  double original_mean;
-  std::default_random_engine gen;
+  double alpha_prior_, beta_prior_;
+  double alpha_, beta_;
+  double quartile_med_;
+  double quartile_upper_;
+  double quartile_stdev_;
+  double original_mean_;
+  std::default_random_engine gen_;
 
  public:
   BetaInfluence(double alpha, double beta, double orig)
-      : alpha_prior(alpha), beta_prior(beta), alpha(alpha), beta(beta),
-        original_mean(orig) {
+      : alpha_prior_(alpha), beta_prior_(beta), alpha_(alpha), beta_(beta),
+        original_mean_(orig) {
     update_quartiles();
   }
 
   void update(unsigned long hit, unsigned long miss) {
-    alpha += (double)hit;
-    beta += (double)miss;
+    alpha_ += (double)hit;
+    beta_ += (double)miss;
     hits += hit;
     misses += miss;
     update_quartiles();
   };
 
   void update_prior(double new_alpha, double new_beta) {
-    alpha_prior = (new_alpha) > 0 ? new_alpha : 1.0;
-    beta_prior = (new_beta) > 0 ? new_beta : 1.0;
-    alpha = alpha_prior + (double)hits;
-    beta = beta_prior + (double)misses;
+    alpha_prior_ = (new_alpha) > 0 ? new_alpha : 1.0;
+    beta_prior_ = (new_beta) > 0 ? new_beta : 1.0;
+    alpha_ = alpha_prior_ + (double)hits;
+    beta_ = beta_prior_ + (double)misses;
     update_quartiles();
   }
 
-  double mean() { return (double)alpha / (double)(alpha + beta); }
+  double mean() { return (double)alpha_ / (double)(alpha_ + beta_); }
 
   double sample(unsigned int interval) {
     if (interval == INFLUENCE_MED) {
-      return quartile_med;
+      return quartile_med_;
     } else if (interval == INFLUENCE_UPPER) {
-      return quartile_upper;
+      return quartile_upper_;
     } else if(interval == INFLUENCE_UCB) {
-      double val = quartile_med + sqrt(3.0 * log(round) /
-          (2.0 * (alpha + beta)));
+      double val = quartile_med_ + sqrt(3.0 * log(round) /
+          (2.0 * (alpha_ + beta_)));
       return (val < 1) ? val : 1.0;
     } else if (interval == INFLUENCE_THOMPSON) {
-      gen.seed(time(0));
-      std::gamma_distribution<double> a(alpha, 1.0);
-      std::gamma_distribution<double> b(beta, 1.0);
-      double x = a(gen);
-      double y = b(gen);
+      gen_.seed(time(0));
+      std::gamma_distribution<double> a(alpha_, 1.0);
+      std::gamma_distribution<double> b(beta_, 1.0);
+      double x = a(gen_);
+      double y = b(gen_);
       return x / (x + y);
     } else { // Case where we shift the distributions by theta stdev (EG)
-      double val = quartile_med + (interval - (double)THETA_OFFSET - 1.0)
-          * quartile_stdev;
+      double val = quartile_med_ + (interval - (double)THETA_OFFSET - 1.0)
+          * quartile_stdev_;
       val = val < 1 ? val : 1.0;
       return val > 0 ? val : 0.0;
     }
-    return quartile_med;
+    return quartile_med_;
   }
 
   double sq_error() {
-    return (quartile_med - original_mean) * (quartile_med - original_mean);
+    return (quartile_med_ - original_mean_) * (quartile_med_ - original_mean_);
   }
 
  private:
   void update_quartiles() {
-    boost::math::beta_distribution<> dist(alpha, beta);
-    quartile_med = alpha / (alpha + beta);
-    quartile_stdev = sqrt(alpha * beta / (alpha + beta + 1.0)) / (alpha + beta);
-    quartile_upper = quantile(dist, 0.75);
+    boost::math::beta_distribution<> dist(alpha_, beta_);
+    quartile_med_ = alpha_ / (alpha_ + beta_);
+    quartile_stdev_ = sqrt(alpha_ * beta_ / (alpha_ + beta_ + 1.0))
+        / (alpha_ + beta_);
+    quartile_upper_ = quantile(dist, 0.75);
   }
 };
 

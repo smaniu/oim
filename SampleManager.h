@@ -33,7 +33,7 @@
 
 using namespace std;
 
-struct sample_type{
+struct SampleType {
   shared_ptr<vector<unsigned long>> sample;
   int age; // this sample is generated at trial #age
   int lastUsedTrial;
@@ -43,7 +43,7 @@ struct sample_type{
 class SampleManager {
  private:
   const Graph& graph;
-  vector<sample_type> sample_pool;
+  vector<SampleType> sample_pool;
   int pointer;
 
   std::random_device rd;
@@ -137,7 +137,7 @@ class SampleManager {
     // check whether there is sample that can be reused
     do {
       if (sample_pool.size() == 0) break;
-      sample_type& sample = sample_pool[(pointer + 1) % (int)sample_pool.size()];
+      SampleType& sample = sample_pool[(pointer + 1) % (int)sample_pool.size()];
       if (sample.lastUsedTrial >= currentTrial) {
         case1 += 1;
         break;
@@ -181,9 +181,9 @@ class SampleManager {
       pointer = (pointer + 1) % (int)sample_pool.size();
     } else {
       pointer = sample_pool.size();
-      sample_pool.push_back(sample_type());
+      sample_pool.push_back(SampleType());
     }
-    sample_type& new_sample = sample_pool[pointer];
+    SampleType& new_sample = sample_pool[pointer];
     new_sample.alpha = graph.alpha_prior;
     new_sample.beta = graph.beta_prior;
     new_sample.sample = sample;

@@ -43,15 +43,10 @@ class PathSampler : public Sampler {
       return (prob < a.prob) ? true : ((prob > a.prob) ? false : id > a.id);
     }
   };
-  // std::random_device rd;
-  // std::uniform_real_distribution<> dist;
-  // std::mt19937 gen;
-  boost::mt19937 gen;
-  boost::uniform_01<boost::mt19937> dist;
 
  public:
   PathSampler(unsigned int type)
-      : Sampler(type), gen(((int)time(0))), dist(gen) {};
+      : Sampler(type) {};
 
   double sample(const Graph& graph,
                 const std::unordered_set<unsigned long>& activated,
@@ -71,7 +66,7 @@ private:
                         const std::unordered_set<unsigned long>& activated,
                         const std::unordered_set<unsigned long>& seeds,
                         unsigned long samples, bool trial, bool inv=false) {
-    trials.clear();
+    trials_.clear();
     boost::heap::fibonacci_heap<node_type> queue;
     std::unordered_map<unsigned long,
         boost::heap::fibonacci_heap<node_type>::handle_type> queue_nodes;
@@ -87,7 +82,7 @@ private:
         tt.source = node.id;
         tt.target = node.id;
         tt.trial = 1;
-        trials.push_back(tt);
+        trials_.push_back(tt);
       }
     }
     while (queue.size() > 0) {
@@ -98,7 +93,7 @@ private:
         tt.source = node.id;
         tt.target = node.id;
         tt.trial = 1;
-        trials.push_back(tt);
+        trials_.push_back(tt);
       }
       if (activated.find(node.id) == activated.end()) spread += node.prob;
       if (node.prob < 0.001) break;
@@ -119,7 +114,7 @@ private:
     if (graph.has_neighbours(node, inv)) {
       for (auto edge : graph.get_neighbours(node, inv)) {
         if (visited.find(edge.target) == visited.end()) {
-          double dst_prob = edge.dist->sample(quantile);
+          double dst_prob = edge.dist->sample(quantile_);
           relax(node, edge.target, dst_prob, queue, queue_nodes);
         }
       }

@@ -27,14 +27,14 @@
 
 class SingleInfluence: public InfluenceDistribution {
  private:
-  double value;
+  double value_;
 
  public:
-  SingleInfluence(double influence_value) : value(influence_value) {};
+  SingleInfluence(double influence_value) : value_(influence_value) {};
 
-  double mean() { return value; }
+  double mean() { return value_; }
 
-  double sample(unsigned int interval) { return value; }
+  double sample(unsigned int interval) { return value_; }
 };
 
 #endif /* defined(__oim__SingleInfluence__) */

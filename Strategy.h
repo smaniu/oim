@@ -73,10 +73,8 @@ class OriginalGraphStrategy {
       timestamp_t t0, t1;
       t0 = get_timestamp();
 
-//======================================================================
       if (INCREMENTAL)
         SampleManager::reset(stage);
-//======================================================================
 
       //selecting seeds using explore or exploit
       std::unordered_set<unsigned long> seeds =\
@@ -103,10 +101,8 @@ class OriginalGraphStrategy {
         }
       }
 
-//======================================================================
       if (INCREMENTAL)
         SampleManager::update_node_age(nodes_to_update);
-//======================================================================
 
       t1 = get_timestamp();
       //printing results
