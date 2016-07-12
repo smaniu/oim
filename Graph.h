@@ -33,8 +33,8 @@
 
 class Graph {
  private:
-  std::unordered_map<unsigned long, std::vector<edge_type>> adj_list;
-  std::unordered_map<unsigned long, std::vector<edge_type>> inv_adj_list;
+  std::unordered_map<unsigned long, std::vector<EdgeType>> adj_list;
+  std::unordered_map<unsigned long, std::vector<EdgeType>> inv_adj_list;
   std::unordered_set<unsigned long> node_set;
   unsigned long num_edges = 0;
   unsigned long num_nodes = 0;
@@ -51,8 +51,8 @@ class Graph {
                 std::shared_ptr<InfluenceDistribution> dist) {
     add_node(source);
     add_node(target);
-    edge_type edge1(source, target, dist);
-    edge_type edge2(target, source, dist);
+    EdgeType edge1(source, target, dist);
+    EdgeType edge2(target, source, dist);
     adj_list[source].push_back(edge1);
     inv_adj_list[target].push_back(edge2);
     num_edges++;
@@ -69,7 +69,7 @@ class Graph {
 
   void update_edge(unsigned long src, unsigned long tgt, unsigned int trial) {
     if (adj_list.find(src) != adj_list.end()) {
-      for (edge_type edge : adj_list[src]) {
+      for (EdgeType edge : adj_list[src]) {
         if (edge.target == tgt) {
           edge.dist->update(trial, 1.0 - trial);
           break;
@@ -111,7 +111,7 @@ class Graph {
       return inv_adj_list.find(node) != inv_adj_list.end();
   }
 
-  const std::vector<edge_type>& get_neighbours(
+  const std::vector<EdgeType>& get_neighbours(
       unsigned long node, bool inv=false) const {
     if (!inv)
       return (adj_list.find(node))->second;

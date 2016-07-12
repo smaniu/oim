@@ -85,7 +85,7 @@ public:
 
     //sample the graphs and create DAGs and supporting structures
     for (unsigned int i = 0; i < samples; i++) {
-      tarjan(sampler,graph); //samples and creates the DAG at the same time
+      tarjan(sampler, graph); //samples and creates the DAG at the same time
       unsigned long max_node = 0;
       unsigned long max_val = 0;
       std::unordered_set<unsigned long> cur_A;

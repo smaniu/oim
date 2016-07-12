@@ -25,7 +25,7 @@
 
 #include "InfluenceDistribution.h"
 
-class SingleInfluence: public InfluenceDistribution {
+class SingleInfluence : public InfluenceDistribution {
  private:
   double value_;
 

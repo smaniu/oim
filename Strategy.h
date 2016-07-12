@@ -60,8 +60,7 @@ class OriginalGraphStrategy {
       : original_g(original_graph), exploit_e(eval_exploit),
         samples(number_samples), INCREMENTAL(INCREMENTAL) {}
 
-  void perform(unsigned int budget, unsigned int k, bool update=true,
-               unsigned int learn=0) {
+  void perform(unsigned int budget, unsigned int k) {
     SpreadSampler exploit_s(INFLUENCE_MED);
     std::unordered_set<unsigned long> activated;
     boost::mt19937 gen((int)time(0));
@@ -77,8 +76,8 @@ class OriginalGraphStrategy {
         SampleManager::reset(stage);
 
       //selecting seeds using explore or exploit
-      std::unordered_set<unsigned long> seeds =\
-            exploit_e.select(original_g, exploit_s, activated, k, samples);
+      std::unordered_set<unsigned long> seeds =
+          exploit_e.select(original_g, exploit_s, activated, k, samples);
       //evaluating the expected and real spread on the seeds
       expected += exploit_s.sample(original_g, activated, seeds, samples);
       real += exploit_s.trial(original_g, activated, seeds);
