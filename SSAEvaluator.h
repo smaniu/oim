@@ -38,8 +38,6 @@ using namespace std;
 class SSAEvaluator : public Evaluator {
  private:
   std::unordered_set<unsigned long> seed_set_;
-  vector<unsigned long> mapping_index_to_node_;
-  unordered_map<unsigned long, unsigned long> mapping_node_to_index_;
   vector<shared_ptr<vector<unsigned long>>> rr_samples_;
   vector<vector<unsigned int>> hyper_graph_;
 
@@ -65,13 +63,6 @@ class SSAEvaluator : public Evaluator {
     rr_samples_.clear();
     delta_ = 1. / graph.get_number_nodes();
     dst_ = uniform_int_distribution<unsigned long>(0, graph.get_number_nodes() - 1);
-    mapping_index_to_node_ = vector<unsigned long>(graph.get_number_nodes(), 0);
-    unsigned long index = 0;
-    for (auto node : graph.get_nodes()) {
-      mapping_index_to_node_[index] = node;
-      mapping_node_to_index_[node] = index;
-      index++;
-    }
 
     for (unsigned int i = 0; i < graph.get_number_nodes(); i++) {
       hyper_graph_.push_back(vector<unsigned int>());
@@ -159,7 +150,7 @@ class SSAEvaluator : public Evaluator {
             graph, nodes_activated, bool_activated, source, true);
       rr_samples_.push_back(rr_sample);
       for (unsigned long node : *rr_sample) {
-        hyper_graph_[mapping_node_to_index_[node]].push_back(i);
+        hyper_graph_[node].push_back(i);
       }
     }
   }
@@ -175,14 +166,14 @@ class SSAEvaluator : public Evaluator {
       degree[i] = hyper_graph_[i].size();
     }
     for (unsigned int i = 0; i < k; i++) {
-      int index = max_element(degree.begin(), degree.end()) - degree.begin();
-      seed_set_.insert(mapping_index_to_node_[index]);
-      degree[index] = 0;
-      for (unsigned int rr_sample_id : hyper_graph_[index]) {
+      unsigned long max_node = max_element(degree.begin(), degree.end()) - degree.begin();
+      seed_set_.insert(max_node);
+      degree[max_node] = 0;
+      for (unsigned int rr_sample_id : hyper_graph_[max_node]) {
         if (!visited_samples[rr_sample_id]) {
           visited_samples[rr_sample_id] = true;
           for (unsigned long node : *rr_samples_[rr_sample_id]) {
-            degree[mapping_node_to_index_[node]]--;
+            degree[node]--;
           }
         }
       }
