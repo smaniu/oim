@@ -34,6 +34,8 @@
 #include "Graph.h"
 #include "Sampler.h"
 
+using namespace std;
+
 class PathSampler : public Sampler {
  private:
   struct NodeType {
@@ -59,6 +61,12 @@ class PathSampler : public Sampler {
                const std::unordered_set<unsigned long>& activated,
                const std::unordered_set<unsigned long>& seeds, bool inv) {
     return perform_sample(graph, activated, seeds, 1, true, inv);
+  }
+
+  shared_ptr<vector<unsigned long>> perform_unique_sample(
+      const Graph& graph, vector<unsigned long> &nodes_activated,
+      vector<bool> &bool_activated, const unsigned long source, bool inv=false) {
+    return shared_ptr<vector<unsigned long>>(NULL);
   }
 
 private:

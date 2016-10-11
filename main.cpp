@@ -34,10 +34,13 @@
 #include "SpreadSampler.h"
 #include "CELFEvaluator.h"
 #include "TIMEvaluator.h"
+#include "SSAEvaluator.h"
 #include "RandomEvaluator.h"
 #include "HighestDegreeEvaluator.h"
 #include "DiscountDegreeEvaluator.h"
 #include "Strategy.h"
+
+using namespace std;
 
 void real(int argc, const char * argv[]) {
   std::string file_name_graph(argv[2]);
@@ -46,12 +49,16 @@ void real(int argc, const char * argv[]) {
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
+  while (file >> src >> tgt >> prob) {
     std::shared_ptr<InfluenceDistribution> dst_original(
         new SingleInfluence(prob));
     original_graph.add_edge(src, tgt, dst_original);
     edges++;
   }
+
+  cerr << "edges => " << edges << " = " << original_graph.get_number_edges() << endl;
+  cerr << "nodes => " << original_graph.get_number_nodes() << endl;
+
   SampleManager::setInstance(original_graph);
   original_graph.set_prior(1.0, 1.0);
 
@@ -64,8 +71,9 @@ void real(int argc, const char * argv[]) {
   evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
 
-  SpreadSampler s_exploit(INFLUENCE_MED);
+  // SpreadSampler s_exploit(INFLUENCE_MED);
   int samples = 100;
   int inc = 0;
   if (argc > 6)
@@ -117,17 +125,14 @@ void explore(int argc, const char * argv[]){
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
-    std::shared_ptr<InfluenceDistribution>\
-    dst_original(new SingleInfluence(prob));
-    std::shared_ptr<InfluenceDistribution>\
-    dst_model(new BetaInfluence(alpha, beta, prob));
+  while (file >> src >> tgt >> prob) {
+    shared_ptr<InfluenceDistribution> dst_original(new SingleInfluence(prob));
+    shared_ptr<InfluenceDistribution> dst_model(
+        new BetaInfluence(alpha, beta, prob));
     original_graph.add_edge(src, tgt, dst_original);
     model_graph.add_edge(src, tgt, dst_model);
     edges++;
   }
-  //original_graph.finish_init();
-  //model_graph.finish_init();
 
   SampleManager::setInstance(model_graph);
   model_graph.set_prior(alpha, beta);
@@ -177,8 +182,6 @@ void epsgreedy(int argc, const char * argv[]){
     model_graph.add_edge(src, tgt, dst_model);
     edges++;
   }
-  //original_graph.finish_init();
-  //model_graph.finish_init();
 
   SampleManager::setInstance(model_graph);
   model_graph.set_prior(alpha, beta);

@@ -44,6 +44,7 @@ extern double choosing_time;
 extern double reused_ratio;
 
 typedef long long int64;
+typedef uint64_t uint64;
 
 class EdgeType {
  public:

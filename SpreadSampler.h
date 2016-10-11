@@ -48,8 +48,8 @@ class SpreadSampler : public Sampler {
   double sample(const Graph& graph,
                 const std::unordered_set<unsigned long>& activated,
                 const std::unordered_set<unsigned long>& seeds,
-                unsigned long samples) {
-    return perform_sample(graph, activated, seeds, samples, false);
+                unsigned long n_samples) {
+    return perform_sample(graph, activated, seeds, n_samples, false);
   }
 
   double trial(const Graph& graph,
@@ -59,18 +59,53 @@ class SpreadSampler : public Sampler {
     return perform_sample(graph, activated, seeds, 1, true, inv);
   }
 
+  shared_ptr<vector<unsigned long>> perform_unique_sample(
+      const Graph& graph, vector<unsigned long> &nodes_activated,
+      vector<bool> &bool_activated, const unsigned long source, bool inv=false) {
+
+    unsigned long cur = source;
+    unsigned long num_marked = 1, cur_pos = 0;
+    bool_activated[cur] = true;
+    nodes_activated[0] = cur;
+    while (cur_pos < num_marked) {
+      cur = nodes_activated[cur_pos];
+  		cur_pos++;
+      if (graph.has_neighbours(cur, inv)) {
+        const vector<EdgeType> &neighbours = graph.get_neighbours(cur, inv);
+        for (auto &neighbour : neighbours) {
+          if (dist_() < neighbour.dist->sample(quantile_)) {
+            if (!bool_activated[neighbour.target]) {
+              bool_activated[neighbour.target] = true;
+              nodes_activated[num_marked] = neighbour.target;
+              num_marked++;
+            }
+          }
+        }
+      }
+    }
+
+    shared_ptr<vector<unsigned long> > rr_sample =
+        shared_ptr<vector<unsigned long> >(new vector<unsigned long>(
+        nodes_activated.begin(), nodes_activated.begin() + num_marked));
+
+    for (unsigned int i = 0; i < num_marked; i++) {
+      bool_activated[(*rr_sample)[i]] = false;
+    }
+    return rr_sample;
+  }
+
   double get_stdev() { return stdev_; }
 
  private:
   double perform_sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,
                         const std::unordered_set<unsigned long>& seeds,
-                        unsigned long samples, bool trial, bool inv=false) {
+                        unsigned long n_samples, bool trial, bool inv=false) {
     trials_.clear();
     double spread = 0;
     stdev_ = 0;
 
-    for (unsigned long sample = 1; sample <= samples; sample++) {
+    for (unsigned long sample = 1; sample <= n_samples; sample++) {
       double reached_round = 0;
       std::queue<unsigned long> queue;
       std::unordered_set<unsigned long> visited;
@@ -86,10 +121,10 @@ class SpreadSampler : public Sampler {
           reached_round++;
       }
       double os = spread;
-      spread += (reached_round - os) / (double)sample;
+      spread += (reached_round - os) / (double)sample;  // TODO Don't understand this line
       stdev_ += (reached_round - os) * (reached_round - spread);
     }
-    stdev_ = sqrt(stdev_ / (double)(samples - 1));
+    stdev_ = sqrt(stdev_ / (double)(n_samples - 1));
     return spread;
   }
 
@@ -108,7 +143,7 @@ class SpreadSampler : public Sampler {
             queue.push(edge.target);
             act = 1;
           }
-          if (trial) {
+          if (trial) {  // If trial, we want to save the generated RR set sample
             trial_type tt;
             tt.source = node;
             tt.target = edge.target;

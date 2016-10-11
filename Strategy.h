@@ -68,7 +68,7 @@ class OriginalGraphStrategy {
     double expected = 0;
     double real = 0;
     double time_min = 0;
-    for (unsigned int stage=0; stage < budget; stage++) {
+    for (unsigned int stage = 0; stage < budget; stage++) {
       timestamp_t t0, t1;
       t0 = get_timestamp();
 
@@ -85,14 +85,14 @@ class OriginalGraphStrategy {
       //updating the model graph
       std::unordered_set<unsigned long> nodes_to_update;
 
-      for(unsigned long node:seeds) {
+      for (unsigned long node : seeds) {
         activated.insert(node);
         nodes_to_update.insert(node);
       }
-      unsigned int hits=0, misses=0;
-      for(trial_type tt:exploit_s.get_trials()){
+      unsigned int hits = 0, misses = 0;
+      for (trial_type tt : exploit_s.get_trials()) {
         nodes_to_update.insert(tt.target);
-        if(tt.trial==1){
+        if (tt.trial == 1) {
           hits++;
           activated.insert(tt.target);
         } else {
@@ -105,7 +105,7 @@ class OriginalGraphStrategy {
 
       t1 = get_timestamp();
       //printing results
-      time_min += (t1-t0)/60000000.0L;
+      time_min += (t1 - t0) / 60000000.0L;
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
           hits << "\t" << misses << "\t" << time_min << "\t";
       for (auto seed:seeds) std::cout << seed << ".";

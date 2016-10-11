@@ -31,6 +31,10 @@
 #include "common.h"
 #include "InfluenceDistribution.h"
 
+/**
+* Class representing the graph. Be careful:
+*   - nodes index starts at 0 up to n - 1
+*/
 class Graph {
  private:
   std::unordered_map<unsigned long, std::vector<EdgeType>> adj_list;

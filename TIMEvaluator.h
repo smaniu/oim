@@ -78,7 +78,7 @@ class TIMEvaluator : public Evaluator {
     total_r_ = 0;
     epsilon_ = 0.1;
 
-    graph_nodes_.clear();
+    graph_nodes_.clear(); // Nodes not yet activated
     n_max_ = 0;
     for (auto src : graph.get_nodes()) {
       if (activated.find(src) == activated.end()) {
@@ -208,7 +208,7 @@ class TIMEvaluator : public Evaluator {
         std::shared_ptr<std::vector<unsigned long>> rr(
             new std::vector<unsigned long>());
         std::unordered_set<unsigned long> seeds;
-        unsigned long nd = graph_nodes_[dst(gen_)];
+        unsigned long nd = graph_nodes_[dst(gen_)]; // Only RR set samples from unreached nodes
         seeds.insert(nd);
         rr->push_back(nd);
 

@@ -44,6 +44,11 @@ class Sampler {
                        const std::unordered_set<unsigned long>& seeds,
                        bool inv=false) = 0;
 
+  virtual std::shared_ptr<std::vector<unsigned long>> perform_unique_sample(
+      const Graph& graph, std::vector<unsigned long> &nodes_activated,
+      std::vector<bool> &bool_activated, const unsigned long source,
+      bool inv=false) = 0;
+
   std::vector<trial_type>& get_trials() { return trials_; }
 
   unsigned int get_quantile() { return quantile_; }
