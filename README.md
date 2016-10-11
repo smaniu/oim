@@ -48,7 +48,7 @@ The parameters are set as follows:
 * *graph* is the name of the graph file
 * *alpha*, *beta* are the global prior on the edges of the graph
 * *exploit*, *explore* can take any of the following values: **0** [CELF][2], **1**
-  Random, **2** Maxdegree, **3** [TIM][3]
+  Random, **2** Maxdegree, **3** [TIM][3], **4** [SSA][4]
 * *trials* is the number of trials, *k* is the number of seeds in each trial
 * *update* is **1** if the graph is updated, **0** otherwise
 * *update_type* is the type of update: **0** local only, **1** least squares or
@@ -63,3 +63,7 @@ The source code is provided as-is under an MIT License. If it is useful to you, 
 [2]: <http://snap.stanford.edu/class/cs224w-readings/goyal11celf.pdf> "A. Goyal, W. Lu, L. Lakshmanan. CELF++: Optimizing the Greedy Algorithm for Influence Maximization in Social Networks. WWW 2011"
 
 [3]: <http://arxiv.org/pdf/1404.0900v2.pdf> "Y. Tang, X. Xiao, and Y. Shi. Influence maximization: Near-optimal time complexity meets practical efficiency. SIGMOD 2014"
+
+[4]: <https://arxiv.org/pdf/1605.07990v2.pdf> "H. T. Nguyen, M. T. Thai, and T.
+N. Dinh. Stop-and-Stare: Optimal Sampling Algorithms for Viral Marketing in
+Billion-scale Networks. SIGMOD 2016"
