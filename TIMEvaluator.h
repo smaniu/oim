@@ -37,76 +37,65 @@ using namespace std;
 
 class TIMEvaluator : public Evaluator {
  private:
-  std::unordered_set<unsigned long> activated;
-  unsigned int k;
-  unsigned long n;
-  unsigned long n_max;
-  unsigned long m;
-  double epsilon;
+  std::unordered_set<unsigned long> activated_;
+  unsigned int k_;
+  unsigned long n_;
+  unsigned long n_max_;
+  unsigned long m_;
+  double epsilon_;
 
-  std::unordered_set<unsigned long> seedSet;
-  std::vector<std::shared_ptr<std::vector<unsigned long>>> rr_sets;
-  std::vector<unsigned long> graph_nodes;
-  std::vector<std::shared_ptr<std::vector<unsigned long>>> hyperG;
-  int64 hyperId;
-  int64 totalR;
-  //random devices
-  std::random_device rd;
-  std::mt19937 gen;
-
-  bool INCREMENTAL;
+  std::unordered_set<unsigned long> seed_set_;
+  std::vector<std::shared_ptr<std::vector<unsigned long>>> rr_sets_;
+  std::vector<unsigned long> graph_nodes_;
+  std::vector<std::shared_ptr<std::vector<unsigned long>>> hyper_g_;
+  int64 hyper_id_;
+  int64 total_r_;
+  std::random_device rd_;
+  std::mt19937 gen_;
+  bool incremental_;
 
  public:
-  TIMEvaluator() : gen(rd()) {};
+  TIMEvaluator() : gen_(rd_()) {};
 
-  void setIncremental(bool inc) { INCREMENTAL = inc; }
+  void setIncremental(bool inc) { incremental_ = inc; }
 
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
       const std::unordered_set<unsigned long>& activated,
       unsigned int k, unsigned long samples) {
 
-    //initializing data structures
-    //printf("activated nodes before this trial: ");
-
     timestamp_t t0, t1, t2;
 
     for (auto node : activated) {
-      (this->activated).insert(node);
+      activated_.insert(node);
     }
-    this->k = k;
+    k_ = k;
 
     t0 = get_timestamp();
+    n_ = graph.get_number_nodes();
+    m_ = graph.get_number_edges();
+    hyper_id_ = 0;
+    total_r_ = 0;
+    epsilon_ = 0.1;
 
-    n = graph.get_number_nodes();
-    m = graph.get_number_edges();
-    hyperId = 0;
-    totalR = 0;
-    epsilon = 0.1;
-
-    graph_nodes.clear();
-    n_max = 0;
+    graph_nodes_.clear(); // Nodes not yet activated
+    n_max_ = 0;
     for (auto src : graph.get_nodes()) {
       if (activated.find(src) == activated.end()) {
-        if (src > n_max) n_max = src;
-        graph_nodes.push_back(src);
+        if (src > n_max_) n_max_ = src;
+        graph_nodes_.push_back(src);
       }
     }
 
-    //SpreadSampler sampler_s(sampler.get_quantile());
     PathSampler sampler_s(sampler.get_quantile());
-
-    std::uniform_int_distribution<int> dst(0, (int)graph_nodes.size() - 1);
-
+    std::uniform_int_distribution<int> dst(0, (int)graph_nodes_.size() - 1);
     double ep_step2, ep_step3;
-    ep_step2 = ep_step3 = epsilon;
+    ep_step2 = ep_step3 = epsilon_;
     ep_step2 = 5 * pow(sqr(ep_step3) / k, 1.0 / 3.0);
     double ept;
 
     ept = EstimateEPT(graph, sampler_s, dst);
     std::cerr << "Profiling 1: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
-
-    //printf("ept = %.lf \n", ept);
 
     BuildSeedSet();
     std::cerr << "Profiling 2: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
@@ -115,148 +104,117 @@ class TIMEvaluator : public Evaluator {
     std::cerr << "Profiling 3: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
     ept = InfluenceHyperGraph();
     std::cerr << "Profiling 4: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
-    //printf("ept1 = %.lf \n", ept);
 
     ept /= 1 + ep_step2;
-    //printf("ept2 = %.lf \n", ept);
 
     BuildHyperGraph3(ep_step3, ept, graph, sampler_s, dst);
 
     t1 = get_timestamp();
     std::cerr << "Sampling time: " << (t1 - t0) / 1000000 << "sec" << std::endl;
 
-    //cerr << "start BuildSeedSet()" << endl;
     BuildSeedSet();
-    //puts("end BuildSeedSet()");
 
     t2 = get_timestamp();
     std::cerr << "Choice time: " << (t2 - t1) / 1000000 << "sec" << std::endl;
 
-    //puts("start InfluenceHyperGraph()");
-    //ept=InfluenceHyperGraph();
-    //puts("end InfluenceHyperGraph()");
-
-    //for(auto item:seedSet)
-    //    cerr<< item << " ";
-    //cerr<<totalR;
-    //cerr<<endl;
-
     sampling_time = (t1 - t0) / 60000000.0L;
     choosing_time = (t2 - t1) / 60000000.0L;
 
-    //printf("Tim Expected = %.lf \n", ept);
-
-    return seedSet;
+    return seed_set_;
   }
 
  private:
   double EstimateEPT(const Graph& graph, Sampler& sampler,
                      std::uniform_int_distribution<int>& dst) {
-    double ept = Estimate_KPT(graph, sampler, dst);
+    double ept = EstimateKPT(graph, sampler, dst);
     ept /= 2;
     return ept;
   }
 
-  double Estimate_KPT(const Graph& graph, Sampler& sampler,
+  double EstimateKPT(const Graph& graph, Sampler& sampler,
                       std::uniform_int_distribution<int>& dst) {
     double lb = 1 / 2.0;
     double c = 0;
-    int64 lastR = 0;
+    int64 last_r = 0;
 
     double return_value = 1;
     int steps = 1;  // added for algorithm 2 line 1
-    while (steps <= log(n) / log(2) - 1) {
-        int loop = (6 * log(n) + 6 * log(log(n)/ log(2))) / lb;
-        c = 0;
-        lastR = loop;
+    while (steps <= log(n_) / log(2) - 1) {
+      int loop = (6 * log(n_) + 6 * log(log(n_)/ log(2))) / lb;
+      c = 0;
+      last_r = loop;
 
-        for (int i = 0; i < loop; i++) {
-            std::shared_ptr<std::vector<unsigned long>>
-                rr(new std::vector<unsigned long>());
-            if (!INCREMENTAL) {
-              std::unordered_set<unsigned long> seeds;
-              unsigned long u = graph_nodes[dst(gen)];
-              seeds.insert(u);
-              rr->push_back(u);
+      for (int i = 0; i < loop; i++) {
+        std::shared_ptr<std::vector<unsigned long>>
+            rr(new std::vector<unsigned long>());
+        if (!incremental_) {
+          std::unordered_set<unsigned long> seeds;
+          unsigned long u = graph_nodes_[dst(gen_)];
+          seeds.insert(u);
+          rr->push_back(u);
 
-              sampler.trial(graph, activated, seeds, true);
+          sampler.trial(graph, activated_, seeds, true);
 
-              //cout<<"Seed and Trial size: "<< u<< " " << sampler.get_trials().size();
-
-              for (trial_type tt : sampler.get_trials()) {
-                if (tt.trial == 1) {
-                  rr->push_back(tt.target);
-                }
-              }
-            } else {
-              rr = SampleManager::getInstance()->getSample(
-                  graph_nodes, sampler, activated, dst);
+          for (trial_type tt : sampler.get_trials()) {
+            if (tt.trial == 1) {
+              rr->push_back(tt.target);
             }
-            double MgTu = 0;
-            for (auto node : (*rr)) {
-              if (graph.has_neighbours(node,true)) {
-                MgTu += graph.get_neighbours(node,true).size();
-              }
-            }
-            double pu = MgTu / m;
-
-            //printf("-- MgTu, pu, c = %lf , %lf, %lf\n", MgTu, pu, c);
-
-            c += 1 - pow(1 - pu, k);
+          }
+        } else {
+          rr = SampleManager::getInstance()->getSample(
+              graph_nodes_, sampler, activated_, dst);
         }
-        c /= loop;
-        if (c > lb) { return_value = c * n; break; }
-        lb /= 2;
-        steps++;
+        double mg_tu = 0;
+        for (auto node : (*rr)) {
+          if (graph.has_neighbours(node,true)) {
+            mg_tu += graph.get_neighbours(node,true).size();
+          }
+        }
+        double pu = mg_tu / m_;
+        c += 1 - pow(1 - pu, k_);
+      }
+      c /= loop;
+      if (c > lb) { return_value = c * n_; break; }
+      lb /= 2;
+      steps++;
     }
-
-    //printf("Estimate_KPT -- R = %lld\n", lastR);
-    buildSamples(lastR, graph, sampler, dst);
-
+    buildSamples(last_r, graph, sampler, dst);
     return return_value;
   }
 
   void buildSamples(int64 &R, const Graph& graph, Sampler& sampler,
                     std::uniform_int_distribution<int>& dst) {
+    total_r_ += R;
 
-    //cerr << "buildSamples R = " << R << endl;
-    totalR += R;
+    if (R > MAX_R)
+      R = MAX_R;
+    hyper_id_ = R;
 
-    if (R > MAX_R) R = MAX_R;
-    hyperId = R;
-
-    hyperG.clear();
-    hyperG.reserve(n);
-    for (int i = 0; i < n; ++i) {
-      hyperG.push_back(std::shared_ptr<std::vector<unsigned long>>(
-            new std::vector<unsigned long>()));
+    hyper_g_.clear();
+    hyper_g_.reserve(n_);
+    for (unsigned int i = 0; i < n_; ++i) {
+      hyper_g_.push_back(std::shared_ptr<std::vector<unsigned long>>(
+          new std::vector<unsigned long>()));
     }
-//    hyperG = vector<vector<unsigned long> >(n, vector<unsigned long>());
 
-    rr_sets.clear();
-    rr_sets.reserve(R);
-//    rr_sets = vector<vector<unsigned long> >(R, vector<unsigned long>());
-
-//    deg.clear();
-//    for(auto src:graph.get_nodes()){
-//      deg[src] = 0;
-//    }
+    rr_sets_.clear();
+    rr_sets_.reserve(R);
 
     double totTime = 0.0;
     double totInDegree = 0;
 
     for (int i = 0; i < R; i++) {
-      if (!INCREMENTAL) {
+      if (!incremental_) {
         std::shared_ptr<std::vector<unsigned long>> rr(
             new std::vector<unsigned long>());
         std::unordered_set<unsigned long> seeds;
-        unsigned long nd = graph_nodes[dst(gen)];
+        unsigned long nd = graph_nodes_[dst(gen_)]; // Only RR set samples from unreached nodes
         seeds.insert(nd);
         rr->push_back(nd);
 
         timestamp_t t0, t1;
         t0 = get_timestamp();
-        sampler.trial(graph, activated, seeds, true);
+        sampler.trial(graph, activated_, seeds, true);
         t1 = get_timestamp();
         totTime += (t1 - t0) / 60000000.0L;
 
@@ -267,41 +225,39 @@ class TIMEvaluator : public Evaluator {
             rr->push_back(tt.target);
           }
         }
-        rr_sets.push_back(rr);
+        rr_sets_.push_back(rr);
       } else {
-        rr_sets.push_back(SampleManager::getInstance()->getSample(
-              graph_nodes, sampler, activated, dst));
+        rr_sets_.push_back(SampleManager::getInstance()->getSample(
+            graph_nodes_, sampler, activated_, dst));
       }
     }
 
     for (int i = 0; i < R; i++) {
-      for (unsigned long t : (*rr_sets[i])) {
-        hyperG[t]->push_back(i);
+      for (unsigned long t : (*rr_sets_[i])) {
+        hyper_g_[t]->push_back(i);
       }
     }
-    //printf("total time for sampler: %lf minutes \n", totTime);
-    //printf("average width for samples: %lf\n", totInDegree / R);
   }
 
   vector<bool> visit_local;
   void BuildSeedSet() {
-    seedSet.clear();
-    vector<int> deg = vector<int>(n, 0);
-    visit_local = vector<bool>(rr_sets.size(), false);
+    seed_set_.clear();
+    vector<int> deg = vector<int>(n_, 0);
+    visit_local = vector<bool>(rr_sets_.size(), false);
 
-    for (int i = 0; i < graph_nodes.size(); ++i) {
-      deg[graph_nodes[i]] = hyperG[graph_nodes[i]]->size();
+    for (unsigned int i = 0; i < graph_nodes_.size(); ++i) {
+      deg[graph_nodes_[i]] = hyper_g_[graph_nodes_[i]]->size();
     }
 
-    for (int i = 0; i < k; ++i) {
+    for (unsigned int i = 0; i < k_; ++i) {
       auto t = max_element(deg.begin(), deg.end());
       int id = t - deg.begin();
-      seedSet.insert(id);
+      seed_set_.insert(id);
       deg[id] = 0;
-      for (int t : (*hyperG[id])) {
+      for (int t : (*hyper_g_[id])) {
         if (!visit_local[t]) {
           visit_local[t] = true;
-          for (int item : (*rr_sets[t])) {
+          for (int item : (*rr_sets_[t])) {
             deg[item]--;
           }
         }
@@ -311,37 +267,32 @@ class TIMEvaluator : public Evaluator {
 
   double InfluenceHyperGraph() {
     unordered_set<unsigned long> s;
-    for(auto t : seedSet) {
-        for(auto tt : (*hyperG[t])) {
-          s.insert(tt);
-        }
+    for(auto t : seed_set_) {
+      for(auto tt : (*hyper_g_[t])) {
+        s.insert(tt);
+      }
     }
-    double inf = (double)n * s.size() / hyperId;
+    double inf = (double)n_ * s.size() / hyper_id_;
     return inf;
   }
 
-  void BuildHyperGraph2(double epsilon, double ept, const Graph& graph,
+  void BuildHyperGraph2(double epsilon_, double ept, const Graph& graph,
                         Sampler& sampler,
                         std::uniform_int_distribution<int>& dst) {
-    int64 R = (8 + 2 * epsilon) * (n * log(n) + n * log(2)) /
-        (epsilon * epsilon * ept) / 4;
-    //printf("BuildHyperGraph2 -- R = %lld\n", R);
+    int64 R = (8 + 2 * epsilon_) * (n_ * log(n_) + n_ * log(2)) /
+        (epsilon_ * epsilon_ * ept) / 4;
     buildSamples(R, graph, sampler, dst);
   }
 
-  void BuildHyperGraph3(double epsilon, double opt, const Graph& graph,
+  void BuildHyperGraph3(double epsilon_, double opt, const Graph& graph,
                         Sampler& sampler,
                         std::uniform_int_distribution<int>& dst) {
-    //int64 R = 16.0 * k * n * log(n) / epsilon / epsilon / opt;
-    //cout<<"OPT: " << opt <<endl;
     double logCnk = 0.0;
-    for (unsigned long i = n, j = 1; j <= k; --i, ++j) {
+    for (unsigned long i = n_, j = 1; j <= k_; --i, ++j) {
       logCnk += log10(i) - log10(j);
     }
-
-    int64 R = (8+2 * epsilon) * (n * log(n) + n * log(2) + n * logCnk) /
-        (epsilon * epsilon * opt);
-    //printf("BuildHyperGraph3 -- R = %lld\n", R);
+    int64 R = (8 + 2 * epsilon_) * (n_ * log(n_) + n_ * log(2) + n_ * logCnk) /
+        (epsilon_ * epsilon_ * opt);
     buildSamples(R, graph, sampler, dst);
   }
 

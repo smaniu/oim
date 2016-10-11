@@ -34,24 +34,21 @@
 #include "Graph.h"
 #include "Sampler.h"
 
+using namespace std;
+
 class PathSampler : public Sampler {
  private:
-  struct node_type {
+  struct NodeType {
     unsigned long id;
     double prob;
-    bool operator<(const node_type &a) const {
+    bool operator<(const NodeType &a) const {
       return (prob < a.prob) ? true : ((prob > a.prob) ? false : id > a.id);
     }
   };
-  // std::random_device rd;
-  // std::uniform_real_distribution<> dist;
-  // std::mt19937 gen;
-  boost::mt19937 gen;
-  boost::uniform_01<boost::mt19937> dist;
 
  public:
   PathSampler(unsigned int type)
-      : Sampler(type), gen(((int)time(0))), dist(gen) {};
+      : Sampler(type) {};
 
   double sample(const Graph& graph,
                 const std::unordered_set<unsigned long>& activated,
@@ -66,19 +63,25 @@ class PathSampler : public Sampler {
     return perform_sample(graph, activated, seeds, 1, true, inv);
   }
 
+  shared_ptr<vector<unsigned long>> perform_unique_sample(
+      const Graph& graph, vector<unsigned long> &nodes_activated,
+      vector<bool> &bool_activated, const unsigned long source, bool inv=false) {
+    return shared_ptr<vector<unsigned long>>(NULL);
+  }
+
 private:
   double perform_sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,
                         const std::unordered_set<unsigned long>& seeds,
                         unsigned long samples, bool trial, bool inv=false) {
-    trials.clear();
-    boost::heap::fibonacci_heap<node_type> queue;
+    trials_.clear();
+    boost::heap::fibonacci_heap<NodeType> queue;
     std::unordered_map<unsigned long,
-        boost::heap::fibonacci_heap<node_type>::handle_type> queue_nodes;
+        boost::heap::fibonacci_heap<NodeType>::handle_type> queue_nodes;
     std::unordered_set<unsigned long> visited;
     double spread = 0.0;
     for (unsigned long seed : seeds) {
-      node_type node;
+      NodeType node;
       node.id = seed;
       node.prob = 1.0;
       queue_nodes[seed] = queue.push(node);
@@ -87,18 +90,18 @@ private:
         tt.source = node.id;
         tt.target = node.id;
         tt.trial = 1;
-        trials.push_back(tt);
+        trials_.push_back(tt);
       }
     }
     while (queue.size() > 0) {
-      node_type node = queue.top();
+      NodeType node = queue.top();
       queue.pop();
       if(trial) {
         trial_type tt;
         tt.source = node.id;
         tt.target = node.id;
         tt.trial = 1;
-        trials.push_back(tt);
+        trials_.push_back(tt);
       }
       if (activated.find(node.id) == activated.end()) spread += node.prob;
       if (node.prob < 0.001) break;
@@ -110,16 +113,16 @@ private:
 
   void sample_outgoing_edges(
       const Graph& graph, unsigned long node,
-      boost::heap::fibonacci_heap<node_type>& queue,
+      boost::heap::fibonacci_heap<NodeType>& queue,
       std::unordered_set<unsigned long>& visited,
       std::unordered_map<unsigned long,
-          boost::heap::fibonacci_heap<node_type>::handle_type>& queue_nodes,
+          boost::heap::fibonacci_heap<NodeType>::handle_type>& queue_nodes,
       bool inv=false) {
 
     if (graph.has_neighbours(node, inv)) {
       for (auto edge : graph.get_neighbours(node, inv)) {
         if (visited.find(edge.target) == visited.end()) {
-          double dst_prob = edge.dist->sample(quantile);
+          double dst_prob = edge.dist->sample(quantile_);
           relax(node, edge.target, dst_prob, queue, queue_nodes);
         }
       }
@@ -128,20 +131,20 @@ private:
 
   void relax(
       unsigned long src, unsigned long tgt, double dst,
-      boost::heap::fibonacci_heap<node_type>& queue,
+      boost::heap::fibonacci_heap<NodeType>& queue,
       std::unordered_map<unsigned long,
-          boost::heap::fibonacci_heap<node_type>::handle_type>& queue_nodes) {
+          boost::heap::fibonacci_heap<NodeType>::handle_type>& queue_nodes) {
 
     double new_prob = (*queue_nodes[src]).prob * dst;
     if (queue_nodes.find(tgt) == queue_nodes.end()) {
-      node_type node;
+      NodeType node;
       node.id = tgt;
       node.prob = new_prob;
       queue_nodes[tgt] = queue.push(node);
     } else {
       double prev_prob = (*queue_nodes[tgt]).prob;
       if (new_prob > prev_prob) {
-        node_type node;
+        NodeType node;
         node.id = tgt;
         node.prob = new_prob;
         auto handle = queue_nodes[tgt];

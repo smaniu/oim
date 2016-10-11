@@ -28,6 +28,17 @@
 #include "Graph.h"
 #include "Sampler.h"
 
+
+struct NodeType {
+  unsigned long id;
+  unsigned long deg;
+  bool operator<(const NodeType &a) const {
+    return deg < a.deg ? true : (deg > a.deg ? false : id > a.id);
+  }
+};
+
+// Interface for algorithm to specify how is chosen the set of seeds. It is
+// implemented by Random, HighestDegree, DiscountDegree, Ohsaka, TIM and CELF.
 class Evaluator {
  public:
   virtual std::unordered_set<unsigned long> select(

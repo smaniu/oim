@@ -1,2 +1,5 @@
 *.o
 *~
+*.gch
+*.out
+.clang-format

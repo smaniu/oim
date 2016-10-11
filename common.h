@@ -45,12 +45,12 @@ extern double reused_ratio;
 
 typedef long long int64;
 
-class edge_type {
+class EdgeType {
  public:
   unsigned long source;
   unsigned long target;
   std::shared_ptr<InfluenceDistribution> dist;
-  edge_type(unsigned long src, unsigned long tgt,
+  EdgeType(unsigned long src, unsigned long tgt,
             std::shared_ptr<InfluenceDistribution> dst)
       : source(src), target(tgt), dist(dst) {};
 };

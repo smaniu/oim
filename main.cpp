@@ -34,10 +34,13 @@
 #include "SpreadSampler.h"
 #include "CELFEvaluator.h"
 #include "TIMEvaluator.h"
+#include "SSAEvaluator.h"
 #include "RandomEvaluator.h"
 #include "HighestDegreeEvaluator.h"
 #include "DiscountDegreeEvaluator.h"
 #include "Strategy.h"
+
+using namespace std;
 
 void real(int argc, const char * argv[]) {
   std::string file_name_graph(argv[2]);
@@ -46,12 +49,16 @@ void real(int argc, const char * argv[]) {
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
+  while (file >> src >> tgt >> prob) {
     std::shared_ptr<InfluenceDistribution> dst_original(
         new SingleInfluence(prob));
     original_graph.add_edge(src, tgt, dst_original);
     edges++;
   }
+
+  cerr << "edges => " << edges << " = " << original_graph.get_number_edges() << endl;
+  cerr << "nodes => " << original_graph.get_number_nodes() << endl;
+
   SampleManager::setInstance(original_graph);
   original_graph.set_prior(1.0, 1.0);
 
@@ -64,15 +71,17 @@ void real(int argc, const char * argv[]) {
   evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
 
-  SpreadSampler s_exploit(INFLUENCE_MED);
+  // SpreadSampler s_exploit(INFLUENCE_MED);
   int samples = 100;
   int inc = 0;
   if (argc > 6)
     inc = atoi(argv[6]);
   if (argc > 7)
     samples = atoi(argv[7]);
-  OriginalGraphStrategy strategy(original_graph, *evals.at(exploit), samples, inc);
+  OriginalGraphStrategy strategy(original_graph, *evals.at(exploit),
+                                 samples, inc);
   strategy.perform(budget, k);
 }
 
@@ -85,7 +94,7 @@ void prior(int argc, const char * argv[]) {
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
+  while (file >> src >> tgt >> prob) {
     std::shared_ptr<InfluenceDistribution>\
       dst_model(new BetaInfluence(alpha, beta, prob));
     original_graph.add_edge(src, tgt, dst_model);
@@ -101,15 +110,10 @@ void prior(int argc, const char * argv[]) {
   evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
   SpreadSampler s_exploit(INFLUENCE_MED);
   int samples = 100;
-  bool update = true;
-  if(argc>8){
-    unsigned int upd = atoi(argv[8]);
-    update = upd==1?true:false;
-  }
-  if(argc>9)
+  if (argc > 9)
     samples = atoi(argv[9]);
   OriginalGraphStrategy strategy(original_graph, *evals.at(exploit), samples);
-  strategy.perform(budget, k, update);
+  strategy.perform(budget, k);
 }
 
 void explore(int argc, const char * argv[]){
@@ -121,17 +125,14 @@ void explore(int argc, const char * argv[]){
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
-    std::shared_ptr<InfluenceDistribution>\
-    dst_original(new SingleInfluence(prob));
-    std::shared_ptr<InfluenceDistribution>\
-    dst_model(new BetaInfluence(alpha, beta, prob));
+  while (file >> src >> tgt >> prob) {
+    shared_ptr<InfluenceDistribution> dst_original(new SingleInfluence(prob));
+    shared_ptr<InfluenceDistribution> dst_model(
+        new BetaInfluence(alpha, beta, prob));
     original_graph.add_edge(src, tgt, dst_original);
     model_graph.add_edge(src, tgt, dst_model);
     edges++;
   }
-  //original_graph.finish_init();
-  //model_graph.finish_init();
 
   SampleManager::setInstance(model_graph);
   model_graph.set_prior(alpha, beta);
@@ -181,8 +182,6 @@ void epsgreedy(int argc, const char * argv[]){
     model_graph.add_edge(src, tgt, dst_model);
     edges++;
   }
-  //original_graph.finish_init();
-  //model_graph.finish_init();
 
   SampleManager::setInstance(model_graph);
   model_graph.set_prior(alpha, beta);
@@ -237,7 +236,7 @@ void expgr(int argc, const char * argv[]) {
   unsigned int k = atoi(argv[7]);
   if (argc > 8) {
     unsigned int upd = atoi(argv[8]);
-    update = (upd == 1) ? true: false;
+    update = (upd == 1) ? true : false;
   }
   if (argc > 9)
     learn = atoi(argv[9]);
@@ -332,36 +331,31 @@ void benchmark(int argc, const char * argv[]){
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
-    std::shared_ptr<InfluenceDistribution>\
-        dst(new BetaInfluence(alpha, beta,prob));
+  while (file >> src >> tgt >> prob) {
+    std::shared_ptr<InfluenceDistribution>
+        dst(new BetaInfluence(alpha, beta, prob));
     graph.add_edge(src, tgt, dst);
     edges++;
   }
-  std::cout<<" done."<<std::endl<<std::flush;
+  std::cout << " done." << std::endl;
   unsigned long nodes = graph.get_nodes().size();
-  std::cout<<"\t"<<nodes<<" nodes, "<<edges<<" edges"<<std::endl<<std::flush;
+  std::cout << "\t" << nodes << " nodes, " << edges << " edges" << std::endl;
   int samples = 100;
-  bool update = true;
-  if(argc>5){
-    unsigned int upd = atoi(argv[5]);
-    update = upd==1?true:false;
-  }
-  if(argc>6)
+  if (argc > 6)
     samples = atoi(argv[6]);
   std::cout<<"done."<<std::endl;
   SpreadSampler sampler(INFLUENCE_MED);
   std::cout<<"sampling... "<< std::flush;
   std::unordered_set<unsigned long> activated;
   t0 = get_timestamp();
-  for(unsigned long node:graph.get_nodes()){
+  for (unsigned long node : graph.get_nodes()) {
     std::unordered_set<unsigned long> seeds;
     seeds.insert(node);
     sampler.sample(graph, activated, seeds, samples);
   }
   t1 = get_timestamp();
-  std::cout<<"done."<<std::endl;
-  time_min = (t1-t0)/60000000.0L;
+  std::cout << "done." << std::endl;
+  time_min = (t1 - t0) / 60000000.0L;
   time_msec =((t1-t0)/1000.0L)/(double)nodes/(double)samples;
   std::cout << "total time " << time_min << "min" <<std::endl;
   std::cout << "time/sample/node " << time_msec << "ms" << std::endl;
