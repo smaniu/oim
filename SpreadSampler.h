@@ -61,7 +61,7 @@ class SpreadSampler : public Sampler {
 
   shared_ptr<vector<unsigned long>> perform_unique_sample(
       const Graph& graph, vector<unsigned long> &nodes_activated,
-      vector<bool> &bool_activated, const unsigned long source, bool inv=false) {
+      vector<bool> &bool_activated, unsigned long source, bool inv=false) {
 
     unsigned long cur = source;
     unsigned long num_marked = 1, cur_pos = 0;

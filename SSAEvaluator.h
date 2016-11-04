@@ -31,15 +31,16 @@
 #include "PathSampler.h"
 #include "SampleManager.h"
 
+#include <omp.h>
 #include <math.h>
 
 using namespace std;
 
 class SSAEvaluator : public Evaluator {
  private:
-  std::unordered_set<unsigned long> seed_set_;
-  vector<shared_ptr<vector<unsigned long>>> rr_samples_;
-  vector<vector<unsigned int>> hyper_graph_;
+  std::unordered_set<unsigned long> seed_set_;  // Set of k selected nodes
+  vector<shared_ptr<vector<unsigned long>>> rr_samples_;  // List of RR samples
+  vector<vector<unsigned int>> hyper_graph_;    // RR samples where appear each node
 
   std::random_device rd_;
   std::mt19937 gen_;
@@ -115,7 +116,7 @@ class SSAEvaluator : public Evaluator {
       unsigned long source = dst_(gen_);
       // We sample a new RR set
       shared_ptr<vector<unsigned long>> rr_sample = sampler.perform_unique_sample(
-          graph, nodes_activated, bool_activated, source, true);  // can be improved because if we found a node from seed_set, we can stop diffusion
+          graph, nodes_activated, bool_activated, source, true);  // TODO can be improved because if we found a node from seed_set, we can stop diffusion
       for (unsigned long sampled_node : *rr_sample) {
         if (seed_set_.find(sampled_node) != seed_set_.end()) {
           cov += 1;
@@ -148,10 +149,10 @@ class SSAEvaluator : public Evaluator {
       shared_ptr<vector<unsigned long>> rr_sample = sampler.perform_unique_sample(
             graph, nodes_activated, bool_activated, source, true);
       rr_samples_.push_back(rr_sample);
-      nb_rr_samples += 1;
       for (unsigned long node : *rr_sample) {
-        hyper_graph_[node].push_back(nb_rr_samples - 1);
+        hyper_graph_[node].push_back(nb_rr_samples);
       }
+      nb_rr_samples += 1;
     }
   }
 

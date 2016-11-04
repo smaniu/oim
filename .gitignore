@@ -1,5 +1,8 @@
 *.o
 *~
 *.gch
+*.pch
 *.out
 .clang-format
+prng_engine.hpp
+oim

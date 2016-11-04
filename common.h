@@ -38,6 +38,7 @@
 
 #define THETA_OFFSET 5
 #define MAX_R 10000000
+#define NUM_THREADS_MAX 4
 
 extern double sampling_time;
 extern double choosing_time;
@@ -71,17 +72,17 @@ struct celf_node_type {
 
 typedef unsigned long long timestamp_t;
 
-static timestamp_t get_timestamp () {
+static timestamp_t get_timestamp() {
   struct timeval now;
-  gettimeofday (&now, NULL);
+  gettimeofday(&now, NULL);
   return  now.tv_usec + (timestamp_t)now.tv_sec * 1000000;
 }
 
 double sqr(double t) {
-    return t * t;
+  return t * t;
 }
 
-void process_mem_usage(double& vm_usage, double& resident_set) {
+void process_mem_usage(double &vm_usage, double &resident_set) {
    using std::ios_base;
    using std::ifstream;
    using std::string;
@@ -90,18 +91,15 @@ void process_mem_usage(double& vm_usage, double& resident_set) {
    resident_set = 0.0;
 
    // 'file' stat seems to give the most reliable results
-   //
-   ifstream stat_stream("/proc/self/stat",ios_base::in);
+   ifstream stat_stream("/proc/self/stat", ios_base::in);
 
    // dummy vars for leading entries in stat that we don't care about
-   //
    string pid, comm, state, ppid, pgrp, session, tty_nr;
    string tpgid, flags, minflt, cminflt, majflt, cmajflt;
    string utime, stime, cutime, cstime, priority, nice;
    string O, itrealvalue, starttime;
 
    // the two fields we want
-   //
    unsigned long vsize;
    long rss;
 
@@ -115,6 +113,14 @@ void process_mem_usage(double& vm_usage, double& resident_set) {
    long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
    vm_usage     = vsize / 1024.0;
    resident_set = rss * page_size_kb;
+}
+
+double disp_mem_usage() {
+  double vm, rss;
+  process_mem_usage(vm, rss);
+  vm /= 1024;
+  rss /= 1024;
+  return rss;
 }
 
 #endif

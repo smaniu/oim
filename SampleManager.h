@@ -26,7 +26,6 @@
 #include "common.h"
 #include "Sampler.h"
 #include "SpreadSampler.h"
-
 #include "InfluenceDistribution.h"
 
 #define INCREMENTAL_THRESHOLD 0.02
@@ -187,6 +186,5 @@ double SampleManager::miss = 0;
 double SampleManager::case1 = 0;
 double SampleManager::case2 = 0;
 double SampleManager::case3 = 0;
-
 
 #endif

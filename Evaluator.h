@@ -38,7 +38,8 @@ struct NodeType {
 };
 
 // Interface for algorithm to specify how is chosen the set of seeds. It is
-// implemented by Random, HighestDegree, DiscountDegree, Ohsaka, TIM and CELF.
+// implemented by Random, HighestDegree, DiscountDegree, Ohsaka, TIM, SSA and
+// CELF.
 class Evaluator {
  public:
   virtual std::unordered_set<unsigned long> select(
