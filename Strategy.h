@@ -161,19 +161,20 @@ class GoodUcbPolicy {
   * Get the `k` largest elements of a vector and returns them as unordered_set.
   * Trick with negative weights to get the lowest element of the priority_queue.
   */
-  std::unordered_set<unsigned long> get_k_largest_arguments(
+  template<typename T>
+  std::unordered_set<T> get_k_largest_arguments(
         std::vector<float>& vec, unsigned int k) {
-    std::priority_queue<std::pair<float, unsigned long>> q;
-    for (unsigned int i = 0; i < k; ++i) {
-      q.push(std::pair<float, unsigned long>(-vec[i], i));
+    std::priority_queue<std::pair<float, T>> q;
+    for (T i = 0; i < k; ++i) {
+      q.push(std::pair<float, T>(-vec[i], i));
     }
-    for (unsigned long i = k; i < vec.size(); ++i) {
+    for (T i = k; i < vec.size(); ++i) {
       if (q.top().first > -vec[i]) {
         q.pop();
-        q.push(std::pair<float, unsigned long>(-vec[i], i));
+        q.push(std::pair<float, T>(-vec[i], i));
       }
     }
-    std::unordered_set<unsigned long> result;
+    std::unordered_set<T> result;
     while (!q.empty()) {
       result.insert(q.top().second);
       q.pop();
@@ -188,7 +189,7 @@ class GoodUcbPolicy {
   /**
   * Selects `k` experts whose Good-UCB indices are the largest.
   */
-  std::unordered_set<unsigned long> selectExpert(unsigned int k) {
+  std::unordered_set<unsigned int> selectExpert(unsigned int k) {
     std::vector<float> ucbs(nb_experts_, 0);
     for (unsigned int i = 0; i < nb_experts_; i++) {
       float missing_mass_i = (float)std::count_if(
@@ -198,15 +199,16 @@ class GoodUcbPolicy {
       ucbs[i] = missing_mass_i + (1 + sqrt(2)) * sqrt(SIGMA * log(4 * t_) /
           n_plays_[i]) + log(4 * t_) / (3 * n_plays_[i]);
     }
-    return get_k_largest_arguments(ucbs, k);
+    return get_k_largest_arguments<unsigned int>(ucbs, k);
   }
 
   /**
   * Update statistics on the chosen expert (k == 1).
   */
-  void updateState(unsigned int expert, vector<unsigned long> &graph_sample) {
+  void updateState(unsigned int expert,
+                   const std::unordered_set<unsigned long>& stage_spread) {
     t_++;
-    for (auto& activated_node : graph_sample) {
+    for (auto& activated_node : stage_spread) {
       if (n_rewards_[expert].count(activated_node) == 0)
         n_rewards_[expert][activated_node] = 0;
       n_rewards_[expert][activated_node]++;
@@ -243,10 +245,10 @@ class MissingMassStrategy : public Strategy {
         n_experts_(n_experts) {}
 
   void perform(unsigned int budget, unsigned int k) {
-    std::unordered_set<unsigned long> activated;
+    SpreadSampler exploit_spread(INFLUENCE_MED);
     double expected = 0, real = 0, totaltime = 0, round_time = 0, memory = 0;
-    std::vector<TrialData> results;
     std::unordered_map<long long, int> edge_hit, edge_miss;
+    std::unordered_set<unsigned long> total_spread;
 
     // 1. Extract experts from graph
     std::vector<unsigned long> experts = g_reduction_.extractExperts(
@@ -256,18 +258,28 @@ class MissingMassStrategy : public Strategy {
     GoodUcbPolicy policy(n_experts_, nb_neighbours);
 
     // 2. Sequentially select the best k nodes from missing mass estimator ucb
+    std::unordered_set<unsigned long> spread;
     for (unsigned int stage = 0; stage < budget; stage++) {
       // 2. (a) Select k experts for this round
       timestamp_t t0, t1, t2;
       t0 = get_timestamp();
-      std::unordered_set<unsigned long> seeds = policy.selectExpert(k);
+      std::unordered_set<unsigned int> chosen_experts = policy.selectExpert(k);
       t1 = get_timestamp();
       selecting_time = (t1 - t0) / 60000000.0L;
 
       // 2. (b) Apply diffusion
-      std::unordered_set<unsigned long> nodes_to_update;
+      std::unordered_set<unsigned long> seeds;
+      for (unsigned int chosen_expert : chosen_experts) {
+        seeds.insert(experts[chosen_expert]); // We add the associated node
+      }
+      auto stage_spread = exploit_spread.perform_diffusion(
+          original_graph_, seeds);
+      total_spread.insert(stage_spread.begin(), stage_spread.end());
 
       // 3. (c) Update statistics of experts
+      for (unsigned long expert : seeds) {
+        policy.updateState(expert, stage_spread);
+      }
       t2 = get_timestamp();
       updating_time = (t2 - t1) / 60000000.0L;
       round_time = (t2 - t0) / 60000000.0L;

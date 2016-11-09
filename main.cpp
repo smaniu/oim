@@ -66,12 +66,12 @@ void real(int argc, const char * argv[]) {
   unsigned int budget = atoi(argv[4]);
   unsigned int k = atoi(argv[5]);
   std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
+  evals.push_back(std::make_unique<Evaluator>(CELFEvaluator()));
+  evals.push_back(std::make_unique<Evaluator>(RandomEvaluator()));
+  evals.push_back(std::make_unique<Evaluator>(DiscountDegreeEvaluator()));
+  evals.push_back(std::make_unique<Evaluator>(TIMEvaluator()));
+  evals.push_back(std::make_unique<Evaluator>(HighestDegreeEvaluator()));
+  evals.push_back(std::make_unique<Evaluator>(SSAEvaluator(0.1)));
 
   // SpreadSampler s_exploit(INFLUENCE_MED);
   int samples = 100;

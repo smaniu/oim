@@ -34,6 +34,9 @@ class Sampler {
  public:
   Sampler(unsigned int type) : quantile_(type) {};
 
+  /**
+  Method to estimate the standard deviation of TODO
+  */
   virtual double sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,
                         const std::unordered_set<unsigned long>& seeds,
@@ -48,6 +51,9 @@ class Sampler {
       const Graph& graph, std::vector<unsigned long> &nodes_activated,
       std::vector<bool> &bool_activated, const unsigned long source,
       bool inv=false) = 0;
+
+  virtual std::unordered_set<unsigned long> perform_diffusion(
+      const Graph& graph, const std::unordered_set<unsigned long>& seeds) = 0;
 
   std::vector<trial_type>& get_trials() { return trials_; }
 
