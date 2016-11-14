@@ -36,6 +36,9 @@
 
 using namespace std;
 
+/**
+  TODO description
+*/
 class PathSampler : public Sampler {
  private:
   struct NodeType {
@@ -64,8 +67,8 @@ class PathSampler : public Sampler {
   }
 
   std::shared_ptr<vector<unsigned long>> perform_unique_sample(
-      const Graph& graph, vector<unsigned long> &nodes_activated,
-      vector<bool> &bool_activated, const unsigned long source, bool inv=false) {
+      const Graph& graph, vector<unsigned long>& nodes_activated,
+      vector<bool>& bool_activated, const unsigned long source, bool inv=false) {
     return shared_ptr<vector<unsigned long>>(NULL);
   }
 
@@ -108,8 +111,10 @@ private:
         tt.trial = 1;
         trials_.push_back(tt);
       }
-      if (activated.find(node.id) == activated.end()) spread += node.prob;
-      if (node.prob < 0.001) break;
+      if (activated.find(node.id) == activated.end())
+        spread += node.prob;
+      if (node.prob < 0.001)
+        break;
       visited.insert(node.id);
       sample_outgoing_edges(graph, node.id, queue, visited, queue_nodes, inv);
     }

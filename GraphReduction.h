@@ -37,7 +37,7 @@ class GraphReduction {
 };
 
 /**
-* This method selects n_experts nodes with the highest degrees as experts.
+* This method selects `n_experts` nodes with the highest degrees as experts.
 */
 class HighestDegreeReduction : public GraphReduction {
  public:
@@ -69,12 +69,13 @@ class GreedyMaxCoveringReduction : public GraphReduction {
   std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
     std::vector<unsigned long> result(n_experts, 0);
     Graph copy_graph(graph); // Copy the graph
-
     for (int i = 0; i < n_experts; i++) {
       // 1. Pick the node with highest degree
       unsigned long current_node = 0; // Current picked node
       unsigned int current_value = 0; // Number of neighbours for current node
       for (auto& node : copy_graph.get_nodes()) {
+        if (!copy_graph.has_neighbours(node))
+          continue;
         unsigned int value = copy_graph.get_neighbours(node).size();
         if (value > current_value) {
           current_value = value;

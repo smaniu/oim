@@ -3,6 +3,8 @@
 *.gch
 *.pch
 *.out
+*.swp
 .clang-format
 prng_engine.hpp
 oim
+test/main_test

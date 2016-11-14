@@ -31,9 +31,20 @@
 #include "common.h"
 #include "InfluenceDistribution.h"
 
+
+class EdgeType {
+ public:
+  unsigned long source;
+  unsigned long target;
+  std::shared_ptr<InfluenceDistribution> dist;
+  EdgeType(unsigned long src, unsigned long tgt,
+            std::shared_ptr<InfluenceDistribution> dst)
+      : source(src), target(tgt), dist(dst) {};
+};
+
 /**
-* Class representing the graph. Be careful:
-*   - nodes index starts at 0 up to n - 1
+  Class representing the graph. Be careful:
+    - nodes index starts at 0 up to n - 1
 */
 class Graph {
  private:
@@ -45,6 +56,8 @@ class Graph {
 
  public:
   double alpha_prior, beta_prior;
+
+  Graph() = default;
 
   Graph(const Graph& g)
       : adj_list_(g.adj_list_), inv_adj_list_(g.inv_adj_list_),
@@ -93,35 +106,37 @@ class Graph {
     // 1. Remove node
     node_set_.erase(node);
     num_nodes_ = node_set_.size();
-
     // 2. Remove real edges from `node`
-    std::vector<EdgeType>& neighbours = adj_list_[node];
-    adj_list_.erase(node);
-    for (auto& edge : neighbours) {
-      num_edges_--;  // We remove one edge leaving from `node`
-      std::vector<EdgeType>& cur_inv_list = inv_adj_list_[edge.target];
-      auto it = std::find_if(cur_inv_list.begin(), cur_inv_list.end(),
-                             [node](auto& e) { return e.target == node; }); // search for reversed edge
-      if (it->target != node) {
-        std::cerr << "Corresponding inverted edge node found" << std::endl;
-        exit(1);
+    if (has_neighbours(node)) {
+      std::vector<EdgeType>& neighbours = adj_list_[node];
+      for (auto& edge : neighbours) {
+        num_edges_--;  // We remove one edge leaving from `node`
+        std::vector<EdgeType>& cur_inv_list = inv_adj_list_[edge.target];
+        auto it = std::find_if(cur_inv_list.begin(), cur_inv_list.end(),
+                               [node](auto& e) { return e.target == node; }); // search for reversed edge
+        if (it->target != node) {
+          std::cerr << "Corresponding inverted edge node found" << std::endl;
+          exit(1);
+        }
+        cur_inv_list.erase(it);
       }
-      cur_inv_list.erase(it);
+      adj_list_.erase(node);
     }
-
     // 3. Remove inversed edges from `node`
-    std::vector<EdgeType>& inv_neighbours = inv_adj_list_[node];
-    inv_adj_list_.erase(node);
-    for (auto& inv_edge : inv_neighbours) {
-      num_edges_--;  // We remove one edge pointing to `node` (reversed points to `target`)
-      std::vector<EdgeType>& cur_list = adj_list_[inv_edge.target];
-      auto it = std::find_if(cur_list.begin(), cur_list.end(),
-                             [node](auto& e) { return e.target == node; });
-      if (it->target != node) {
-        std::cerr << "Corresponding edge node found" << std::endl;
-        exit(1);
+    if (has_neighbours(node, true)) {
+      std::vector<EdgeType>& inv_neighbours = inv_adj_list_[node];
+      for (auto& inv_edge : inv_neighbours) {
+        num_edges_--;  // We remove one edge pointing to `node` (reversed points to `target`)
+        std::vector<EdgeType>& cur_list = adj_list_[inv_edge.target];
+        auto it = std::find_if(cur_list.begin(), cur_list.end(),
+                               [node](auto& e) { return e.target == node; });
+        if (it->target != node) {
+          std::cerr << "Corresponding edge node found" << std::endl;
+          exit(1);
+        }
+        cur_list.erase(it);
       }
-      cur_list.erase(it);
+      inv_adj_list_.erase(node);
     }
   }
 
@@ -156,10 +171,11 @@ class Graph {
   }
 
   void update_rounds(double round) {
-    for (auto lst : adj_list_)
+    for (auto lst : adj_list_) {
       for (auto edge : lst.second) {
         edge.dist->set_round(round);
       }
+    }
   }
 
   bool has_neighbours(unsigned long node, bool inv=false) const {

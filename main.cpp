@@ -27,6 +27,7 @@
 #include <time.h>
 
 #include "common.h"
+#include "graph_utils.hpp"
 #include "Graph.h"
 #include "InfluenceDistribution.h"
 #include "SingleInfluence.h"
@@ -66,12 +67,12 @@ void real(int argc, const char * argv[]) {
   unsigned int budget = atoi(argv[4]);
   unsigned int k = atoi(argv[5]);
   std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::make_unique<Evaluator>(CELFEvaluator()));
-  evals.push_back(std::make_unique<Evaluator>(RandomEvaluator()));
-  evals.push_back(std::make_unique<Evaluator>(DiscountDegreeEvaluator()));
-  evals.push_back(std::make_unique<Evaluator>(TIMEvaluator()));
-  evals.push_back(std::make_unique<Evaluator>(HighestDegreeEvaluator()));
-  evals.push_back(std::make_unique<Evaluator>(SSAEvaluator(0.1)));
+  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
 
   // SpreadSampler s_exploit(INFLUENCE_MED);
   int samples = 100;
@@ -398,14 +399,55 @@ void spread(int argc, const char * argv[]) {
     time_min_random <<std::endl;
 }
 
+/**
+  Function performing experiment with MissingMassStrategy.
+
+  Ex. usage: ./oim --missing_mass graph.txt max_cover 20 2 5
+*/
+void missing_mass(int argc, const char * argv[], std::unordered_map<
+      std::string, std::unique_ptr<GraphReduction>>& greduction) {
+  if (argc != 7) {
+    std::cerr << "Wrong number of arguments.\n\tUsage ./out --missing_mass "
+              << "<graph_file> <graph_reduction> <budget> <k> <n_experts>"
+              << std::endl;
+    exit(1);
+  }
+  Graph original_graph;
+  load_graph(argv[2], original_graph);
+  // Graph reduction method
+  if (greduction.find(argv[3]) == greduction.end()) {
+    std::cerr << "Wrong type of graph reduction." << std::endl;
+    exit(1);
+  }
+  unsigned int budget = atoi(argv[4]);
+  unsigned int k = atoi(argv[5]);
+  int n_experts = atoi(argv[6]);
+  MissingMassStrategy strategy(
+      original_graph, *greduction.at(argv[3]), n_experts);
+  std::cerr << "Before performing" << std::endl;
+  strategy.perform(budget, k);
+  std::cerr << "After performing" << std::endl;
+}
+
 int main(int argc, const char * argv[]) {
-  std::string first_arg(argv[1]);
-  if (first_arg == "--benchmark") benchmark(argc, argv);
-  else if (first_arg == "--spread") spread(argc, argv);
-  else if (first_arg == "--egreedy") epsgreedy(argc, argv);
-  else if (first_arg == "--explore") explore(argc, argv);
-  else if (first_arg == "--real") real(argc, argv);
-  else if (first_arg == "--prior") prior(argc, argv);
-  else if (first_arg == "--eg") expgr(argc, argv);
-  else if (first_arg == "--zsc") zscore(argc, argv);
+  // Hashmap of different GraphReduction implementations
+  std::unordered_map<string, unique_ptr<GraphReduction>> greduction;
+  greduction.insert(std::make_pair("max_cover",
+      std::unique_ptr<GraphReduction>(new GreedyMaxCoveringReduction())));
+  greduction.insert(std::make_pair("highest_degree",
+      std::unique_ptr<GraphReduction>(new HighestDegreeReduction())));
+
+  // Hashmap of different Evaluator implementations TODO
+  std::vector<std::unique_ptr<Evaluator>> evaluators;
+
+  std::string experiment(argv[1]);
+  if (experiment == "--benchmark") benchmark(argc, argv);
+  else if (experiment == "--spread") spread(argc, argv);
+  else if (experiment == "--egreedy") epsgreedy(argc, argv);
+  else if (experiment == "--explore") explore(argc, argv);
+  else if (experiment == "--real") real(argc, argv);
+  else if (experiment == "--prior") prior(argc, argv);
+  else if (experiment == "--eg") expgr(argc, argv);
+  else if (experiment == "--zsc") zscore(argc, argv);
+  else if (experiment == "--missing_mass") missing_mass(argc, argv, greduction);
 }

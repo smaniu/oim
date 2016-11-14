@@ -35,6 +35,8 @@
 #include <string>
 
 #include "InfluenceDistribution.h"
+#include "SingleInfluence.h"
+
 
 #define THETA_OFFSET 5
 #define MAX_R 10000000
@@ -45,16 +47,6 @@ extern double choosing_time;
 extern double reused_ratio;
 
 typedef long long int64;
-
-class EdgeType {
- public:
-  unsigned long source;
-  unsigned long target;
-  std::shared_ptr<InfluenceDistribution> dist;
-  EdgeType(unsigned long src, unsigned long tgt,
-            std::shared_ptr<InfluenceDistribution> dst)
-      : source(src), target(tgt), dist(dst) {};
-};
 
 typedef struct {
   unsigned long source;

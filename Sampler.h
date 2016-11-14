@@ -26,6 +26,9 @@
 #include "common.h"
 #include "Graph.h"
 
+/**
+  TODO Description
+*/
 class Sampler {
  protected:
   unsigned int quantile_;
@@ -48,8 +51,8 @@ class Sampler {
                        bool inv=false) = 0;
 
   virtual std::shared_ptr<std::vector<unsigned long>> perform_unique_sample(
-      const Graph& graph, std::vector<unsigned long> &nodes_activated,
-      std::vector<bool> &bool_activated, const unsigned long source,
+      const Graph& graph, std::vector<unsigned long>& nodes_activated,
+      std::vector<bool>& bool_activated, const unsigned long source,
       bool inv=false) = 0;
 
   virtual std::unordered_set<unsigned long> perform_diffusion(
