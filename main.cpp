@@ -148,6 +148,8 @@ void explore(int argc, const char * argv[]){
   evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
   int samples = 1000;
   bool update = true;
   unsigned int learn = 0;
@@ -174,11 +176,9 @@ void epsgreedy(int argc, const char * argv[]){
   unsigned long src, tgt;
   double prob;
   unsigned long edges = 0;
-  while(file >> src >> tgt >> prob){
-    std::shared_ptr<InfluenceDistribution>\
-      dst_original(new SingleInfluence(prob));
-    std::shared_ptr<InfluenceDistribution>\
-      dst_model(new BetaInfluence(alpha, beta, prob));
+  while (file >> src >> tgt >> prob) {
+    std::shared_ptr<InfluenceDistribution> dst_original(new SingleInfluence(prob));
+    std::shared_ptr<InfluenceDistribution> dst_model(new BetaInfluence(alpha, beta, prob));
     original_graph.add_edge(src, tgt, dst_original);
     model_graph.add_edge(src, tgt, dst_model);
     edges++;
@@ -197,25 +197,27 @@ void epsgreedy(int argc, const char * argv[]){
   evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
   evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
   int samples = 1000;
   bool update = true;
   unsigned int learn = 0;
-  if(argc>10){
+  if (argc > 10) {
     unsigned int upd = atoi(argv[10]);
-    update = upd==1?true:false;
+    update = (upd == 1) ? true : false;
   }
   unsigned int int_explore = INFLUENCE_MED;
   unsigned int int_exploit = INFLUENCE_MED;
   int inc = 0;
-  if(argc>11)
+  if (argc > 11)
     learn = atoi(argv[11]);
-  if(argc>12)
+  if (argc > 12)
     int_exploit = atoi(argv[12]);
-  if(argc>13)
+  if (argc > 13)
     int_explore = atoi(argv[13]);
-  if(argc>14)
+  if (argc > 14)
     inc = atoi(argv[14]);
-  if(argc>15)
+  if (argc > 15)
     samples = atoi(argv[15]);
   EpsilonGreedyStrategy strategy(model_graph, original_graph,
                                  *evals.at(explore), *evals.at(exploit),
@@ -271,8 +273,12 @@ void expgr(int argc, const char * argv[]) {
     evaluator = std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator());
   } else if (exploit == 3) {
     evaluator = std::unique_ptr<Evaluator>(new TIMEvaluator());
+  } else if (exploit == 4) {
+    evaluator = std::unique_ptr<Evaluator>(new HighestDegreeEvaluator());
+  } else if (exploit == 5) {
+    evaluator = std::unique_ptr<Evaluator>(new SSAEvaluator(0.1));
   } else {
-    std::cerr << "Error: `exploit` must be in range 0..3" << std::endl;
+    std::cerr << "Error: `exploit` must be in range 0..5" << std::endl;
     exit(1);
   }
   ExponentiatedGradientStrategy strategy(model_graph, original_graph,
@@ -424,9 +430,7 @@ void missing_mass(int argc, const char * argv[], std::unordered_map<
   int n_experts = atoi(argv[6]);
   MissingMassStrategy strategy(
       original_graph, *greduction.at(argv[3]), n_experts);
-  std::cerr << "Before performing" << std::endl;
   strategy.perform(budget, k);
-  std::cerr << "After performing" << std::endl;
 }
 
 int main(int argc, const char * argv[]) {
