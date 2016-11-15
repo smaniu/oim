@@ -132,7 +132,7 @@ private:
     if (graph.has_neighbours(node, inv)) {
       for (auto edge : graph.get_neighbours(node, inv)) {
         if (visited.find(edge.target) == visited.end()) {
-          double dst_prob = edge.dist->sample(quantile_);
+          double dst_prob = edge.dist->sample(type_);
           relax(node, edge.target, dst_prob, queue, queue_nodes);
         }
       }

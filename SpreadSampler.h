@@ -91,7 +91,7 @@ class SpreadSampler : public Sampler {
       if (graph.has_neighbours(cur, inv)) {
         const vector<EdgeType> &neighbours = graph.get_neighbours(cur, inv);
         for (auto &neighbour : neighbours) {
-          if (dist_() < neighbour.dist->sample(quantile_)) {
+          if (dist_() < neighbour.dist->sample(type_)) {
             if (!bool_activated[neighbour.target]) {
               bool_activated[neighbour.target] = true;
               nodes_activated[num_marked] = neighbour.target;
@@ -177,7 +177,7 @@ class SpreadSampler : public Sampler {
     if (graph.has_neighbours(node, inv)) {
       for (auto edge : graph.get_neighbours(node, inv)) {
         if (visited.find(edge.target) == visited.end()) {
-          double dice_dst = edge.dist->sample(quantile_);
+          double dice_dst = edge.dist->sample(type_);
           unsigned int act = 0;
           double dice = dist_();
           if (dice < dice_dst) {

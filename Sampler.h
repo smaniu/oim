@@ -31,11 +31,11 @@
 */
 class Sampler {
  protected:
-  unsigned int quantile_;
+  unsigned int type_;
   std::vector<trial_type> trials_;
 
  public:
-  Sampler(unsigned int type) : quantile_(type) {};
+  Sampler(unsigned int type) : type_(type) {};
 
   /**
   Method to estimate the standard deviation of TODO
@@ -60,7 +60,7 @@ class Sampler {
 
   std::vector<trial_type>& get_trials() { return trials_; }
 
-  unsigned int get_quantile() { return quantile_; }
+  unsigned int get_type() { return type_; }
 
 };
 
