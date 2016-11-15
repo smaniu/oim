@@ -31,15 +31,16 @@
 #include "PathSampler.h"
 #include "SampleManager.h"
 
+#include <omp.h>
 #include <math.h>
 
 using namespace std;
 
 class SSAEvaluator : public Evaluator {
  private:
-  std::unordered_set<unsigned long> seed_set_;
-  vector<shared_ptr<vector<unsigned long>>> rr_samples_;
-  vector<vector<unsigned int>> hyper_graph_;
+  std::unordered_set<unsigned long> seed_set_;  // Set of k selected nodes
+  vector<shared_ptr<vector<unsigned long>>> rr_samples_;  // List of RR samples
+  vector<vector<unsigned int>> hyper_graph_;    // RR samples where appear each node
 
   std::random_device rd_;
   std::mt19937 gen_;
@@ -58,8 +59,7 @@ class SSAEvaluator : public Evaluator {
         const Graph& graph, Sampler& sampler,
         const std::unordered_set<unsigned long>& activated,
         unsigned int k, unsigned long samples) {
-
-    clock_t begin = clock();
+    // clock_t begin = clock();
     hyper_graph_.clear();
     rr_samples_.clear();
     delta_ = 1. / graph.get_number_nodes();
@@ -74,7 +74,6 @@ class SSAEvaluator : public Evaluator {
     unsigned long lambda_1 = (unsigned long)((1 + epsilon_1) * (1 + epsilon_2) *
         (2 + 2 / 3 * epsilon_3) * log(3 / delta_) / (epsilon_3 * epsilon_3));
     unsigned long n_samples = 2 * lambda_1;
-
     // Algorithm here
     while(true) {
       unsigned long n_new_samples = n_samples - rr_samples_.size();
@@ -88,7 +87,8 @@ class SSAEvaluator : public Evaluator {
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
                                                 k, T_max);
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
-        cerr << "Time = " << (double)(clock() - begin) / CLOCKS_PER_SEC << endl;
+          // std::cerr << "Time = " << (double)(clock() - begin) /
+          //       CLOCKS_PER_SEC << endl;
           return seed_set_;
         }
       }
@@ -115,7 +115,7 @@ class SSAEvaluator : public Evaluator {
       unsigned long source = dst_(gen_);
       // We sample a new RR set
       shared_ptr<vector<unsigned long>> rr_sample = sampler.perform_unique_sample(
-          graph, nodes_activated, bool_activated, source, true);  // can be improved because if we found a node from seed_set, we can stop diffusion
+          graph, nodes_activated, bool_activated, source, true);  // TODO can be improved because if we found a node from seed_set, we can stop diffusion
       for (unsigned long sampled_node : *rr_sample) {
         if (seed_set_.find(sampled_node) != seed_set_.end()) {
           cov += 1;
@@ -123,7 +123,6 @@ class SSAEvaluator : public Evaluator {
         }
       }
       if (cov >= lambda_2) {
-        cerr << "counter = " << i << endl;
         return (double)n * cov / (double)i;
       }
     }
@@ -133,13 +132,11 @@ class SSAEvaluator : public Evaluator {
   /**
   * Samples n_samples new RR sets and add them to set of RR samples rr_samples_
   */
-  void buildSamples(unsigned long n_samples, const Graph& graph,
-                    Sampler& sampler, const unordered_set<unsigned long> &activated) {
-
+  void buildSamples(unsigned long n_samples, const Graph& graph, Sampler& sampler,
+                    const unordered_set<unsigned long> &activated) {
     vector<unsigned long> nodes_activated(graph.get_number_nodes(), 0);
     vector<bool> bool_activated(graph.get_number_nodes(), false);
     unsigned int nb_rr_samples = rr_samples_.size();
-
     for (unsigned int i = 0; i < n_samples; i++) {
       unsigned long source = dst_(gen_);
       while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
@@ -148,10 +145,10 @@ class SSAEvaluator : public Evaluator {
       shared_ptr<vector<unsigned long>> rr_sample = sampler.perform_unique_sample(
             graph, nodes_activated, bool_activated, source, true);
       rr_samples_.push_back(rr_sample);
-      nb_rr_samples += 1;
       for (unsigned long node : *rr_sample) {
-        hyper_graph_[node].push_back(nb_rr_samples - 1);
+        hyper_graph_[node].push_back(nb_rr_samples);
       }
+      nb_rr_samples += 1;
     }
   }
 
@@ -160,8 +157,8 @@ class SSAEvaluator : public Evaluator {
   */
   double buildSeedSet(const Graph &graph, unsigned int k) {
     seed_set_.clear();
-    vector<unsigned int> degree = vector<unsigned int>(graph.get_number_nodes(), 0);  // Number of covered sets
-    vector<bool> visited_samples = vector<bool>(rr_samples_.size(), false);
+    vector<unsigned int> degree(graph.get_number_nodes(), 0);  // Number of covered sets
+    vector<bool> visited_samples(rr_samples_.size(), false);
     for (unsigned int i = 0; i < hyper_graph_.size(); i++) {
       degree[i] = hyper_graph_[i].size();
     }

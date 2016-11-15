@@ -36,6 +36,9 @@
 
 using namespace std;
 
+/**
+  TODO description
+*/
 class PathSampler : public Sampler {
  private:
   struct NodeType {
@@ -63,10 +66,15 @@ class PathSampler : public Sampler {
     return perform_sample(graph, activated, seeds, 1, true, inv);
   }
 
-  shared_ptr<vector<unsigned long>> perform_unique_sample(
-      const Graph& graph, vector<unsigned long> &nodes_activated,
-      vector<bool> &bool_activated, const unsigned long source, bool inv=false) {
+  std::shared_ptr<vector<unsigned long>> perform_unique_sample(
+      const Graph& graph, vector<unsigned long>& nodes_activated,
+      vector<bool>& bool_activated, const unsigned long source, bool inv=false) {
     return shared_ptr<vector<unsigned long>>(NULL);
+  }
+
+  std::unordered_set<unsigned long> perform_diffusion(
+      const Graph& graph, const std::unordered_set<unsigned long>& seeds) {
+    return std::unordered_set<unsigned long>();
   }
 
 private:
@@ -103,8 +111,10 @@ private:
         tt.trial = 1;
         trials_.push_back(tt);
       }
-      if (activated.find(node.id) == activated.end()) spread += node.prob;
-      if (node.prob < 0.001) break;
+      if (activated.find(node.id) == activated.end())
+        spread += node.prob;
+      if (node.prob < 0.001)
+        break;
       visited.insert(node.id);
       sample_outgoing_edges(graph, node.id, queue, visited, queue_nodes, inv);
     }
@@ -122,7 +132,7 @@ private:
     if (graph.has_neighbours(node, inv)) {
       for (auto edge : graph.get_neighbours(node, inv)) {
         if (visited.find(edge.target) == visited.end()) {
-          double dst_prob = edge.dist->sample(quantile_);
+          double dst_prob = edge.dist->sample(type_);
           relax(node, edge.target, dst_prob, queue, queue_nodes);
         }
       }

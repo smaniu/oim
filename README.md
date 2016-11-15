@@ -64,6 +64,4 @@ The source code is provided as-is under an MIT License. If it is useful to you, 
 
 [3]: <http://arxiv.org/pdf/1404.0900v2.pdf> "Y. Tang, X. Xiao, and Y. Shi. Influence maximization: Near-optimal time complexity meets practical efficiency. SIGMOD 2014"
 
-[4]: <https://arxiv.org/pdf/1605.07990v2.pdf> "H. T. Nguyen, M. T. Thai, and T.
-N. Dinh. Stop-and-Stare: Optimal Sampling Algorithms for Viral Marketing in
-Billion-scale Networks. SIGMOD 2016"
+[4]: <https://arxiv.org/pdf/1605.07990v2.pdf> "H. T. Nguyen, M. T. Thai, and T. N. Dinh. Stop-and-Stare: Optimal Sampling Algorithms for Viral Marketing in Billion-scale Networks. SIGMOD 2016"

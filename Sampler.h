@@ -26,14 +26,20 @@
 #include "common.h"
 #include "Graph.h"
 
+/**
+  TODO Description
+*/
 class Sampler {
  protected:
-  unsigned int quantile_;
+  unsigned int type_;
   std::vector<trial_type> trials_;
 
  public:
-  Sampler(unsigned int type) : quantile_(type) {};
+  Sampler(unsigned int type) : type_(type) {};
 
+  /**
+  Method to estimate the standard deviation of TODO
+  */
   virtual double sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,
                         const std::unordered_set<unsigned long>& seeds,
@@ -45,13 +51,16 @@ class Sampler {
                        bool inv=false) = 0;
 
   virtual std::shared_ptr<std::vector<unsigned long>> perform_unique_sample(
-      const Graph& graph, std::vector<unsigned long> &nodes_activated,
-      std::vector<bool> &bool_activated, const unsigned long source,
+      const Graph& graph, std::vector<unsigned long>& nodes_activated,
+      std::vector<bool>& bool_activated, const unsigned long source,
       bool inv=false) = 0;
+
+  virtual std::unordered_set<unsigned long> perform_diffusion(
+      const Graph& graph, const std::unordered_set<unsigned long>& seeds) = 0;
 
   std::vector<trial_type>& get_trials() { return trials_; }
 
-  unsigned int get_quantile() { return quantile_; }
+  unsigned int get_type() { return type_; }
 
 };
 

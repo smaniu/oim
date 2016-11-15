@@ -35,6 +35,9 @@
 
 using namespace std;
 
+/**
+  Independent Cascade Model Sampler of the graph (does a *real* sample).
+*/
 class SpreadSampler : public Sampler {
  private:
   boost::mt19937 gen_;
@@ -45,6 +48,9 @@ class SpreadSampler : public Sampler {
   SpreadSampler(unsigned int type)
       : Sampler(type), gen_((int)time(0)), dist_(gen_) {};
 
+  /**
+    Samples `n_samples` from seeds.
+  */
   double sample(const Graph& graph,
                 const std::unordered_set<unsigned long>& activated,
                 const std::unordered_set<unsigned long>& seeds,
@@ -52,6 +58,10 @@ class SpreadSampler : public Sampler {
     return perform_sample(graph, activated, seeds, n_samples, false);
   }
 
+  /**
+    Performs the *real* sample, that is, diffuse the influence from selected
+    seeds. Compared to the sample method, it saves sampled edges in `trials_`.
+  */
   double trial(const Graph& graph,
                const std::unordered_set<unsigned long>& activated,
                const std::unordered_set<unsigned long>& seeds,
@@ -59,10 +69,18 @@ class SpreadSampler : public Sampler {
     return perform_sample(graph, activated, seeds, 1, true, inv);
   }
 
-  shared_ptr<vector<unsigned long>> perform_unique_sample(
-      const Graph& graph, vector<unsigned long> &nodes_activated,
-      vector<bool> &bool_activated, const unsigned long source, bool inv=false) {
+  /**
+    Performs a unique sample from `source`. This method is used for sampling
+    RR sets in SSAEvaluator.
 
+    @param nodes_activated Reserved vector of size the number of nodes. It is
+        used as queue while performing the sample
+    @param bool_activated When a node is activated, mark its corresponding index
+    @return Vector containing activated nodes in this sample.
+  */
+  std::shared_ptr<vector<unsigned long>> perform_unique_sample(
+        const Graph& graph, std::vector<unsigned long>& nodes_activated,
+        std::vector<bool>& bool_activated, unsigned long source, bool inv=false) {
     unsigned long cur = source;
     unsigned long num_marked = 1, cur_pos = 0;
     bool_activated[cur] = true;
@@ -73,7 +91,7 @@ class SpreadSampler : public Sampler {
       if (graph.has_neighbours(cur, inv)) {
         const vector<EdgeType> &neighbours = graph.get_neighbours(cur, inv);
         for (auto &neighbour : neighbours) {
-          if (dist_() < neighbour.dist->sample(quantile_)) {
+          if (dist_() < neighbour.dist->sample(type_)) {
             if (!bool_activated[neighbour.target]) {
               bool_activated[neighbour.target] = true;
               nodes_activated[num_marked] = neighbour.target;
@@ -83,20 +101,41 @@ class SpreadSampler : public Sampler {
         }
       }
     }
-
-    shared_ptr<vector<unsigned long> > rr_sample =
-        shared_ptr<vector<unsigned long> >(new vector<unsigned long>(
+    std::shared_ptr<vector<unsigned long> > rr_sample =
+        std::make_shared<vector<unsigned long>>(vector<unsigned long>(
         nodes_activated.begin(), nodes_activated.begin() + num_marked));
-
     for (unsigned int i = 0; i < num_marked; i++) {
       bool_activated[(*rr_sample)[i]] = false;
     }
     return rr_sample;
   }
 
+  /**
+    Performs the real diffusion from selected seeds.
+    Returns the set of actiavted users.
+  */
+  std::unordered_set<unsigned long> perform_diffusion(const Graph& graph,
+        const std::unordered_set<unsigned long>& seeds) {
+    std::queue<unsigned long> queue;
+    std::unordered_set<unsigned long> visited;
+    for (auto source : seeds) {
+      queue.push(source);
+      visited.insert(source);
+    }
+    while (queue.size() > 0) {
+      auto node_id = queue.front();
+      sample_outgoing_edges(graph, node_id, queue, visited, false, false);
+      queue.pop();
+    }
+    return visited; // Potentially a copy, depending on compiler's optimzations
+  }
+
   double get_stdev() { return stdev_; }
 
  private:
+  /**
+    Performs `n_samples` samples starting from `seeds`. // TODO depreciated, remove its use everywhere
+  */
   double perform_sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,
                         const std::unordered_set<unsigned long>& seeds,
@@ -104,9 +143,8 @@ class SpreadSampler : public Sampler {
     trials_.clear();
     double spread = 0;
     stdev_ = 0;
-
     for (unsigned long sample = 1; sample <= n_samples; sample++) {
-      double reached_round = 0;
+      double reached_round = 0; // Number of nodes activated
       std::queue<unsigned long> queue;
       std::unordered_set<unsigned long> visited;
       for (unsigned long source : seeds) {
@@ -128,6 +166,10 @@ class SpreadSampler : public Sampler {
     return spread;
   }
 
+  /**
+    Samples outgoing edges from `node`. New activated nodes are added to
+    `visited`. If `trial` is true, we add sampled edges in the vector `trials_`.
+  */
   void sample_outgoing_edges(const Graph& graph, const unsigned long node,
                              std::queue<unsigned long>& queue,
                              std::unordered_set<unsigned long>& visited,
@@ -135,7 +177,7 @@ class SpreadSampler : public Sampler {
     if (graph.has_neighbours(node, inv)) {
       for (auto edge : graph.get_neighbours(node, inv)) {
         if (visited.find(edge.target) == visited.end()) {
-          double dice_dst = edge.dist->sample(quantile_);
+          double dice_dst = edge.dist->sample(type_);
           unsigned int act = 0;
           double dice = dist_();
           if (dice < dice_dst) {

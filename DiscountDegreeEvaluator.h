@@ -35,7 +35,7 @@ class DiscountDegreeEvaluator : public Evaluator {
         const std::unordered_set<unsigned long>& activated,
         unsigned int k, unsigned long samples) {
     std::unordered_set<unsigned long> set;
-    unsigned int quantile = sampler.get_quantile();
+    unsigned int type = sampler.get_type();
     boost::heap::fibonacci_heap<NodeType> queue;
     std::unordered_map<unsigned long,
         boost::heap::fibonacci_heap<NodeType>::handle_type> queue_nodes;
@@ -46,7 +46,7 @@ class DiscountDegreeEvaluator : public Evaluator {
         if (graph.has_neighbours(node)) {
           for(auto edge:graph.get_neighbours(node)) {
             if(activated.find(edge.target) == activated.end()) {
-              nstruct.deg += edge.dist->sample(quantile);
+              nstruct.deg += edge.dist->sample(type);
             }
           }
         }
@@ -60,7 +60,7 @@ class DiscountDegreeEvaluator : public Evaluator {
             set.find(edge.target) == set.end()) {
           NodeType newnstruct = *queue_nodes[edge.target];
           newnstruct.id = edge.target;
-          newnstruct.deg = newnstruct.deg*(1.0f - edge.dist->sample(quantile));
+          newnstruct.deg = newnstruct.deg*(1.0f - edge.dist->sample(type));
           queue.update(queue_nodes[edge.target], newnstruct);
         }
       }
