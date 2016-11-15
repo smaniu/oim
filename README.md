@@ -34,7 +34,11 @@ The following methods are currently supported:
         ./oim --eg <graph> <alpha> <beta> <exploit> <trials> <k> <update>
         <update_type> [<samples>]
 
-3. *real graph*, which executes on the real graph:
+3. *missing mass*, which runs as follows:
+
+        ./oim --missing_mass <graph> <reduction> <budget> <k> <n_experts>
+
+4. *real graph*, which executes on the real graph:
 
         ./oim --real <graph> <exploit> <trials> <k> [<samples>]
 
@@ -53,6 +57,7 @@ The parameters are set as follows:
 * *update* is **1** if the graph is updated, **0** otherwise
 * *update_type* is the type of update: **0** local only, **1** least squares or
   **2** maximum likelihood
+* *reduction* can take the following values: **max_cover**, **highest_degree**
   
 # License
 

@@ -351,7 +351,7 @@ void missing_mass(int argc, const char * argv[], std::unordered_map<
       std::string, std::unique_ptr<GraphReduction>>& greduction) {
   if (argc != 7) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./out --missing_mass "
-              << "<graph_file> <graph_reduction> <budget> <k> <n_experts>"
+              << "<graph> <reduction> <budget> <k> <n_experts>"
               << std::endl;
     exit(1);
   }
