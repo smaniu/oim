@@ -345,20 +345,20 @@ void spread(int argc, const char * argv[]) {
 /**
   Function performing experiment with MissingMassStrategy.
 
-  Ex. usage: ./oim --missing_mass graph.txt max_cover 20 2 5
+  Ex. usage: ./oim --missing_mass graph.txt 0 20 2 5
 */
-void missing_mass(int argc, const char * argv[], std::unordered_map<
-      std::string, std::unique_ptr<GraphReduction>>& greduction) {
+void missing_mass(int argc, const char * argv[],
+      std::vector<std::unique_ptr<GraphReduction>>& greduction) {
   if (argc != 7) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./out --missing_mass "
-              << "<graph> <reduction> <budget> <k> <n_experts>"
-              << std::endl;
+              << "<graph> <reduction> <budget> <k> <n_experts>" << std::endl;
     exit(1);
   }
   Graph original_graph;
   load_graph(argv[2], original_graph);
   // Graph reduction method
-  if (greduction.find(argv[3]) == greduction.end()) {
+  unsigned int reduction = atoi(argv[3]);
+  if (reduction >= greduction.size()) {
     std::cerr << "Wrong type of graph reduction." << std::endl;
     exit(1);
   }
@@ -366,19 +366,19 @@ void missing_mass(int argc, const char * argv[], std::unordered_map<
   unsigned int k = atoi(argv[5]);
   int n_experts = atoi(argv[6]);
   MissingMassStrategy strategy(
-      original_graph, *greduction.at(argv[3]), n_experts);
+      original_graph, *greduction.at(reduction), n_experts);
   strategy.perform(budget, k);
 }
 
 int main(int argc, const char * argv[]) {
-  // Hashmap of different GraphReduction implementations
-  std::unordered_map<string, unique_ptr<GraphReduction>> greduction;
-  greduction.insert(std::make_pair("max_cover",
-      std::unique_ptr<GraphReduction>(new GreedyMaxCoveringReduction())));
-  greduction.insert(std::make_pair("highest_degree",
-      std::unique_ptr<GraphReduction>(new HighestDegreeReduction())));
+  // Vector of different GraphReduction implementations
+  std::vector<unique_ptr<GraphReduction>> greductions;
+  greductions.push_back(std::unique_ptr<GraphReduction>(
+      new GreedyMaxCoveringReduction()));
+  greductions.push_back(std::unique_ptr<GraphReduction>(
+      new HighestDegreeReduction()));
 
-  // Hashmap of different Evaluator implementations TODO
+  // Vector of different Evaluator implementations
   std::vector<std::unique_ptr<Evaluator>> evaluators;
   evaluators.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
@@ -395,5 +395,5 @@ int main(int argc, const char * argv[]) {
   else if (experiment == "--real") real(argc, argv, evaluators);
   else if (experiment == "--prior") prior(argc, argv);
   else if (experiment == "--eg") expgr(argc, argv, evaluators);
-  else if (experiment == "--missing_mass") missing_mass(argc, argv, greduction);
+  else if (experiment == "--missing_mass") missing_mass(argc, argv, greductions);
 }

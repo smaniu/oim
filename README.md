@@ -57,7 +57,8 @@ The parameters are set as follows:
 * *update* is **1** if the graph is updated, **0** otherwise
 * *update_type* is the type of update: **0** local only, **1** least squares or
   **2** maximum likelihood
-* *reduction* can take the following values: **max_cover**, **highest_degree**
+* *reduction* can take the following values: **0** (max cover), **1** (highest
+  degree)
   
 # License
 
