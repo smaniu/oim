@@ -76,7 +76,7 @@ class SSAEvaluator : public Evaluator {
         (2 + 2 / 3 * epsilon_3) * log(3 / delta_) / (epsilon_3 * epsilon_3));
     unsigned long n_samples = 2 * lambda_1;
     // Algorithm here
-    std::cerr << "Ici " << std::endl;
+    std::cerr << "while()" << std::endl;
     while(true) {
       unsigned long n_new_samples = n_samples - rr_samples_.size();
       std::cerr << "new samples = " << n_new_samples << std::endl;

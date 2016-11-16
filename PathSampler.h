@@ -37,7 +37,8 @@
 using namespace std;
 
 /**
-  TODO description
+  Makes false samples based on path estimations. The expected spread corresponds
+  to the sum of expected activation of each node, computed using paths.
 */
 class PathSampler : public Sampler {
  private:
