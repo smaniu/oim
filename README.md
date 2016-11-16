@@ -11,7 +11,13 @@ The output binary is *oim*.
 
 ## Dependencies
 
-The code needs the Boost C++ library headers. It assumes the include files are present in */usr/local/include*. If your Boost installation is someplace else, you have to modify the *INCLUDE_DIRS* directive in *Makefile*. The binary library does not need to be linked.
+The *Makefile* expects GCC 4.9.0 or superior is installed as it uses c++14
+features.
+
+The code needs the Boost C++ library headers. It assumes the include files are
+present in */usr/local/include*. If your Boost installation is someplace else,
+you have to modify the *INCLUDE_DIRS* directive in *Makefile*. The binary
+library does not need to be linked.
 
 # Methods and usage
 

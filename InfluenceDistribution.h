@@ -31,9 +31,9 @@
 
 class InfluenceDistribution {
  protected:
-  unsigned long hits = 0;
-  unsigned long misses = 0;
-  double round = 0;
+  unsigned long hits_ = 0;
+  unsigned long misses_ = 0;
+  double round_ = 0;
 
  public:
   virtual void update(unsigned long, unsigned long) {};
@@ -46,11 +46,11 @@ class InfluenceDistribution {
 
   virtual double sq_error() { return 0.0; }
 
-  void set_round(double new_round) { round += new_round; }
+  void set_round(double new_round) { round_ += new_round; }
 
-  unsigned long get_hits() { return hits; }
+  unsigned long get_hits() { return hits_; }
 
-  unsigned long get_misses() { return misses; }
+  unsigned long get_misses() { return misses_; }
 };
 
 #endif /* defined(__oim__InfluenceDistribution__) */

@@ -60,7 +60,7 @@ class SSAEvaluator : public Evaluator {
         const Graph& graph, Sampler& sampler,
         const std::unordered_set<unsigned long>& activated,
         unsigned int k, unsigned long samples) {
-
+    clock_t begin = clock();
     hyper_graph_.clear();
     rr_samples_.clear();
     delta_ = 1. / graph.get_number_nodes();
@@ -76,10 +76,13 @@ class SSAEvaluator : public Evaluator {
         (2 + 2 / 3 * epsilon_3) * log(3 / delta_) / (epsilon_3 * epsilon_3));
     unsigned long n_samples = 2 * lambda_1;
     // Algorithm here
+    std::cerr << "Ici " << std::endl;
     while(true) {
       unsigned long n_new_samples = n_samples - rr_samples_.size();
+      std::cerr << "new samples = " << n_new_samples << std::endl;
       buildSamples(n_new_samples, graph, sampler, activated);
       n_samples *= 2;
+      std::cerr << "buildSeedset()" << std::endl;
       double biased_estimator = buildSeedSet(graph, k);
       if (biased_estimator * rr_samples_.size() / graph.get_number_nodes() >= lambda_1) {
         unsigned int T_max = (unsigned int)(2 * rr_samples_.size() *
@@ -88,6 +91,8 @@ class SSAEvaluator : public Evaluator {
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
                                                 k, T_max);
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
+          std::cerr << "Time = " << (double)(clock() - begin) /
+                CLOCKS_PER_SEC << endl;
           return seed_set_;
         }
       }
