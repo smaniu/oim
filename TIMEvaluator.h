@@ -52,12 +52,9 @@ class TIMEvaluator : public Evaluator {
   int64 total_r_;
   std::random_device rd_;
   std::mt19937 gen_;
-  bool incremental_;
 
  public:
   TIMEvaluator() : gen_(rd_()) {};
-
-  void setIncremental(bool inc) { incremental_ = inc; }
 
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,

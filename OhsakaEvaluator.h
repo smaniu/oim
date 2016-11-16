@@ -47,8 +47,7 @@ typedef std::unordered_map<unsigned int, std::unordered_set<unsigned long>>
 
 class OhsakaEvaluator : public Evaluator {
  private:
-  //std::vector<Graph&> dags;
-  //Structures containing the CCs detected in each round
+  // Structures containing the CCs detected in each round
   std::vector<cc_map> cc;
   std::vector<cc_node_map> cc_list;
   std::vector<Graph> graphs;
@@ -58,7 +57,7 @@ class OhsakaEvaluator : public Evaluator {
   std::vector<std::unordered_map<unsigned long, bool>> latest;
   std::vector<std::unordered_map<unsigned long, float>> delta;
 
-  //For Tarjan's algorithm
+  // For Tarjan's algorithm
   std::unordered_map<unsigned long, unsigned long> lowlink;
   std::unordered_map<unsigned long, unsigned long> index;
   std::unordered_map<unsigned long, unsigned long> pred;
@@ -66,7 +65,7 @@ class OhsakaEvaluator : public Evaluator {
   std::stack<unsigned long> vis_stack;
   unsigned long cur_index;
 
-  //random devices
+  // random devices
   std::random_device rd;
   std::mt19937 gen;
   std::uniform_real_distribution<> dist;
@@ -184,7 +183,7 @@ public:
     //recursive loop for finding cycles
     if (graph.has_neighbours(node)) {
       for (auto edge : graph.get_neighbours(node)) {
-        double dice_dst = edge.dist->sample(sampler.get_quantile());
+        double dice_dst = edge.dist->sample(sampler.get_type());
         double dice = dist(gen);
         if (dice < dice_dst) {
           if (index.find(edge.target) == index.end()) {

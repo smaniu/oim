@@ -44,7 +44,7 @@ class DiscountDegreeEvaluator : public Evaluator {
         nstruct.id = node;
         nstruct.deg = activated.find(node) == activated.end() ? 1.0f : 0.0f;
         if (graph.has_neighbours(node)) {
-          for(auto edge:graph.get_neighbours(node)) {
+          for (auto edge : graph.get_neighbours(node)) {
             if(activated.find(edge.target) == activated.end()) {
               nstruct.deg += edge.dist->sample(type);
             }

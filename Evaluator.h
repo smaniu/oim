@@ -37,17 +37,22 @@ struct NodeType {
   }
 };
 
-// Interface for algorithm to specify how is chosen the set of seeds. It is
-// implemented by Random, HighestDegree, DiscountDegree, Ohsaka, TIM, SSA and
-// CELF.
+/**
+  Interface for algorithm to specify how is chosen the set of seeds. It is
+  implemented by Random, HighestDegree, DiscountDegree, Ohsaka, TIM, SSA and
+  CELF.
+*/
 class Evaluator {
+ protected:
+  bool incremental_;
+
  public:
   virtual std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
       const std::unordered_set<unsigned long>& activated,
       unsigned int k, unsigned long samples) = 0;
 
-  virtual void setIncremental(bool inc) {}
+  void setIncremental(bool inc) { incremental_ = inc; }
 };
 
 #endif /* defined(__oim__Evaluator__) */

@@ -51,13 +51,10 @@ class SSAEvaluator : public Evaluator {
   double epsilon_;
   double delta_;
   std::uniform_int_distribution<unsigned long> dst_;
-  bool incremental_;
 
  public:
   SSAEvaluator(double epsilon)
       : gen_(rd_()), epsilon_(epsilon) {};
-
-  void setIncremental(bool inc) { incremental_ = inc; }
 
   std::unordered_set<unsigned long> select(
         const Graph& graph, Sampler& sampler,
@@ -183,7 +180,6 @@ class SSAEvaluator : public Evaluator {
     }
     return cov * graph.get_number_nodes() / rr_samples_.size();
   }
-
 };
 
 #endif /* defined(__oim__SSAEvaluator__) */
