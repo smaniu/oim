@@ -52,14 +52,14 @@ using namespace std;
 void real(int argc, const char * argv[],
           std::vector<std::unique_ptr<Evaluator>>& evaluators) {
   if (argc < 6) {
-    std::cerr << "Wrong number of arguments.\n\tUsage ./out --real "
-              << "<graph_file> <exploit> <budget> <k>" << std::endl;
+    std::cerr << "Wrong number of arguments.\n\tUsage ./oim --real <graph> "
+              << "<exploit> <budget> <k> [<samples>]" << std::endl;
     exit(1);
   }
   Graph original_graph;
-  load_graph(argv[2], original_graph);
+  load_original_graph(argv[2], original_graph);
   SampleManager::setInstance(original_graph);
-  original_graph.set_prior(1.0, 1.0);
+  original_graph.set_prior(1.0, 1.0); // TODO Why ?
   unsigned int exploit = atoi(argv[3]);
   unsigned int budget = atoi(argv[4]);
   unsigned int k = atoi(argv[5]);
@@ -215,49 +215,42 @@ void epsgreedy(int argc, const char * argv[]){
 
 /**
   TODO description
+
+  Ex. usage: ./oim --eg graph.txt 1 20 5 20 2
 */
 void expgr(int argc, const char * argv[],
            std::vector<std::unique_ptr<Evaluator>>& evaluators) {
+  if (argc < 8) {
+    std::cerr << "Wrong number of arguments.\n\tUsage ./oim --eg <graph> "
+              << "<alpha> <beta> <exploit> <trials> <k> [<update> "
+              << "<update_type> <samples>]" << std::endl;
+    exit(1);
+  }
+  // Take parameters
   bool update = true;
   unsigned int learn = 0;
   int inc = 0;
-
-  // Take parameters
-  std::string file_name_graph(argv[2]);
   double alpha = atof(argv[3]);
   double beta = atof(argv[4]);
   unsigned int exploit = atoi(argv[5]);
+  if (exploit > 5) {
+    std::cerr << "Error: <exploit> must be in range 0..5" << std::endl;
+    exit(1);
+  }
   unsigned int budget = atoi(argv[6]);
   unsigned int k = atoi(argv[7]);
-  if (argc > 8) {
-    unsigned int upd = atoi(argv[8]);
-    update = (upd == 1) ? true : false;
-  }
+  if (argc > 8)
+    update = (atoi(argv[8]) == 1) ? true : false;
   if (argc > 9)
     learn = atoi(argv[9]);
   if (argc > 10)
     inc = atoi(argv[10]);
-
-  std::ifstream file(file_name_graph);
+  // Load model and original graphs
   Graph original_graph, model_graph;
-  unsigned long src, tgt;
-  double prob;
-  unsigned long edges = 0;
-  while (file >> src >> tgt >> prob) {
-    std::shared_ptr<InfluenceDistribution> dst_original(
-        new SingleInfluence(prob));
-    std::shared_ptr<InfluenceDistribution> dst_model(
-        new BetaInfluence(alpha, beta, prob));
-    original_graph.add_edge(src, tgt, dst_original);
-    model_graph.add_edge(src, tgt, dst_model);
-    edges++;
-  }
+  load_model_and_original_graph(argv[2], alpha, beta,
+                                original_graph, model_graph);
   SampleManager::setInstance(model_graph);
-  model_graph.set_prior(alpha, beta);
-  if (exploit > 5) {
-    std::cerr << "Error: `exploit` must be in range 0..5" << std::endl;
-    exit(1);
-  }
+  // Run experiment with Exponentiated Gradient strategy
   ExponentiatedGradientStrategy strategy(
       model_graph, original_graph, *evaluators.at(exploit), inc, update, learn);
   strategy.perform(budget, k);
@@ -350,12 +343,12 @@ void spread(int argc, const char * argv[]) {
 void missing_mass(int argc, const char * argv[],
       std::vector<std::unique_ptr<GraphReduction>>& greduction) {
   if (argc != 7) {
-    std::cerr << "Wrong number of arguments.\n\tUsage ./out --missing_mass "
+    std::cerr << "Wrong number of arguments.\n\tUsage ./oim --missing_mass "
               << "<graph> <reduction> <budget> <k> <n_experts>" << std::endl;
     exit(1);
   }
   Graph original_graph;
-  load_graph(argv[2], original_graph);
+  load_original_graph(argv[2], original_graph);
   // Graph reduction method
   unsigned int reduction = atoi(argv[3]);
   if (reduction >= greduction.size()) {

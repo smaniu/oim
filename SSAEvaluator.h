@@ -36,12 +36,16 @@
 
 using namespace std;
 
+/**
+  Implementation of SSA algorithm introduced in `Stop-and-Stare: Optimal
+  Sampling Algorithms for Viral Marketing in Billion-scale Networks` by H. T.
+  Nguyen et al., SIGMOD 2017.
+*/
 class SSAEvaluator : public Evaluator {
  private:
   std::unordered_set<unsigned long> seed_set_;  // Set of k selected nodes
   vector<shared_ptr<vector<unsigned long>>> rr_samples_;  // List of RR samples
   vector<vector<unsigned int>> hyper_graph_;    // RR samples where appear each node
-
   std::random_device rd_;
   std::mt19937 gen_;
   double epsilon_;
@@ -59,7 +63,7 @@ class SSAEvaluator : public Evaluator {
         const Graph& graph, Sampler& sampler,
         const std::unordered_set<unsigned long>& activated,
         unsigned int k, unsigned long samples) {
-    // clock_t begin = clock();
+
     hyper_graph_.clear();
     rr_samples_.clear();
     delta_ = 1. / graph.get_number_nodes();
@@ -87,8 +91,6 @@ class SSAEvaluator : public Evaluator {
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
                                                 k, T_max);
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
-          // std::cerr << "Time = " << (double)(clock() - begin) /
-          //       CLOCKS_PER_SEC << endl;
           return seed_set_;
         }
       }
@@ -98,7 +100,7 @@ class SSAEvaluator : public Evaluator {
 
  private:
   /**
-  * Influence estimation of a given seed set seed_set_
+    Influence estimation of a given seed set seed_set_
   */
   double estimateInf(const Graph &graph, Sampler &sampler, double epsilon_2,
                      unsigned int k, unsigned int T_max) {  // delta_2 = delta_3

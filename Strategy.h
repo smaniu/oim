@@ -72,53 +72,45 @@ class Strategy {
   Strategy using the influence maximization algorithm (Evaluator) on the *known*
   graph. This strategy isn't an online version that doesn't know the original
   graph, but only a baseline.
-
-  TODO migrate as Strategy implementation
 */
-class OriginalGraphStrategy {
+class OriginalGraphStrategy : public Strategy {
  private:
-  Graph& original_g;
-  Evaluator& exploit_e;
-  unsigned long samples;
-  bool INCREMENTAL;
+  Evaluator& evaluator_;
+  unsigned long samples_;
+  bool incremental_;
 
  public:
-  OriginalGraphStrategy(Graph& original_graph, Evaluator& eval_exploit,
-                        double number_samples, bool INCREMENTAL=0)
-      : original_g(original_graph), exploit_e(eval_exploit),
-        samples(number_samples), INCREMENTAL(INCREMENTAL) {}
+  OriginalGraphStrategy(Graph& original_graph, Evaluator& evaluator,
+                        double n_samples, bool incremental=0)
+      : Strategy(original_graph), evaluator_(evaluator),
+        samples_(n_samples), incremental_(incremental) {}
 
   void perform(unsigned int budget, unsigned int k) {
-    SpreadSampler exploit_s(INFLUENCE_MED);
+    SpreadSampler sampler(INFLUENCE_MED);
     std::unordered_set<unsigned long> activated;
-    boost::mt19937 gen((int)time(0));
-    boost::uniform_01<boost::mt19937> dst(gen);
-    double expected = 0;
-    double real = 0;
-    double time_min = 0;
+    double expected = 0, real = 0, time_min = 0;
     for (unsigned int stage = 0; stage < budget; stage++) {
       timestamp_t t0, t1;
       t0 = get_timestamp();
 
-      if (INCREMENTAL)
+      if (incremental_)
         SampleManager::reset(stage);
 
-      //selecting seeds using explore or exploit
+      // Select seeds using explore or exploit
       std::unordered_set<unsigned long> seeds =
-          exploit_e.select(original_g, exploit_s, activated, k, samples);
+          evaluator_.select(original_graph_, sampler, activated, k, samples_);
       //evaluating the expected and real spread on the seeds
-      expected += exploit_s.sample(original_g, activated, seeds, samples);
-      real += exploit_s.trial(original_g, activated, seeds);
+      expected += sampler.sample(original_graph_, activated, seeds, samples_);
+      real += sampler.trial(original_graph_, activated, seeds);
 
       //updating the model graph
       std::unordered_set<unsigned long> nodes_to_update;
-
       for (unsigned long node : seeds) {
         activated.insert(node);
         nodes_to_update.insert(node);
       }
       unsigned int hits = 0, misses = 0;
-      for (trial_type tt : exploit_s.get_trials()) {
+      for (trial_type tt : sampler.get_trials()) {
         nodes_to_update.insert(tt.target);
         if (tt.trial == 1) {
           hits++;
@@ -128,15 +120,16 @@ class OriginalGraphStrategy {
         }
       }
 
-      if (INCREMENTAL)
+      if (incremental_)
         SampleManager::update_node_age(nodes_to_update);
 
       t1 = get_timestamp();
       // Printing results
-      time_min += (t1 - t0) / 60000000.0L;
-      std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
-          hits << "\t" << misses << "\t" << time_min << "\t";
-      for (auto seed : seeds) std::cout << seed << ".";
+      time_min += (double)(t1 - t0) / 1000000;
+      std::cout << stage << "\t" << real << "\t" << expected << "\t" << hits
+                << "\t" << misses << "\t" << time_min << "\t";
+      for (auto seed : seeds)
+        std::cout << seed << ".";
       std::cout << std::endl << std::flush;
     }
   }
@@ -298,7 +291,7 @@ class MissingMassStrategy : public Strategy {
       t0 = get_timestamp();
       std::unordered_set<unsigned int> chosen_experts = policy.selectExpert(k);
       t1 = get_timestamp();
-      selectingtime = (t1 - t0) / 60000000.0L;
+      selectingtime = (double)(t1 - t0) / 1000000;
 
       // 2. (b) Apply diffusion
       std::unordered_set<unsigned long> seeds;
@@ -314,8 +307,8 @@ class MissingMassStrategy : public Strategy {
         policy.updateState(expert, stage_spread);
       }
       t2 = get_timestamp();
-      updatingtime = (t2 - t1) / 60000000.0L;
-      roundtime = (t2 - t0) / 60000000.0L;
+      updatingtime = (double)(t2 - t1) / 1000000.;
+      roundtime = (double)(t2 - t0) / 1000000;
       totaltime += roundtime;
       memory = disp_mem_usage();
 

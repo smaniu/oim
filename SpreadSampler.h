@@ -26,6 +26,8 @@
 #include <queue>
 #include <unordered_set>
 #include <random>
+#include <boost/random.hpp>
+#include <boost/generator_iterator.hpp>
 #include <sys/time.h>
 #include <math.h>
 
@@ -46,7 +48,7 @@ class SpreadSampler : public Sampler {
 
  public:
   SpreadSampler(unsigned int type)
-      : Sampler(type), gen_((int)time(0)), dist_(gen_) {};
+      : Sampler(type), gen_(seed_ns()), dist_(gen_) {};
 
   /**
     Samples `n_samples` from seeds.

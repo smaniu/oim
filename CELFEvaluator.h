@@ -29,6 +29,15 @@
 #include "Evaluator.h"
 
 class CELFEvaluator : public Evaluator {
+ private:
+  struct celf_node_type {
+    unsigned long id;
+    double spr;
+    bool operator<(const celf_node_type &a) const {
+      return (spr < a.spr) ? true : ((spr > a.spr) ? false : id > a.id);
+    }
+  };
+
  public:
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
