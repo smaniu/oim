@@ -8,7 +8,7 @@
 // Test the graph structure and the loading of a graph
 TEST_CASE( "GRAPH LOADED", "[graph loading]" ) {
   Graph graph;
-  unsigned long n_edges = load_graph("datasets/graph_test.csv", graph);
+  unsigned long n_edges = load_original_graph("datasets/graph_test.csv", graph);
   REQUIRE(graph.get_number_nodes() == 8);
   REQUIRE(n_edges == 14 );
   REQUIRE(graph.get_number_edges() == 14);
@@ -24,7 +24,7 @@ TEST_CASE( "GRAPH LOADED", "[graph loading]" ) {
 TEST_CASE( "REMOVE NODE", "[remove node]" ) {
   Graph graph;
   // Load graph
-  unsigned long n_edges = load_graph("datasets/graph_test.csv", graph);
+  unsigned long n_edges = load_original_graph("datasets/graph_test.csv", graph);
   // Copy graph
   Graph copy_graph(graph);
   // Remove one node in the copy_graph
@@ -54,7 +54,7 @@ TEST_CASE( "REMOVE NODE", "[remove node]" ) {
 // Test that the reduction with greedy algorithm works
 TEST_CASE( "GREEDY MAX COVERING REDUCTION", "[greedy max cover]" ) {
   Graph graph;
-  load_graph("datasets/graph_test.csv", graph);
+  load_original_graph("datasets/graph_test.csv", graph);
   GreedyMaxCoveringReduction g_reduction = GreedyMaxCoveringReduction();
   std::vector<unsigned long> experts = g_reduction.extractExperts(graph, 1);
   REQUIRE(experts.size() == 1);

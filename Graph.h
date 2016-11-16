@@ -27,6 +27,7 @@
 #include <unordered_set>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 #include "common.h"
 #include "InfluenceDistribution.h"
@@ -90,7 +91,7 @@ class Graph {
   };
 
   /**
-  * Adds a node to the Graph.
+    Adds a node to the Graph.
   */
   void add_node(unsigned long node) {
     node_set_.insert(node);
@@ -98,9 +99,9 @@ class Graph {
   }
 
   /**
-  * Remove node from graph, remove all the corresponding data (neighbours,
-  * appearances in neighours' neighbours).
-  * TODO Renumber last node to removed node number
+    Remove node from graph, remove all the corresponding data (neighbours,
+    appearances in neighours' neighbours).
+    TODO Renumber last node to removed node number
   */
   void remove_node(unsigned long node) {
     // 1. Remove node
@@ -198,14 +199,14 @@ class Graph {
   };
 
   /**
-  * Get the set of nodes.
+    Get the set of nodes.
   */
   const std::unordered_set<unsigned long>& get_nodes() const {
     return node_set_;
   }
 
   /*
-  * Test if a node is in the graph.
+    Test if a node is in the graph.
   */
   bool has_node(unsigned long node) {
     return node_set_.find(node) != node_set_.end();

@@ -25,8 +25,6 @@
 
 #include <random>
 #include <sys/time.h>
-#include <boost/random.hpp>
-#include <boost/generator_iterator.hpp>
 #include <memory>
 #include <unistd.h>
 #include <ios>
@@ -54,16 +52,20 @@ typedef struct {
   unsigned int trial;
 } trial_type;
 
-struct celf_node_type {
-  unsigned long id;
-  double spr;
-  bool operator<(const celf_node_type &a) const {
-    return (spr < a.spr) ? true : ((spr > a.spr) ? false : id > a.id);
-  }
-};
+/**
+  Builds a seed using nanoseconds to avoid same results.
+*/
+int seed_ns() {
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (int)ts.tv_nsec;
+}
 
 typedef unsigned long long timestamp_t;
 
+/**
+  Returns number of microseconds since the Epoch.
+*/
 static timestamp_t get_timestamp() {
   struct timeval now;
   gettimeofday(&now, NULL);
