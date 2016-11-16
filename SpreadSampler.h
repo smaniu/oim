@@ -91,7 +91,7 @@ class SpreadSampler : public Sampler {
       cur = nodes_activated[cur_pos];
   		cur_pos++;
       if (graph.has_neighbours(cur, inv)) {
-        const vector<EdgeType> &neighbours = graph.get_neighbours(cur, inv);
+        const vector<EdgeType>& neighbours = graph.get_neighbours(cur, inv);
         for (auto &neighbour : neighbours) {
           if (dist_() < neighbour.dist->sample(type_)) {
             if (!bool_activated[neighbour.target]) {

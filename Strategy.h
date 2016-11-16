@@ -36,7 +36,6 @@
 #include <sys/time.h>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_01.hpp>
-#include <cmath>
 #include <limits>
 
 
@@ -63,7 +62,7 @@ class Strategy {
 
  public:
   Strategy(Graph &original_graph)
-      : original_graph_(original_graph), gen_(time(NULL)), dist_(gen_) {}
+      : original_graph_(original_graph), gen_(seed_ns()), dist_(gen_) {}
 
   virtual void perform(unsigned int budget, unsigned int k) = 0;
 };
@@ -143,7 +142,7 @@ class OriginalGraphStrategy : public Strategy {
 class GoodUcbPolicy {
  private:
   unsigned int nb_experts_;                   // Number of experts
-  std::vector<unsigned long> &nb_neighbours_; // Number of reachable nodes for each expert (useless so far)
+  std::vector<unsigned long>& nb_neighbours_; // Number of reachable nodes for each expert (useless so far)
   unsigned int t_;                            // Number of rounds played
   std::vector<float> n_plays_;                // Number of times experts were played
   // For each expert, hashmap {node : #activations}
@@ -524,11 +523,11 @@ class ExponentiatedGradientStrategy : public Strategy {
         learn_(learn) {}
 
   void perform(unsigned int budget, unsigned int k) {
-    double p[3] = {0.333, 0.333, 0.333};
+    std::vector<double> p(3, 0.333);
     double w[3] = {1.0, 1.0, 1.0};
     unsigned int cur_theta = THETA_OFFSET;
     double mu = log(300.0) / (3 * budget);
-    double tau = 12.0 * mu / (3.0 + mu);
+    double tau = 12 * mu / (3.0 + mu);
     double lambda = tau / 6.0;
     SpreadSampler exploit_sampler(INFLUENCE_MED); // Sampler for *real* graph
     std::unordered_set<unsigned long> activated;
@@ -543,16 +542,17 @@ class ExponentiatedGradientStrategy : public Strategy {
 
       timestamp_t t0, t1, t2;
       t0 = get_timestamp();
-      //sampling the distribution
-      std::default_random_engine generator((int)time(0)); // TODO why creating a new generator each time ?
+      // sampling the distribution
+      //std::default_random_engine generator((int)time(0)); // TODO why creating a new generator each time ?
       // trick for stupid GCC which expects std::discrete_distribution to be
       // templated by an integral type (clang doesn't)
-      int p0 = (int)(p[0] * 1000.0);
+      /*int p0 = (int)(p[0] * 1000.0);
       int p1 = (int)(p[1] * 1000.0);
       int p2 = (int)(p[2] * 1000.0);
       std::discrete_distribution<int> prob {static_cast<double>(p0),
-          static_cast<double>(p1), static_cast<double>(p2)};
-      cur_theta = prob(generator) + THETA_OFFSET;
+          static_cast<double>(p1), static_cast<double>(p2)};*/
+      std::discrete_distribution<int> prob(p.begin(), p.end());
+      cur_theta = prob(gen_) + THETA_OFFSET;
 
       // PathSampler path_sampler(cur_theta); (version with path sampler, not used anymore)
       SpreadSampler explore_sampler(cur_theta);

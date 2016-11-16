@@ -25,6 +25,10 @@
 
 #include "InfluenceDistribution.h"
 
+/**
+  Influence on *known* edges. This influence distribution is used with the known
+  graph.
+*/
 class SingleInfluence : public InfluenceDistribution {
  private:
   double value_;

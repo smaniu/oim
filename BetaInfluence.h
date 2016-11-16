@@ -44,23 +44,23 @@ class BetaInfluence: public InfluenceDistribution {
  public:
   BetaInfluence(double alpha, double beta, double orig)
       : alpha_prior_(alpha), beta_prior_(beta), alpha_(alpha), beta_(beta),
-        original_mean_(orig) {
+        original_mean_(orig), gen_(seed_ns()) {
     update_quartiles();
   }
 
   void update(unsigned long hit, unsigned long miss) {
     alpha_ += (double)hit;
     beta_ += (double)miss;
-    hits += hit;
-    misses += miss;
+    hits_ += hit;
+    misses_ += miss;
     update_quartiles();
   };
 
   void update_prior(double new_alpha, double new_beta) {
     alpha_prior_ = (new_alpha) > 0 ? new_alpha : 1.0;
     beta_prior_ = (new_beta) > 0 ? new_beta : 1.0;
-    alpha_ = alpha_prior_ + (double)hits;
-    beta_ = beta_prior_ + (double)misses;
+    alpha_ = alpha_prior_ + (double)hits_;
+    beta_ = beta_prior_ + (double)misses_;
     update_quartiles();
   }
 
@@ -72,11 +72,10 @@ class BetaInfluence: public InfluenceDistribution {
     } else if (interval == INFLUENCE_UPPER) {
       return quartile_upper_;
     } else if(interval == INFLUENCE_UCB) {
-      double val = quartile_med_ + sqrt(3.0 * log(round) /
+      double val = quartile_med_ + sqrt(3.0 * log(round_) /
           (2.0 * (alpha_ + beta_)));
       return (val < 1) ? val : 1.0;
     } else if (interval == INFLUENCE_THOMPSON) {
-      gen_.seed(time(0));
       std::gamma_distribution<double> a(alpha_, 1.0);
       std::gamma_distribution<double> b(beta_, 1.0);
       double x = a(gen_);
