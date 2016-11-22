@@ -58,8 +58,7 @@ class TIMEvaluator : public Evaluator {
 
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated,
-      unsigned int k, unsigned long samples) {
+      const std::unordered_set<unsigned long>& activated, unsigned int k) {
 
     timestamp_t t0, t1, t2;
 

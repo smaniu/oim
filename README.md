@@ -11,7 +11,7 @@ The output binary is *oim*.
 
 ## Dependencies
 
-The *Makefile* expects GCC 4.9.0 or superior is installed as it uses c++14
+The *Makefile* expects GCC 4.9.0 or superior is installed as it uses C++14
 features.
 
 The code needs the Boost C++ library headers. It assumes the include files are

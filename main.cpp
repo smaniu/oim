@@ -93,15 +93,16 @@ void prior(int argc, const char * argv[]) {
   unsigned int exploit = atoi(argv[5]);
   unsigned int budget = atoi(argv[6]);
   unsigned int k = atoi(argv[7]);
-  std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
+
   SpreadSampler s_exploit(INFLUENCE_MED);
   int samples = 100;
   if (argc > 9)
     samples = atoi(argv[9]);
+  std::vector<std::unique_ptr<Evaluator>> evals;
+  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator(samples)));
+  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
   OriginalGraphStrategy strategy(original_graph, *evals.at(exploit), samples);
   strategy.perform(budget, k);
 }
@@ -132,13 +133,6 @@ void explore(int argc, const char * argv[]){
   unsigned int budget = atoi(argv[6]);
   unsigned int k = atoi(argv[7]);
   double eps = 1.0;
-  std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
   int samples = 1000;
   bool update = true;
   unsigned int learn = 0;
@@ -150,6 +144,13 @@ void explore(int argc, const char * argv[]){
   }
   if(argc>9)
     learn = atoi(argv[9]);
+  std::vector<std::unique_ptr<Evaluator>> evals;
+  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator(samples)));
+  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
   EpsilonGreedyStrategy strategy(model_graph, original_graph,
                                  *evals.at(explore), *evals.at(explore),
                                  samples, eps, inc);
@@ -181,13 +182,6 @@ void epsgreedy(int argc, const char * argv[]){
   unsigned int budget = atoi(argv[7]);
   unsigned int k = atoi(argv[8]);
   double eps = atof(argv[9]);
-  std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
   int samples = 1000;
   bool update = true;
   unsigned int learn = 0;
@@ -208,6 +202,13 @@ void epsgreedy(int argc, const char * argv[]){
     inc = atoi(argv[14]);
   if (argc > 15)
     samples = atoi(argv[15]);
+  std::vector<std::unique_ptr<Evaluator>> evals;
+  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator(samples)));
+  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
+  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
   EpsilonGreedyStrategy strategy(model_graph, original_graph,
                                  *evals.at(explore), *evals.at(exploit),
                                  samples, eps, inc);
@@ -322,14 +323,14 @@ void spread(int argc, const char * argv[]) {
     samples = atoi(argv[6]);
   std::unordered_set<unsigned long> activated;
   PathSampler sampler(INFLUENCE_MED);
-  CELFEvaluator evaluator_celf;
+  CELFEvaluator evaluator_celf(samples);
   t0 = get_timestamp();
-  evaluator_celf.select(graph, sampler, activated, k, samples);
+  evaluator_celf.select(graph, sampler, activated, k);
   t1 = get_timestamp();
   time_min_celf = (t1 - t0) / 60000000.0L;
   RandomEvaluator evaluator_random;
   t0 = get_timestamp();
-  evaluator_random.select(graph, sampler, activated, k, samples);
+  evaluator_random.select(graph, sampler, activated, k);
   t1 = get_timestamp();
   time_min_random = (t1-t0)/60000000.0L;
   std::cout << k << "\t" << time_min_celf << "\t" <<
@@ -377,7 +378,7 @@ int main(int argc, const char * argv[]) {
   evaluators.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
-  evaluators.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
+  evaluators.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator(100)));
   evaluators.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
   evaluators.push_back(std::unique_ptr<Evaluator>(new PMCEvaluator(200)));

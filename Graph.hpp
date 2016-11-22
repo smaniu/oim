@@ -39,7 +39,7 @@ class EdgeType {
   unsigned long target;
   std::shared_ptr<InfluenceDistribution> dist;
   EdgeType(unsigned long src, unsigned long tgt,
-            std::shared_ptr<InfluenceDistribution> dst)
+           std::shared_ptr<InfluenceDistribution> dst)
       : source(src), target(tgt), dist(dst) {};
 };
 

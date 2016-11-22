@@ -97,7 +97,7 @@ class OriginalGraphStrategy : public Strategy {
 
       // Select seeds using explore or exploit
       std::unordered_set<unsigned long> seeds =
-          evaluator_.select(original_graph_, sampler, activated, k, samples_);
+          evaluator_.select(original_graph_, sampler, activated, k);
       //evaluating the expected and real spread on the seeds
       expected += sampler.sample(original_graph_, activated, seeds, samples_);
       real += sampler.trial(original_graph_, activated, seeds);
@@ -373,10 +373,10 @@ class EpsilonGreedyStrategy {
 
       if (dice < epsilon) {
         explore_e.setIncremental(INCREMENTAL);
-        seeds = explore_e.select(model_g, explore_p, activated, k, samples);
+        seeds = explore_e.select(model_g, explore_p, activated, k);
       } else {
         exploit_e.setIncremental(INCREMENTAL);
-        seeds = exploit_e.select(model_g, exploit_p, activated, k, samples);
+        seeds = exploit_e.select(model_g, exploit_p, activated, k);
       }
       // evaluating the expected and real spread on the seeds
       expected += exploit_s.sample(original_g, activated, seeds, samples);
@@ -553,7 +553,7 @@ class ExponentiatedGradientStrategy : public Strategy {
       // Selecting seeds using explore or exploit
       std::unordered_set<unsigned long> seeds;
       // seeds = evaluator_.select(model_graph_, path_sampler, activated, k, 100); (version with path sampler, not used anymore)
-      seeds = evaluator_.select(model_graph_, explore_sampler, activated, k, 100);
+      seeds = evaluator_.select(model_graph_, explore_sampler, activated, k);
       // Evaluating the expected and real spread on the seeds
       double cur_expected = explore_sampler.sample(
             model_graph_, activated, seeds, 100);

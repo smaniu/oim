@@ -32,8 +32,7 @@ class DiscountDegreeEvaluator : public Evaluator {
  public:
   std::unordered_set<unsigned long> select(
         const Graph& graph, Sampler& sampler,
-        const std::unordered_set<unsigned long>& activated,
-        unsigned int k, unsigned long samples) {
+        const std::unordered_set<unsigned long>& activated, unsigned int k) {
     std::unordered_set<unsigned long> set;
     unsigned int type = sampler.get_type();
     boost::heap::fibonacci_heap<NodeType> queue;
