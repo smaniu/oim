@@ -20,41 +20,25 @@
  THE SOFTWARE.
  */
 
-#ifndef __oim__RandomEvaluator__
-#define __oim__RandomEvaluator__
+#ifndef __oim__SingleInfluence__
+#define __oim__SingleInfluence__
 
-#include "common.h"
-#include "Evaluator.h"
+#include "InfluenceDistribution.hpp"
 
-#include <sys/time.h>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
+/**
+  Influence on *known* edges. This influence distribution is used with the known
+  graph.
+*/
+class SingleInfluence : public InfluenceDistribution {
+ private:
+  double value_;
 
-class RandomEvaluator : public Evaluator {
  public:
-  std::unordered_set<unsigned long> select(
-      const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated, unsigned int k,
-      unsigned long samples) {
-    boost::mt19937 gen((int)time(0));
-    std::vector<unsigned long> reservoir;
-    unsigned int index = 0;
-    for (unsigned long node : graph.get_nodes()) {
-      if (activated.find(node) == activated.end()) {
-        if (index < k) {
-          reservoir.push_back(node);
-        } else {
-          boost::random::uniform_int_distribution<> dist(0, index);
-          unsigned int dice = dist(gen);
-          if (dice < k) reservoir[dice] = node;
-        }
-        index++;
-      }
-    }
-    std::unordered_set<unsigned long> set;
-    for (unsigned long node : reservoir) set.insert(node);
-    return set;
-  }
+  SingleInfluence(double influence_value) : value_(influence_value) {};
+
+  double mean() { return value_; }
+
+  double sample(unsigned int interval) { return value_; }
 };
 
-#endif /* defined(__oim__RandomEvaluator__) */
+#endif /* defined(__oim__SingleInfluence__) */

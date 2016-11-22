@@ -25,8 +25,8 @@
 
 #include <boost/heap/fibonacci_heap.hpp>
 
-#include "common.h"
-#include "Evaluator.h"
+#include "common.hpp"
+#include "Evaluator.hpp"
 
 class CELFEvaluator : public Evaluator {
  private:

@@ -34,11 +34,11 @@
 #include <stack>
 #include <queue>
 
-#include "common.h"
-#include "Evaluator.h"
-#include "InfluenceDistribution.h"
-#include "SingleInfluence.h"
-#include "Graph.h"
+#include "common.hpp"
+#include "Evaluator.hpp"
+#include "InfluenceDistribution.hpp"
+#include "SingleInfluence.hpp"
+#include "Graph.hpp"
 
 
 typedef std::unordered_map<unsigned long, unsigned long> cc_map;

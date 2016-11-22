@@ -26,10 +26,10 @@
 #include <iostream>
 #include <fstream>
 
-#include "InfluenceDistribution.h"
-#include "SingleInfluence.h"
-#include "BetaInfluence.h"
-#include "Graph.h"
+#include "InfluenceDistribution.hpp"
+#include "SingleInfluence.hpp"
+#include "BetaInfluence.hpp"
+#include "Graph.hpp"
 
 
 // Load the graph from file and returns the number of nodes

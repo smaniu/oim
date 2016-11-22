@@ -23,15 +23,8 @@
 #ifndef __oim__PMCEvaluator__
 #define __oim__PMCEvaluator__
 
-#include "common.h"
-#include "Graph.h"
-#include "Evaluator.h"
-#include "Sampler.h"
-
 #include <omp.h>
 #include <math.h>
-
-using namespace std;
 
 #include <iostream>
 #include <fstream>
@@ -39,6 +32,13 @@ using namespace std;
 #include <queue>
 #include <stack>
 #include <algorithm>
+
+#include "common.hpp"
+#include "Graph.hpp"
+#include "Evaluator.hpp"
+#include "Sampler.hpp"
+
+using namespace std;
 
 
 class PrunedEstimator {

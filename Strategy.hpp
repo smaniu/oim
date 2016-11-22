@@ -23,12 +23,12 @@
 #ifndef __oim__Strategy__
 #define __oim__Strategy__
 
-#include "common.h"
-#include "Evaluator.h"
-#include "SpreadSampler.h"
-#include "PathSampler.h"
-#include "Graph.h"
-#include "SampleManager.h"
+#include "common.hpp"
+#include "Evaluator.hpp"
+#include "SpreadSampler.hpp"
+#include "PathSampler.hpp"
+#include "Graph.hpp"
+#include "SampleManager.hpp"
 #include "GraphReduction.hpp"
 
 #include <iostream>

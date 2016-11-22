@@ -20,39 +20,41 @@
  THE SOFTWARE.
  */
 
-#ifndef __oim__Evaluator__
-#define __oim__Evaluator__
+#ifndef __oim__RandomEvaluator__
+#define __oim__RandomEvaluator__
 
-#include <unordered_set>
+#include "common.hpp"
+#include "Evaluator.hpp"
 
-#include "Graph.h"
-#include "Sampler.h"
+#include <sys/time.h>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
-
-struct NodeType {
-  unsigned long id;
-  unsigned long deg;
-  bool operator<(const NodeType &a) const {
-    return deg < a.deg ? true : (deg > a.deg ? false : id > a.id);
+class RandomEvaluator : public Evaluator {
+ public:
+  std::unordered_set<unsigned long> select(
+      const Graph& graph, Sampler& sampler,
+      const std::unordered_set<unsigned long>& activated, unsigned int k,
+      unsigned long samples) {
+    boost::mt19937 gen((int)time(0));
+    std::vector<unsigned long> reservoir;
+    unsigned int index = 0;
+    for (unsigned long node : graph.get_nodes()) {
+      if (activated.find(node) == activated.end()) {
+        if (index < k) {
+          reservoir.push_back(node);
+        } else {
+          boost::random::uniform_int_distribution<> dist(0, index);
+          unsigned int dice = dist(gen);
+          if (dice < k) reservoir[dice] = node;
+        }
+        index++;
+      }
+    }
+    std::unordered_set<unsigned long> set;
+    for (unsigned long node : reservoir) set.insert(node);
+    return set;
   }
 };
 
-/**
-  Interface for algorithm to specify how is chosen the set of seeds. It is
-  implemented by Random, HighestDegree, DiscountDegree, Ohsaka, TIM, SSA and
-  CELF.
-*/
-class Evaluator {
- protected:
-  bool incremental_;
-
- public:
-  virtual std::unordered_set<unsigned long> select(
-      const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated,
-      unsigned int k, unsigned long samples) = 0;
-
-  void setIncremental(bool inc) { incremental_ = inc; }
-};
-
-#endif /* defined(__oim__Evaluator__) */
+#endif /* defined(__oim__RandomEvaluator__) */

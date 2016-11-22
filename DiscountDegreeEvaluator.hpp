@@ -20,52 +20,55 @@
  THE SOFTWARE.
  */
 
-#ifndef __oim__HighestDegreeEvaluator__
-#define __oim__HighestDegreeEvaluator__
+#ifndef __oim__DiscountDegreeEvaluator__
+#define __oim__DiscountDegreeEvaluator__
 
-#include "common.h"
-#include "Evaluator.h"
+#include "common.hpp"
+#include "Evaluator.hpp"
 
 #include <boost/heap/fibonacci_heap.hpp>
 
-class HighestDegreeEvaluator : public Evaluator {
- private:
-  static std::unordered_set<unsigned long> seedSets;
-
+class DiscountDegreeEvaluator : public Evaluator {
  public:
-  static void init() {
-    seedSets.clear();
-  }
-
   std::unordered_set<unsigned long> select(
         const Graph& graph, Sampler& sampler,
         const std::unordered_set<unsigned long>& activated,
         unsigned int k, unsigned long samples) {
     std::unordered_set<unsigned long> set;
+    unsigned int type = sampler.get_type();
     boost::heap::fibonacci_heap<NodeType> queue;
+    std::unordered_map<unsigned long,
+        boost::heap::fibonacci_heap<NodeType>::handle_type> queue_nodes;
     for (unsigned long node : graph.get_nodes()) {
       NodeType nstruct;
-      nstruct.id = node;
-      nstruct.deg = 0;
-      if(graph.has_neighbours(node))
-        nstruct.deg = graph.get_neighbours(node).size();
-      queue.push(nstruct);
+        nstruct.id = node;
+        nstruct.deg = activated.find(node) == activated.end() ? 1.0f : 0.0f;
+        if (graph.has_neighbours(node)) {
+          for (auto edge : graph.get_neighbours(node)) {
+            if(activated.find(edge.target) == activated.end()) {
+              nstruct.deg += edge.dist->sample(type);
+            }
+          }
+        }
+        queue_nodes[node] = queue.push(nstruct);
     }
-    while (set.size() < k && !queue.empty()) {
+    while (set.size() < k && (!queue.empty())) {
       NodeType nstruct = queue.top();
-      //if(activated.find(nstruct.id)==activated.end())
-      if (seedSets.find(nstruct.id) == seedSets.end()) {
-        // guarantee no duplicate nodes in the seed set for all trials
-        set.insert(nstruct.id);
-        seedSets.insert(nstruct.id);
+      set.insert(nstruct.id);
+      for (auto edge : graph.get_neighbours(nstruct.id)) {
+        if (activated.find(edge.target) == activated.end() &&
+            set.find(edge.target) == set.end()) {
+          NodeType newnstruct = *queue_nodes[edge.target];
+          newnstruct.id = edge.target;
+          newnstruct.deg = newnstruct.deg*(1.0f - edge.dist->sample(type));
+          queue.update(queue_nodes[edge.target], newnstruct);
+        }
       }
       queue.pop();
     }
+    queue_nodes.clear();
     return set;
   }
 };
 
-std::unordered_set<unsigned long> HighestDegreeEvaluator::seedSets
-    = std::unordered_set<unsigned long>();
-
-#endif /* defined(__oim__HighestDegreeEvaluator__) */
+#endif /* defined(__oim__DiscountDegreeEvaluator__) */

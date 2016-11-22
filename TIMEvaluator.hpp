@@ -23,13 +23,13 @@
 #ifndef __oim__TIMEvaluator__
 #define __oim__TIMEvaluator__
 
-#include "common.h"
-#include "Graph.h"
-#include "Evaluator.h"
-#include "Sampler.h"
-#include "SpreadSampler.h"
-#include "PathSampler.h"
-#include "SampleManager.h"
+#include "common.hpp"
+#include "Graph.hpp"
+#include "Evaluator.hpp"
+#include "Sampler.hpp"
+#include "SpreadSampler.hpp"
+#include "PathSampler.hpp"
+#include "SampleManager.hpp"
 
 #include <math.h>
 
