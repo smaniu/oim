@@ -92,30 +92,16 @@ class TIMEvaluator : public Evaluator {
     double ept;
 
     ept = EstimateEPT(graph, sampler_s, dst);
-    std::cerr << "Profiling 1: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
-
     BuildSeedSet();
-    std::cerr << "Profiling 2: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
-
     BuildHyperGraph2(ep_step2, ept, graph, sampler_s, dst);
-    std::cerr << "Profiling 3: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
     ept = InfluenceHyperGraph();
-    std::cerr << "Profiling 4: " << (get_timestamp() - t0) / 1000000 << "sec" << std::endl;
-
     ept /= 1 + ep_step2;
-
     BuildHyperGraph3(ep_step3, ept, graph, sampler_s, dst);
-
     t1 = get_timestamp();
-    std::cerr << "Sampling time: " << (t1 - t0) / 1000000 << "sec" << std::endl;
-
     BuildSeedSet();
-
     t2 = get_timestamp();
-    std::cerr << "Choice time: " << (t2 - t1) / 1000000 << "sec" << std::endl;
-
-    sampling_time = (t1 - t0) / 60000000.0L;
-    choosing_time = (t2 - t1) / 60000000.0L;
+    sampling_time = (double)(t1 - t0) / 1000000;
+    choosing_time = (double)(t2 - t1) / 1000000;
 
     return seed_set_;
   }
@@ -129,7 +115,7 @@ class TIMEvaluator : public Evaluator {
   }
 
   double EstimateKPT(const Graph& graph, Sampler& sampler,
-                      std::uniform_int_distribution<int>& dst) {
+                     std::uniform_int_distribution<int>& dst) {
     double lb = 1 / 2.0;
     double c = 0;
     int64 last_r = 0;
@@ -149,10 +135,8 @@ class TIMEvaluator : public Evaluator {
           unsigned long u = graph_nodes_[dst(gen_)];
           seeds.insert(u);
           rr->push_back(u);
-
           sampler.trial(graph, activated_, seeds, true);
-
-          for (trial_type tt : sampler.get_trials()) {
+          for (TrialType tt : sampler.get_trials()) {
             if (tt.trial == 1) {
               rr->push_back(tt.target);
             }
@@ -179,7 +163,7 @@ class TIMEvaluator : public Evaluator {
     return return_value;
   }
 
-  void buildSamples(int64 &R, const Graph& graph, Sampler& sampler,
+  void buildSamples(int64& R, const Graph& graph, Sampler& sampler,
                     std::uniform_int_distribution<int>& dst) {
     total_r_ += R;
 
@@ -213,10 +197,10 @@ class TIMEvaluator : public Evaluator {
         t0 = get_timestamp();
         sampler.trial(graph, activated_, seeds, true);
         t1 = get_timestamp();
-        totTime += (t1 - t0) / 60000000.0L;
+        totTime += (double)(t1 - t0) / 1000000;
 
         totInDegree += sampler.get_trials().size();
-        for (trial_type tt : sampler.get_trials()) {
+        for (TrialType tt : sampler.get_trials()) {
           if (tt.trial == 1) {
             //deg[tt.target] += 1;
             rr->push_back(tt.target);

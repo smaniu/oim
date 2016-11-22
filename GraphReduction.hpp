@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2016 Paul Lagrée (Université Paris Sud)
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,8 @@
 #include "Graph.h"
 
 /**
-* Abstract class for reducing graphs to experts. Each method must implement this
-* class.
+ Abstract class for reducing graphs to experts. Each method must implement this
+ class.
 */
 class GraphReduction {
  public:
@@ -37,7 +37,7 @@ class GraphReduction {
 };
 
 /**
-* This method selects `n_experts` nodes with the highest degrees as experts.
+ This method selects `n_experts` nodes with the highest degrees as experts.
 */
 class HighestDegreeReduction : public GraphReduction {
  public:
@@ -58,11 +58,11 @@ class HighestDegreeReduction : public GraphReduction {
 };
 
 /**
-* This method greedily selects n_experts nodes to maximize the cover of the
-* graph. Specifically, the algorithm is as follows:
-*   1. Pick node with highest degree
-*   2. Remove all neighbours of selected node (to avoid intersecting support)
-*   3. Restart from 1.
+ This method greedily selects n_experts nodes to maximize the cover of the
+ graph. Specifically, the algorithm is as follows:
+   1. Pick node with highest degree
+   2. Remove all neighbours of selected node (to avoid intersecting support)
+   3. Restart from 1.
 */
 class GreedyMaxCoveringReduction : public GraphReduction {
  public:
@@ -87,6 +87,17 @@ class GreedyMaxCoveringReduction : public GraphReduction {
       // 2. Remove all neighbours of chosen node
       copy_graph.remove_node(current_node);
     }
+    return result;
+  }
+};
+
+/**
+  TODO DivRank graph reduction.
+*/
+class DivRankReduction : public GraphReduction {
+ public:
+  std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
+    std::vector<unsigned long> result(n_experts, 0);
     return result;
   }
 };

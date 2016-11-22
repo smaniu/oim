@@ -39,6 +39,7 @@
 #include "RandomEvaluator.h"
 #include "HighestDegreeEvaluator.h"
 #include "DiscountDegreeEvaluator.h"
+#include "PMCEvaluator.hpp"
 #include "Strategy.h"
 
 using namespace std;
@@ -233,8 +234,8 @@ void expgr(int argc, const char * argv[],
   double alpha = atof(argv[3]);
   double beta = atof(argv[4]);
   unsigned int exploit = atoi(argv[5]);
-  if (exploit > 5) {
-    std::cerr << "Error: <exploit> must be in range 0..5" << std::endl;
+  if (exploit > 6) {
+    std::cerr << "Error: <exploit> must be in range 0..6" << std::endl;
     exit(1);
   }
   unsigned int budget = atoi(argv[6]);
@@ -379,6 +380,7 @@ int main(int argc, const char * argv[]) {
   evaluators.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
+  evaluators.push_back(std::unique_ptr<Evaluator>(new PMCEvaluator(200)));
 
   std::string experiment(argv[1]);
   if (experiment == "--benchmark") benchmark(argc, argv);

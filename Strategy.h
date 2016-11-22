@@ -29,7 +29,7 @@
 #include "PathSampler.h"
 #include "Graph.h"
 #include "SampleManager.h"
-#include "GraphReduction.h"
+#include "GraphReduction.hpp"
 
 #include <iostream>
 #include <unordered_set>
@@ -48,7 +48,7 @@ double reused_ratio = 0;
 struct TrialData {
   std::unordered_set<unsigned long> seeds;
   double spread;
-  std::vector<trial_type> trials;
+  std::vector<TrialType> trials;
 };
 
 /**
@@ -109,7 +109,7 @@ class OriginalGraphStrategy : public Strategy {
         nodes_to_update.insert(node);
       }
       unsigned int hits = 0, misses = 0;
-      for (trial_type tt : sampler.get_trials()) {
+      for (TrialType tt : sampler.get_trials()) {
         nodes_to_update.insert(tt.target);
         if (tt.trial == 1) {
           hits++;
@@ -391,7 +391,7 @@ class EpsilonGreedyStrategy {
         nodes_to_update.insert(node);
       }
       unsigned int hits = 0, misses = 0;
-      for (trial_type tt : exploit_s.get_trials()) {
+      for (TrialType tt : exploit_s.get_trials()) {
         nodes_to_update.insert(tt.target);
         if (tt.trial ==1 ) {
           hits++;
@@ -411,7 +411,7 @@ class EpsilonGreedyStrategy {
         TrialData result;
         for (unsigned long seed : seeds) result.seeds.insert(seed);
         result.spread = cur_real;
-        for(trial_type tt:exploit_s.get_trials()) result.trials.push_back(tt);
+        for (TrialType tt:exploit_s.get_trials()) result.trials.push_back(tt);
         results.push_back(result);
         //linear regression learning
         if (learn == 1) {
@@ -444,15 +444,14 @@ class EpsilonGreedyStrategy {
           double t = 0.0, a = 0.0;
           for (TrialData res : results) {
             t += (double) res.trials.size();
-            for (trial_type tt : res.trials)
+            for (TrialType tt : res.trials)
               a += (double)tt.trial;
           }
           alpha += a;
           beta += t - a;
           //beta = a>0?(t-a)/a:t;
         } else if (learn == 2) { // MLE with alpha = 1
-          //cerr<< "Learning..."<<endl;
-          for (trial_type tt:result.trials) {
+          for (TrialType tt : result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
             if (tt.trial == 0) {
               auto iter = edge_miss.find(edge);
@@ -492,7 +491,7 @@ class EpsilonGreedyStrategy {
       }
       model_g.update_rounds(1.0);
       t1 = get_timestamp();
-      //printing results
+      // Printing results
       time_min += (t1 - t0) / 60000000.0L;
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
           hits << "\t" << misses << "\t" << time_min << "\t" << alpha <<
@@ -543,16 +542,9 @@ class ExponentiatedGradientStrategy : public Strategy {
       timestamp_t t0, t1, t2;
       t0 = get_timestamp();
       // sampling the distribution
-      //std::default_random_engine generator((int)time(0)); // TODO why creating a new generator each time ?
-      // trick for stupid GCC which expects std::discrete_distribution to be
-      // templated by an integral type (clang doesn't)
-      /*int p0 = (int)(p[0] * 1000.0);
-      int p1 = (int)(p[1] * 1000.0);
-      int p2 = (int)(p[2] * 1000.0);
-      std::discrete_distribution<int> prob {static_cast<double>(p0),
-          static_cast<double>(p1), static_cast<double>(p2)};*/
       std::discrete_distribution<int> prob(p.begin(), p.end());
       cur_theta = prob(gen_) + THETA_OFFSET;
+      std::cerr << "type_ == " << cur_theta << std::endl;
 
       // PathSampler path_sampler(cur_theta); (version with path sampler, not used anymore)
       SpreadSampler explore_sampler(cur_theta);
@@ -591,7 +583,7 @@ class ExponentiatedGradientStrategy : public Strategy {
         nodes_to_update.insert(node);
       }
       unsigned int hits = 0, misses = 0;
-      for (trial_type tt : exploit_sampler.get_trials()) {
+      for (TrialType tt : exploit_sampler.get_trials()) {
         nodes_to_update.insert(tt.target);
         if (tt.trial == 1) {
           hits++;
@@ -602,7 +594,6 @@ class ExponentiatedGradientStrategy : public Strategy {
         if (update_)
           model_graph_.update_edge(tt.source, tt.target, tt.trial);
       }
-
       if (incremental_)
         SampleManager::update_node_age(nodes_to_update);
 
@@ -612,7 +603,7 @@ class ExponentiatedGradientStrategy : public Strategy {
         for (unsigned long seed : seeds)
           result.seeds.insert(seed);
         result.spread = cur_real;
-        for (trial_type tt : exploit_sampler.get_trials())
+        for (TrialType tt : exploit_sampler.get_trials())
           result.trials.push_back(tt);
         results.push_back(result);
         // Linear regression learning
@@ -645,13 +636,13 @@ class ExponentiatedGradientStrategy : public Strategy {
           double t = 0.0, a = 0.0;
           for (TrialData res : results) {
             t += (double)res.trials.size();
-            for (trial_type tt : res.trials) a += (double)tt.trial;
+            for (TrialType tt : res.trials) a += (double)tt.trial;
           }
           alpha += a;
           beta += t - a;
         }
         else if (learn_ == 2) { // MLE with alpha = 1
-          for (trial_type tt : result.trials) {
+          for (TrialType tt : result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
             if (tt.trial == 0) {
               auto iter = edge_miss.find(edge);
@@ -696,15 +687,15 @@ class ExponentiatedGradientStrategy : public Strategy {
       roundtime = (double)(t2 - t0) / 1000000;
       totaltime += roundtime;
       memory = disp_mem_usage();
-      double mse = model_graph_.get_mse();
+      //double mse = model_graph_.get_mse();
 
       // Printing results
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
-          hits << "\t" << misses << "\t" << totaltime << "\t" << roundtime <<
-          "\t" << sampling_time << "\t" << choosing_time << "\t" <<
+          /*hits << "\t" << misses << "\t" <<*/ totaltime << "\t" << roundtime <<
+          /*"\t" << sampling_time << "\t" << choosing_time << "\t" <<
           selecting_time << "\t" << updating_time << "\t" << alpha << "\t" <<
-          beta << "\t" << mse << "\t" << (int)cur_theta - THETA_OFFSET - 1 <<
-          "\t" << reused_ratio << "\t" << memory << "\t";
+          beta << "\t" << mse <<*/ "\t" << (int)cur_theta - THETA_OFFSET - 1 <<
+          "\t" << /*reused_ratio << "\t" <<*/ memory << "\t";
       for (auto seed : seeds)
         std::cout << seed << ".";
       std::cout << std::endl << std::flush;

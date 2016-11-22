@@ -32,7 +32,7 @@
 class Sampler {
  protected:
   unsigned int type_;
-  std::vector<trial_type> trials_;
+  std::vector<TrialType> trials_;
 
  public:
   Sampler(unsigned int type) : type_(type) {};
@@ -58,7 +58,7 @@ class Sampler {
   virtual std::unordered_set<unsigned long> perform_diffusion(
       const Graph& graph, const std::unordered_set<unsigned long>& seeds) = 0;
 
-  std::vector<trial_type>& get_trials() { return trials_; }
+  std::vector<TrialType>& get_trials() { return trials_; }
 
   unsigned int get_type() { return type_; }
 

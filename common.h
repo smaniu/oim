@@ -50,7 +50,7 @@ typedef struct {
   unsigned long source;
   unsigned long target;
   unsigned int trial;
-} trial_type;
+} TrialType;
 
 /**
   Builds a seed using nanoseconds to avoid same results.

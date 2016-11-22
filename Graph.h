@@ -77,7 +77,7 @@ class Graph {
   }
 
   /**
-  * Adds an edge and the corresponding inversed edge to the Graph.
+    Adds an edge and the corresponding inversed edge to the Graph.
   */
   void add_edge(unsigned long source, unsigned long target,
                 std::shared_ptr<InfluenceDistribution> dist) {
@@ -96,6 +96,21 @@ class Graph {
   void add_node(unsigned long node) {
     node_set_.insert(node);
     num_nodes_ = node_set_.size();
+  }
+
+  /**
+    Sort edges of the graph such that for each node n, its list of neighbour
+    edges is sorted from the lowest to the highest numbered. Used in PMCEvaluator.
+  */
+  void sort_edges() {
+    for (unsigned int i = 0; i < get_number_nodes(); i++) {
+      if (!has_neighbours(i))
+        continue;
+      auto& vec = adj_list_.find(i)->second;
+      sort(vec.begin(), vec.end(), [](auto& e1, auto& e2) {
+        return (e1.target < e2.target);
+      });
+    }
   }
 
   /**
