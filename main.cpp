@@ -26,21 +26,21 @@
 #include <memory>
 #include <time.h>
 
-#include "common.h"
+#include "common.hpp"
 #include "graph_utils.hpp"
-#include "Graph.h"
-#include "InfluenceDistribution.h"
-#include "SingleInfluence.h"
-#include "BetaInfluence.h"
-#include "SpreadSampler.h"
-#include "CELFEvaluator.h"
-#include "TIMEvaluator.h"
-#include "SSAEvaluator.h"
-#include "RandomEvaluator.h"
-#include "HighestDegreeEvaluator.h"
-#include "DiscountDegreeEvaluator.h"
+#include "Graph.hpp"
+#include "InfluenceDistribution.hpp"
+#include "SingleInfluence.hpp"
+#include "BetaInfluence.hpp"
+#include "SpreadSampler.hpp"
+#include "CELFEvaluator.hpp"
+#include "TIMEvaluator.hpp"
+#include "SSAEvaluator.hpp"
+#include "RandomEvaluator.hpp"
+#include "HighestDegreeEvaluator.hpp"
+#include "DiscountDegreeEvaluator.hpp"
 #include "PMCEvaluator.hpp"
-#include "Strategy.h"
+#include "Strategy.hpp"
 
 using namespace std;
 
@@ -374,11 +374,11 @@ int main(int argc, const char * argv[]) {
 
   // Vector of different Evaluator implementations
   std::vector<std::unique_ptr<Evaluator>> evaluators;
-  evaluators.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evaluators.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
+  evaluators.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator()));
+  evaluators.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
   evaluators.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
   evaluators.push_back(std::unique_ptr<Evaluator>(new PMCEvaluator(200)));
 

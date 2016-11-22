@@ -30,9 +30,9 @@
 #include <sys/time.h>
 #include <boost/heap/fibonacci_heap.hpp>
 
-#include "common.h"
-#include "Graph.h"
-#include "Sampler.h"
+#include "common.hpp"
+#include "Graph.hpp"
+#include "Sampler.hpp"
 
 using namespace std;
 

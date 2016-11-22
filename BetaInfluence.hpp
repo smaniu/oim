@@ -23,8 +23,8 @@
 #ifndef __oim__BetaInfluence__
 #define __oim__BetaInfluence__
 
-#include "common.h"
-#include "InfluenceDistribution.h"
+#include "common.hpp"
+#include "InfluenceDistribution.hpp"
 
 #include <boost/math/distributions.hpp>
 #include <random>

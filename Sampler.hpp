@@ -23,8 +23,8 @@
 #ifndef __oim__Sampler__
 #define __oim__Sampler__
 
-#include "common.h"
-#include "Graph.h"
+#include "common.hpp"
+#include "Graph.hpp"
 
 /**
   TODO Description

@@ -23,10 +23,10 @@
 #ifndef oim_samplemanager_h
 #define oim_samplemanager_h
 
-#include "common.h"
-#include "Sampler.h"
-#include "SpreadSampler.h"
-#include "InfluenceDistribution.h"
+#include "common.hpp"
+#include "Sampler.hpp"
+#include "SpreadSampler.hpp"
+#include "InfluenceDistribution.hpp"
 
 #define INCREMENTAL_THRESHOLD 0.02
 

@@ -23,10 +23,10 @@
 #ifndef __oim__SSAEvaluator__
 #define __oim__SSAEvaluator__
 
-#include "common.h"
-#include "Graph.h"
-#include "Evaluator.h"
-#include "Sampler.h"
+#include "common.hpp"
+#include "Graph.hpp"
+#include "Evaluator.hpp"
+#include "Sampler.hpp"
 
 #include <math.h>
 

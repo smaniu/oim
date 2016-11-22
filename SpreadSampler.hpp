@@ -31,9 +31,9 @@
 #include <sys/time.h>
 #include <math.h>
 
-#include "common.h"
-#include "Graph.h"
-#include "Sampler.h"
+#include "common.hpp"
+#include "Graph.hpp"
+#include "Sampler.hpp"
 
 using namespace std;
 

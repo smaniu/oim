@@ -32,8 +32,8 @@
 #include <fstream>
 #include <string>
 
-#include "InfluenceDistribution.h"
-#include "SingleInfluence.h"
+#include "InfluenceDistribution.hpp"
+#include "SingleInfluence.hpp"
 
 
 #define THETA_OFFSET 5

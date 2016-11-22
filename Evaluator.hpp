@@ -20,25 +20,39 @@
  THE SOFTWARE.
  */
 
-#ifndef __oim__SingleInfluence__
-#define __oim__SingleInfluence__
+#ifndef __oim__Evaluator__
+#define __oim__Evaluator__
 
-#include "InfluenceDistribution.h"
+#include <unordered_set>
 
-/**
-  Influence on *known* edges. This influence distribution is used with the known
-  graph.
-*/
-class SingleInfluence : public InfluenceDistribution {
- private:
-  double value_;
+#include "Graph.hpp"
+#include "Sampler.hpp"
 
- public:
-  SingleInfluence(double influence_value) : value_(influence_value) {};
 
-  double mean() { return value_; }
-
-  double sample(unsigned int interval) { return value_; }
+struct NodeType {
+  unsigned long id;
+  unsigned long deg;
+  bool operator<(const NodeType &a) const {
+    return deg < a.deg ? true : (deg > a.deg ? false : id > a.id);
+  }
 };
 
-#endif /* defined(__oim__SingleInfluence__) */
+/**
+  Interface for algorithm to specify how is chosen the set of seeds. It is
+  implemented by Random, HighestDegree, DiscountDegree, Ohsaka, TIM, SSA and
+  CELF.
+*/
+class Evaluator {
+ protected:
+  bool incremental_;
+
+ public:
+  virtual std::unordered_set<unsigned long> select(
+      const Graph& graph, Sampler& sampler,
+      const std::unordered_set<unsigned long>& activated,
+      unsigned int k, unsigned long samples) = 0;
+
+  void setIncremental(bool inc) { incremental_ = inc; }
+};
+
+#endif /* defined(__oim__Evaluator__) */

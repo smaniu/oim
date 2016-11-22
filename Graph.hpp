@@ -29,8 +29,8 @@
 #include <memory>
 #include <algorithm>
 
-#include "common.h"
-#include "InfluenceDistribution.h"
+#include "common.hpp"
+#include "InfluenceDistribution.hpp"
 
 
 class EdgeType {

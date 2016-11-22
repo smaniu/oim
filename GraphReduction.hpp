@@ -24,7 +24,7 @@
 #define __oim__GraphReduction__
 
 #include <unordered_set>
-#include "Graph.h"
+#include "Graph.hpp"
 
 /**
  Abstract class for reducing graphs to experts. Each method must implement this
