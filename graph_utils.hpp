@@ -31,6 +31,7 @@
 #include "BetaInfluence.h"
 #include "Graph.h"
 
+
 // Load the graph from file and returns the number of nodes
 unsigned long load_original_graph(std::string filename, Graph& graph) {
   std::ifstream file(filename);

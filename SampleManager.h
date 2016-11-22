@@ -154,7 +154,7 @@ class SampleManager {
 
     shared_ptr<vector<unsigned long>>sample (new vector<unsigned long>());
     sample->push_back(nd);
-    for(trial_type tt : sampler.get_trials()) {
+    for (TrialType tt : sampler.get_trials()) {
       if (tt.trial == 1) {
         sample->push_back(tt.target);
       }

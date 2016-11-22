@@ -95,7 +95,7 @@ private:
       node.prob = 1.0;
       queue_nodes[seed] = queue.push(node);
       if (trial) {
-        trial_type tt;
+        TrialType tt;
         tt.source = node.id;
         tt.target = node.id;
         tt.trial = 1;
@@ -106,7 +106,7 @@ private:
       NodeType node = queue.top();
       queue.pop();
       if(trial) {
-        trial_type tt;
+        TrialType tt;
         tt.source = node.id;
         tt.target = node.id;
         tt.trial = 1;

@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2016 Paul Lagrée (Université Paris Sud)
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,7 @@
 #include "Graph.h"
 #include "Evaluator.h"
 #include "Sampler.h"
-#include "SpreadSampler.h"
-#include "PathSampler.h"
-#include "SampleManager.h"
 
-#include <omp.h>
 #include <math.h>
 
 using namespace std;
@@ -56,11 +52,17 @@ class SSAEvaluator : public Evaluator {
   SSAEvaluator(double epsilon)
       : gen_(rd_()), epsilon_(epsilon) {};
 
+  /**
+    Selects `k` nodes from the graph using the sampler given in parameter.
+    -> `samples` isn't used and should be removed.
+    -> `activated` is used to avoid sampling already activated nodes, I think I
+       made a mistake and it should be used to count only unactivated nodes in
+       the diffusion process. TODO
+  */
   std::unordered_set<unsigned long> select(
         const Graph& graph, Sampler& sampler,
         const std::unordered_set<unsigned long>& activated,
         unsigned int k, unsigned long samples) {
-    clock_t begin = clock();
     hyper_graph_.clear();
     rr_samples_.clear();
     delta_ = 1. / graph.get_number_nodes();
@@ -76,13 +78,10 @@ class SSAEvaluator : public Evaluator {
         (2 + 2 / 3 * epsilon_3) * log(3 / delta_) / (epsilon_3 * epsilon_3));
     unsigned long n_samples = 2 * lambda_1;
     // Algorithm here
-    std::cerr << "while()" << std::endl;
     while(true) {
       unsigned long n_new_samples = n_samples - rr_samples_.size();
-      std::cerr << "new samples = " << n_new_samples << std::endl;
       buildSamples(n_new_samples, graph, sampler, activated);
       n_samples *= 2;
-      std::cerr << "buildSeedset()" << std::endl;
       double biased_estimator = buildSeedSet(graph, k);
       if (biased_estimator * rr_samples_.size() / graph.get_number_nodes() >= lambda_1) {
         unsigned int T_max = (unsigned int)(2 * rr_samples_.size() *
@@ -91,8 +90,6 @@ class SSAEvaluator : public Evaluator {
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
                                                 k, T_max);
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
-          std::cerr << "Time = " << (double)(clock() - begin) /
-                CLOCKS_PER_SEC << endl;
           return seed_set_;
         }
       }
@@ -134,10 +131,11 @@ class SSAEvaluator : public Evaluator {
   }
 
   /**
-  * Samples n_samples new RR sets and add them to set of RR samples rr_samples_
+    Samples n_samples new RR sets and add them to set of RR samples rr_samples_
+    TODO Pretty sure I don't use `activated` properly.
   */
   void buildSamples(unsigned long n_samples, const Graph& graph, Sampler& sampler,
-                    const unordered_set<unsigned long> &activated) {
+                    const unordered_set<unsigned long>& activated) {
     vector<unsigned long> nodes_activated(graph.get_number_nodes(), 0);
     vector<bool> bool_activated(graph.get_number_nodes(), false);
     unsigned int nb_rr_samples = rr_samples_.size();

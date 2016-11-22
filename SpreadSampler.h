@@ -92,7 +92,7 @@ class SpreadSampler : public Sampler {
   		cur_pos++;
       if (graph.has_neighbours(cur, inv)) {
         const vector<EdgeType>& neighbours = graph.get_neighbours(cur, inv);
-        for (auto &neighbour : neighbours) {
+        for (auto& neighbour : neighbours) {
           if (dist_() < neighbour.dist->sample(type_)) {
             if (!bool_activated[neighbour.target]) {
               bool_activated[neighbour.target] = true;
@@ -161,7 +161,7 @@ class SpreadSampler : public Sampler {
           reached_round++;
       }
       double os = spread;
-      spread += (reached_round - os) / (double)sample;  // TODO Don't understand this line
+      spread += (reached_round - os) / (double)sample;  // TODO Don't understand this line ERROR
       stdev_ += (reached_round - os) * (reached_round - spread);
     }
     stdev_ = sqrt(stdev_ / (double)(n_samples - 1));
@@ -188,7 +188,7 @@ class SpreadSampler : public Sampler {
             act = 1;
           }
           if (trial) {  // If trial, we want to save the generated RR set sample
-            trial_type tt;
+            TrialType tt;
             tt.source = node;
             tt.target = edge.target;
             tt.trial = act;
