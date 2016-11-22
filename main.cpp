@@ -294,7 +294,7 @@ void benchmark(int argc, const char * argv[]){
   t1 = get_timestamp();
   std::cout << "done." << std::endl;
   time_min = (t1 - t0) / 60000000.0L;
-  time_msec =((t1-t0)/1000.0L)/(double)nodes/(double)samples;
+  time_msec = ((t1-t0)/1000.0L) / (double)nodes/(double)samples;
   std::cout << "total time " << time_min << "min" <<std::endl;
   std::cout << "time/sample/node " << time_msec << "ms" << std::endl;
 }

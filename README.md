@@ -22,7 +22,7 @@ library does not need to be linked.
 # Methods and usage
 
 The program expects as input a tab delimited graph file of the following format:
-    
+
     node1 <TAB> node2 <TAB> prob
 
 where *node1* and *node2* are the endpoints of a graph edge, and *prob* is the
@@ -57,19 +57,20 @@ The parameters are set as follows:
 
 * *graph* is the name of the graph file
 * *alpha*, *beta* are the global prior on the edges of the graph
-* *exploit*, *explore* can take any of the following values: **0** [CELF][2], **1**
-  Random, **2** Maxdegree, **3** [TIM][3], **4** [SSA][4]
+* *exploit*, *explore* can take any of the following values: **0** Random,
+  **1** Discountdegree, **2** Maxdegree, **3** [CELF][2], **4** [TIM][3],
+  **5** [SSA][4], **6** [PMC][5]
 * *trials* is the number of trials, *k* is the number of seeds in each trial
 * *update* is **1** if the graph is updated, **0** otherwise
 * *update_type* is the type of update: **0** local only, **1** least squares or
   **2** maximum likelihood
-* *reduction* can take the following values: **0** (max cover), **1** (highest
-  degree)
-  
+* *reduction* can take the following values: **0** max cover, **1** highest
+  degree
+
 # License
 
 The source code is provided as-is under an MIT License. If it is useful to you, please cite [our paper][1].
-  
+
 [1]: <http://arxiv.org/pdf/1506.01188v1.pdf> "S. Lei, S. Maniu, L. Mo, R. Cheng, P. Senellart. Online Influence Maximization. KDD 2015"
 
 [2]: <http://snap.stanford.edu/class/cs224w-readings/goyal11celf.pdf> "A. Goyal, W. Lu, L. Lakshmanan. CELF++: Optimizing the Greedy Algorithm for Influence Maximization in Social Networks. WWW 2011"
@@ -77,3 +78,5 @@ The source code is provided as-is under an MIT License. If it is useful to you, 
 [3]: <http://arxiv.org/pdf/1404.0900v2.pdf> "Y. Tang, X. Xiao, and Y. Shi. Influence maximization: Near-optimal time complexity meets practical efficiency. SIGMOD 2014"
 
 [4]: <https://arxiv.org/pdf/1605.07990v2.pdf> "H. T. Nguyen, M. T. Thai, and T. N. Dinh. Stop-and-Stare: Optimal Sampling Algorithms for Viral Marketing in Billion-scale Networks. SIGMOD 2016"
+
+[5]: <https://www.aaai.org/ocs/index.php/AAAI/AAAI14/paper/download/8455/8411> "N. Ohsaka, T. Akiba, Y. Yoshida and K. Kawarabayashi. Fast and Accurate Influence Maximization on Large Networks with Pruned Monte-Carlo Simulations. AAAI 2014"
