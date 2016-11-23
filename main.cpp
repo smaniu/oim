@@ -372,6 +372,9 @@ int main(int argc, const char * argv[]) {
       new GreedyMaxCoveringReduction()));
   greductions.push_back(std::unique_ptr<GraphReduction>(
       new HighestDegreeReduction()));
+  std::unique_ptr<Evaluator> evaluator(new PMCEvaluator(200));
+  greductions.push_back(std::unique_ptr<GraphReduction>(
+      new EvaluatorReduction(0.05, *evaluator)));
 
   // Vector of different Evaluator implementations
   std::vector<std::unique_ptr<Evaluator>> evaluators;

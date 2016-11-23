@@ -450,7 +450,7 @@ class PMCEvaluator : public Evaluator {
   	std::vector<PrunedEstimator> infs(R_);
 
   	for (unsigned int t = 0; t < R_; t++) {
-  		Xorshift xs = Xorshift(t/* + time(NULL)*/);
+  		Xorshift xs = Xorshift(t + seed_ns());
   		unsigned int mp = 0;
   		at_e_.assign(n_ + 1, 0);
   		at_r_.assign(n_ + 1, 0);

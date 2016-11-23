@@ -147,7 +147,7 @@ class GoodUcbPolicy {
   std::vector<float> n_plays_;                // Number of times experts were played
   // For each expert, hashmap {node : #activations}
   std::vector<std::unordered_map<unsigned long, unsigned int>> n_rewards_;
-  float SIGMA = 0.1;  // TODO change that (should be an estimator or ??)
+  // float SIGMA = 0.1;  // TODO change that (should be an estimator or ??)
 
   /**
     Get the `k` largest elements of a vector and returns them as unordered_set.
@@ -204,10 +204,14 @@ class GoodUcbPolicy {
     std::vector<float> ucbs(nb_experts_, 0);
     for (unsigned int i = 0; i < nb_experts_; i++) {
       float missing_mass_i = (float)std::count_if(
-          n_rewards_[i].begin(), n_rewards_[i].end(), [](auto &elt) {
+          n_rewards_[i].begin(), n_rewards_[i].end(), [](auto& elt) {
             return elt.second == 1; // Count hapaxes
           }) / n_plays_[i];
-      ucbs[i] = missing_mass_i + (1 + sqrt(2)) * sqrt(SIGMA * log(4 * t_) /
+      float sigma = 0;  // Estimator of expected diffusion from this expert
+      for (auto& elt : n_rewards_[i])
+        sigma += elt.second;
+      sigma /= n_plays_[i];
+      ucbs[i] = missing_mass_i + (1 + sqrt(2)) * sqrt(sigma * log(4 * t_) /
           n_plays_[i]) + log(4 * t_) / (3 * n_plays_[i]);
     }
     return get_k_largest_arguments<unsigned int>(ucbs, k);
@@ -265,18 +269,23 @@ class MissingMassStrategy : public Strategy {
   /**
   Performs the experiment with the missing mass strategy (good-UCB estimator).
 
-  Output: stage <TAB> totalspread" <TAB> totaltime <TAB> roundtime <TAB>
-          selectingtime" <TAB> updatingtime <TAB> memory <TAB> experts
+  Output: stage <TAB> totalspread" <TAB> reductiontime <TAB> totaltime <TAB>
+          roundtime <TAB> selectingtime" <TAB> updatingtime <TAB>
+          memory <TAB> experts.
   */
   void perform(unsigned int budget, unsigned int k) {
     SpreadSampler exploit_spread(INFLUENCE_MED);
     double totaltime = 0, roundtime = 0, memory = 0,
-        updatingtime = 0, selectingtime = 0;
+        updatingtime = 0, selectingtime = 0, reductiontime;
     std::unordered_set<unsigned long> total_spread;
 
     // 1. Extract experts from graph
+    timestamp_t t0, t1;
+    t0 = get_timestamp();
     std::vector<unsigned long> experts = g_reduction_.extractExperts(
         original_graph_, n_experts_); // So far, we do not give children of experts
+    t1 = get_timestamp();
+    reductiontime = (double)(t1 - t0) / 1000000;
 
     vector<unsigned long> nb_neighbours(
         n_experts_, original_graph_.get_number_nodes());
@@ -286,7 +295,7 @@ class MissingMassStrategy : public Strategy {
     std::unordered_set<unsigned long> spread;
     for (unsigned int stage = 0; stage < budget; stage++) {
       // 2. (a) Select k experts for this round
-      timestamp_t t0, t1, t2;
+      timestamp_t t2;
       t0 = get_timestamp();
       std::unordered_set<unsigned int> chosen_experts = policy.selectExpert(k);
       t1 = get_timestamp();
@@ -313,8 +322,9 @@ class MissingMassStrategy : public Strategy {
 
       // 4. Printing results
       std::cout << stage << "\t" << total_spread.size() << '\t'
-                << totaltime << "\t" << roundtime << "\t" << selectingtime
-                << "\t" << updatingtime << "\t" << memory << "\t";
+                << reductiontime << "\t" << totaltime << "\t"
+                << roundtime << "\t" << selectingtime << "\t"
+                << updatingtime << "\t" << memory << "\t";
       for (auto seed : seeds)
         std::cout << seed << ".";
       std::cout << std::endl << std::flush;
