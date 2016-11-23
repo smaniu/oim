@@ -435,12 +435,10 @@ class PMCEvaluator : public Evaluator {
 
   std::unordered_set<unsigned long> select(
         const Graph& graph, Sampler& sampler,
-        const std::unordered_set<unsigned long>& activated,
-        unsigned int k, unsigned long samples) {
+        const std::unordered_set<unsigned long>& activated, unsigned int k) {
   	n_ = graph.get_number_nodes();
   	m_ = graph.get_number_edges();
     type_ = sampler.get_type();
-    std::cerr << "type_ == " << type_ << std::endl;
 
   	// sort(es.begin(), es.end()); TODO sort the graph edges
 
@@ -452,7 +450,7 @@ class PMCEvaluator : public Evaluator {
   	std::vector<PrunedEstimator> infs(R_);
 
   	for (unsigned int t = 0; t < R_; t++) {
-  		Xorshift xs = Xorshift(t/* + time(NULL)*/);
+  		Xorshift xs = Xorshift(t + seed_ns());
   		unsigned int mp = 0;
   		at_e_.assign(n_ + 1, 0);
   		at_r_.assign(n_ + 1, 0);

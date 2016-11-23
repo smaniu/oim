@@ -61,8 +61,7 @@ class SSAEvaluator : public Evaluator {
   */
   std::unordered_set<unsigned long> select(
         const Graph& graph, Sampler& sampler,
-        const std::unordered_set<unsigned long>& activated,
-        unsigned int k, unsigned long samples) {
+        const std::unordered_set<unsigned long>& activated, unsigned int k) {
     hyper_graph_.clear();
     rr_samples_.clear();
     delta_ = 1. / graph.get_number_nodes();

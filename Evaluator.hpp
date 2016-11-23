@@ -39,8 +39,7 @@ struct NodeType {
 
 /**
   Interface for algorithm to specify how is chosen the set of seeds. It is
-  implemented by Random, HighestDegree, DiscountDegree, Ohsaka, TIM, SSA and
-  CELF.
+  implemented by Random, HighestDegree, DiscountDegree, CELF, TIM, SSA and PMC.
 */
 class Evaluator {
  protected:
@@ -49,8 +48,7 @@ class Evaluator {
  public:
   virtual std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated,
-      unsigned int k, unsigned long samples) = 0;
+      const std::unordered_set<unsigned long>& activated, unsigned int k) = 0;
 
   void setIncremental(bool inc) { incremental_ = inc; }
 };

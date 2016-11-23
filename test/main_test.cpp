@@ -1,9 +1,9 @@
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 #include "catch.hpp"
 
-#include "../Graph.h"
+#include "../Graph.hpp"
 #include "../graph_utils.hpp"
-#include "../GraphReduction.h"
+#include "../GraphReduction.hpp"
 
 // Test the graph structure and the loading of a graph
 TEST_CASE( "GRAPH LOADED", "[graph loading]" ) {

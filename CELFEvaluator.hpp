@@ -37,12 +37,14 @@ class CELFEvaluator : public Evaluator {
       return (spr < a.spr) ? true : ((spr > a.spr) ? false : id > a.id);
     }
   };
+  unsigned int samples_;
 
  public:
+  CELFEvaluator(unsigned int samples) : samples_(samples) {}
+
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated,
-      unsigned int k, unsigned long samples) {
+      const std::unordered_set<unsigned long>& activated, unsigned int k) {
     boost::heap::fibonacci_heap<celf_node_type> queue;
     std::unordered_map<unsigned long,
       boost::heap::fibonacci_heap<celf_node_type>::handle_type> queue_nodes;
@@ -54,7 +56,7 @@ class CELFEvaluator : public Evaluator {
       u.id = node;
       std::unordered_set<unsigned long> seeds;
       seeds.insert(node);
-      u.spr = sampler.sample(graph, activated, seeds, samples);
+      u.spr = sampler.sample(graph, activated, seeds, samples_);
       queue_nodes[node] = queue.push(u);
     }
 
@@ -70,7 +72,7 @@ class CELFEvaluator : public Evaluator {
         for (unsigned long node : set) seeds.insert(node);
         seeds.insert(u.id);
         double prev_val = u.spr;
-        u.spr = sampler.sample(graph, activated, seeds, samples) - prev_val;
+        u.spr = sampler.sample(graph, activated, seeds, samples_) - prev_val;
         if (u.spr >= queue.top().spr) {
           set.insert(u.id);
           found = true;

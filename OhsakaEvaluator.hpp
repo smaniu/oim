@@ -45,6 +45,10 @@ typedef std::unordered_map<unsigned long, unsigned long> cc_map;
 typedef std::unordered_map<unsigned int, std::unordered_set<unsigned long>>
     cc_node_map;
 
+/**
+  Implementation of PMC (MC method that is robust to edge probabilities not
+  summing to 1).
+*/
 class OhsakaEvaluator : public Evaluator {
  private:
   // Structures containing the CCs detected in each round
@@ -56,6 +60,7 @@ class OhsakaEvaluator : public Evaluator {
   std::vector<unsigned long> h;
   std::vector<std::unordered_map<unsigned long, bool>> latest;
   std::vector<std::unordered_map<unsigned long, float>> delta;
+  unsigned int R_;  // Number of MC simulations
 
   // For Tarjan's algorithm
   std::unordered_map<unsigned long, unsigned long> lowlink;
@@ -71,20 +76,19 @@ class OhsakaEvaluator : public Evaluator {
   std::uniform_real_distribution<> dist;
 
 public:
-  OhsakaEvaluator() : gen(rd()), dist(0,1) {};
+  OhsakaEvaluator(unsigned int R) : R_(R), gen(rd()), dist(0, 1) {};
 
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated,
-      unsigned int k, unsigned long samples) {
+      const std::unordered_set<unsigned long>& activated, unsigned int k) {
 
     A.clear(); D.clear(); h.clear(); latest.clear(); delta.clear();
     graphs.clear(); cc.clear(); cc_list.clear();
     std::unordered_set<unsigned long> set;
 
-    //sample the graphs and create DAGs and supporting structures
-    for (unsigned int i = 0; i < samples; i++) {
-      tarjan(sampler, graph); //samples and creates the DAG at the same time
+    // Sample the graphs and create DAGs and supporting structures
+    for (unsigned int i = 0; i < R_; i++) {
+      tarjan(sampler, graph); // samples and creates the DAG at the same time
       unsigned long max_node = 0;
       unsigned long max_val = 0;
       std::unordered_set<unsigned long> cur_A;
@@ -100,14 +104,14 @@ public:
           max_node = node;
         }
       }
-      //removing activated nodes
+      // Removing activated nodes
       for (auto node : activated) {
         for (auto cc : cc_list[i]) {
           if (cc.second.find(node) != cc.second.end())
             cc.second.erase(node);
         }
       }
-      //compute the set of ancestors and descendants
+      // Compute the set of ancestors and descendants
       h.push_back(max_node);
       bfs(h[i], i,D[i]);
       for (auto node : graphs[i].get_nodes())
@@ -122,16 +126,16 @@ public:
       delta.push_back(cur_delta);
       latest.push_back(cur_latest);
     }
-    //main loop for computing the seed set
+    // Main loop for computing the seed set
     while (set.size() < k) {
       unsigned long t = 0;
       float val_max = 0;
       for (auto v : graph.get_nodes()) {
         if (activated.find(v) == activated.end()) {
           float tot_val = 0;
-          for (unsigned int i = 0; i < samples; i++)
+          for (unsigned int i = 0; i < R_; i++)
             tot_val += gain(i, v, set);
-          tot_val = tot_val / (float)samples;
+          tot_val = tot_val / (float)R_;
           if (tot_val >= val_max) {
             val_max = tot_val;
             t = v;
@@ -139,7 +143,7 @@ public:
         }
       }
       set.insert(t);
-      for (unsigned int i = 0; i < samples; i++) update_dag(i, t);
+      for (unsigned int i = 0; i < R_; i++) update_dag(i, t);
     }
     return set;
   }
@@ -160,7 +164,7 @@ public:
     cc.push_back(cur_cc);
     cc_list.push_back(cur_cc_list);
     Graph dag;
-    //create the DAG (actually, most probably a spanning tree...)
+    // Create the DAG (actually, most probably a spanning tree...)
     for (auto val : pred) {
       dag.add_node(val.first);
       if (cur_cc[val.second] != cur_cc[val.first]) {
@@ -180,7 +184,7 @@ public:
     cur_index++;
     visited.insert(node);
     vis_stack.push(node);
-    //recursive loop for finding cycles
+    // Recursive loop for finding cycles
     if (graph.has_neighbours(node)) {
       for (auto edge : graph.get_neighbours(node)) {
         double dice_dst = edge.dist->sample(sampler.get_type());
@@ -196,7 +200,7 @@ public:
         }
       }
     }
-    //if found the root, create SCC
+    // If found the root, create SCC
     if (lowlink[node] == index[node]) {
       unsigned long cur_node;
       do {
@@ -243,10 +247,10 @@ public:
     if (!graphs[i].has_node(v)) return 0.0;
     if (latest[i][v]) return delta[i][v];
     latest[i][v] = true;
-    //if part of the ancestors of h[i], prune
+    // If part of the ancestors of h[i], prune
     if ((A[i].find(v) != A[i].end()) && (set.size() == 0)) { // CHANGED
       delta[i][v] = gain(i,*cc_list[i][h[i]].begin(),set);
-      //still unclear if it's supposed to loop over all nodes in the SCC
+      // Still unclear if it's supposed to loop over all nodes in the SCC
     } else { //otherwise, main BFS loop
       delta[i][v] = 0.0;
     }

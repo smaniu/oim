@@ -34,8 +34,7 @@ class RandomEvaluator : public Evaluator {
  public:
   std::unordered_set<unsigned long> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated, unsigned int k,
-      unsigned long samples) {
+      const std::unordered_set<unsigned long>& activated, unsigned int k) {
     boost::mt19937 gen((int)time(0));
     std::vector<unsigned long> reservoir;
     unsigned int index = 0;
