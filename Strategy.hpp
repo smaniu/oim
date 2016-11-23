@@ -696,17 +696,13 @@ class ExponentiatedGradientStrategy : public Strategy {
       roundtime = (double)(t2 - t0) / 1000000;
       totaltime += roundtime;
       memory = disp_mem_usage();
-      if (roundtime > 150) {
-        model_graph_.write_err(cur_theta);
-        exit(1);
-      }
       //double mse = model_graph_.get_mse();
 
       // Printing results
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
-          /*hits << "\t" << misses << "\t" <<*/ totaltime << "\t" << roundtime <<
-          /*"\t" << sampling_time << "\t" << choosing_time << "\t" <<
-          selecting_time << "\t" << updating_time << "\t" << alpha << "\t" <<
+          /*hits << "\t" << misses << "\t" <<*/ totaltime << "\t" << roundtime <</*
+          "\t" << sampling_time << "\t" << choosing_time << "\t" <<*/
+          selecting_time << "\t" << updating_time <</* "\t" << alpha << "\t" <<
           beta << "\t" << mse <<*/ "\t" << (int)cur_theta - THETA_OFFSET - 1 <<
           "\t" << /*reused_ratio << "\t" <<*/ memory << "\t";
       for (auto seed : seeds)
