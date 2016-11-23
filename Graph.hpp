@@ -234,6 +234,15 @@ class Graph {
   unsigned long get_number_edges() const {
     return num_edges_;
   }
+
+  void write_err(int type) {
+    for (unsigned long i = 0; i < get_number_nodes(); i++) {
+      if (!has_neighbours(i))
+        continue;
+      for (auto& edge : get_neighbours(i))
+        std::cerr << edge.source << "\t" << edge.target << "\t" << edge.dist->sample(type) << std::endl;
+    }
+  }
 };
 
 #endif /* defined(__oim__Graph__) */

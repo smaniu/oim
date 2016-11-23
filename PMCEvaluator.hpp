@@ -441,6 +441,7 @@ class PMCEvaluator : public Evaluator {
     type_ = sampler.get_type();
 
   	// sort(es.begin(), es.end()); TODO sort the graph edges
+    seed_set_.clear();
 
   	es1_.resize(m_);
   	rs1_.resize(m_);

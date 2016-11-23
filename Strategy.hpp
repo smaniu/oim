@@ -650,8 +650,7 @@ class ExponentiatedGradientStrategy : public Strategy {
           }
           alpha += a;
           beta += t - a;
-        }
-        else if (learn_ == 2) { // MLE with alpha = 1
+        } else if (learn_ == 2) { // MLE with alpha = 1
           for (TrialType tt : result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
             if (tt.trial == 0) {
@@ -697,6 +696,10 @@ class ExponentiatedGradientStrategy : public Strategy {
       roundtime = (double)(t2 - t0) / 1000000;
       totaltime += roundtime;
       memory = disp_mem_usage();
+      if (roundtime > 150) {
+        model_graph_.write_err(cur_theta);
+        exit(1);
+      }
       //double mse = model_graph_.get_mse();
 
       // Printing results
