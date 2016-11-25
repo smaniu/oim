@@ -11,8 +11,7 @@ The output binary is *oim*.
 
 ## Dependencies
 
-The *Makefile* expects GCC 4.9.0 or superior is installed as it uses C++14
-features.
+The *Makefile* requires GCC 4.9.0 (or superior) as it uses C++14 features.
 
 The code needs the Boost C++ library headers. It assumes the include files are
 present in */usr/local/include*. If your Boost installation is someplace else,
@@ -42,7 +41,7 @@ The following methods are currently supported:
 
 3. *missing mass*, which runs as follows:
 
-        ./oim --missing_mass <graph> <reduction> <budget> <k> <n_experts>
+        ./oim --missing_mass <graph> <policy> <reduction> <budget> <k> <n_experts>
 
 4. *real graph*, which executes on the real graph:
 
@@ -66,6 +65,7 @@ The parameters are set as follows:
   **2** maximum likelihood
 * *reduction* can take the following values: **0** max cover, **1** highest
   degree
+* *policy* can take the following values: **0** random, **1** Good-UCB
 
 # License
 

@@ -47,6 +47,7 @@ class SSAEvaluator : public Evaluator {
   double epsilon_;
   double delta_;
   std::uniform_int_distribution<unsigned long> dst_;
+  unsigned int THRESHOLD = 10000000;            // To avoid too long computations
 
  public:
   SSAEvaluator(double epsilon)
@@ -77,8 +78,9 @@ class SSAEvaluator : public Evaluator {
         (2 + 2 / 3 * epsilon_3) * log(3 / delta_) / (epsilon_3 * epsilon_3));
     unsigned long n_samples = 2 * lambda_1;
     // Algorithm here
-    while(true) {
-      unsigned long n_new_samples = n_samples - rr_samples_.size();
+    unsigned long n_new_samples = 0;
+    while (n_new_samples < THRESHOLD) {
+      n_new_samples = n_samples - rr_samples_.size();
       buildSamples(n_new_samples, graph, sampler, activated);
       n_samples *= 2;
       double biased_estimator = buildSeedSet(graph, k);
