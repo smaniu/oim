@@ -134,6 +134,11 @@ class OriginalGraphStrategy : public Strategy {
   }
 };
 
+enum Sigma {
+  MEAN,       // Replace sigma by the mean of observed spreads
+  SAMPLE_STD, // Mean + sampled standard deviation of observed spreads
+};
+
 /**
   Good-UCB policy for our problem. Each experts maintains a missing mass
   estimator which is used to select the next expert to play. See paper for
@@ -142,12 +147,13 @@ class OriginalGraphStrategy : public Strategy {
 class GoodUcbPolicy {
  private:
   unsigned int nb_experts_;                   // Number of experts
-  std::vector<unsigned long>& nb_neighbours_; // Number of reachable nodes for each expert (useless so far)
+  std::vector<unsigned long>& nb_neighbours_; // Number of reachable nodes for each expert
   unsigned int t_;                            // Number of rounds played
   std::vector<float> n_plays_;                // Number of times experts were played
   // For each expert, hashmap {node : #activations}
   std::vector<std::unordered_map<unsigned long, unsigned int>> n_rewards_;
-  // float SIGMA = 0.1;  // TODO change that (should be an estimator or ??)
+  std::vector<std::vector<double>> spreads_;  // List of sampled spreads for each experts
+  Sigma sigma_type_;
 
   /**
     Get the `k` largest elements of a vector and returns them as unordered_set.
@@ -175,8 +181,10 @@ class GoodUcbPolicy {
   }
 
  public:
-  GoodUcbPolicy(unsigned int nb_experts, std::vector<unsigned long>& nb_neighbours)
-      : nb_experts_(nb_experts), nb_neighbours_(nb_neighbours) { init(); }
+  GoodUcbPolicy(unsigned int nb_experts, std::vector<unsigned long>& nb_neighbours,
+                Sigma type=MEAN)
+      : nb_experts_(nb_experts), nb_neighbours_(nb_neighbours),
+        sigma_type_(type) { init(); }
 
   /**
     Selects `k` experts whose Good-UCB indices are the largest.
@@ -211,6 +219,17 @@ class GoodUcbPolicy {
       for (auto& elt : n_rewards_[i])
         sigma += elt.second;
       sigma /= n_plays_[i];
+      if (sigma_type_ == SAMPLE_STD) {  // If we estimate sum of p(x) by the sample mean + std
+        double empirical_variance = 0;
+        for (auto elt : spreads_[i])
+          empirical_variance += (elt - sigma) * (elt - sigma);
+        if (n_plays_[i] == 1)
+          empirical_variance = sigma;
+        else
+          empirical_variance = sqrt(empirical_variance / (n_plays_[i] - 1));
+        sigma += empirical_variance;
+      }
+      // sigma += nb_neighbours_[i] * sqrt(log(t_) / n_plays_[i]); // UCB for expert spread (too large, doesn't work well in practice) [3]
       ucbs[i] = missing_mass_i + (1 + sqrt(2)) * sqrt(sigma * log(4 * t_) /
           n_plays_[i]) + log(4 * t_) / (3 * n_plays_[i]);
     }
@@ -228,6 +247,7 @@ class GoodUcbPolicy {
         n_rewards_[expert][activated_node] = 0;
       n_rewards_[expert][activated_node]++;
     }
+    spreads_[expert].push_back(stage_spread.size());
     n_plays_[expert]++;
   }
 
@@ -238,6 +258,7 @@ class GoodUcbPolicy {
   void init() {
     t_ = 0;
     n_plays_ = std::vector<float>(nb_experts_, 0);
+    spreads_ = std::vector<std::vector<double>>(nb_experts_);
     for (unsigned int k = 0; k < nb_experts_; k++) {
       n_rewards_.push_back(std::unordered_map<unsigned long, unsigned int>());
     }
@@ -513,7 +534,8 @@ class EpsilonGreedyStrategy {
 };
 
 /**
-  TODO description
+  Confidence bound strategy that dynamically updates the factor of exploration
+  theta using exponentiated gradients.
 */
 class ExponentiatedGradientStrategy : public Strategy {
  private:
@@ -701,7 +723,7 @@ class ExponentiatedGradientStrategy : public Strategy {
       // Printing results
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
           /*hits << "\t" << misses << "\t" <<*/ totaltime << "\t" << roundtime <</*
-          "\t" << sampling_time << "\t" << choosing_time << "\t" <<*/
+          "\t" << sampling_time << "\t" << choosing_time <<*/ "\t" <<
           selecting_time << "\t" << updating_time <</* "\t" << alpha << "\t" <<
           beta << "\t" << mse <<*/ "\t" << (int)cur_theta - THETA_OFFSET - 1 <<
           "\t" << /*reused_ratio << "\t" <<*/ memory << "\t";
