@@ -216,7 +216,7 @@ void epsgreedy(int argc, const char * argv[]){
 }
 
 /**
-  TODO description
+  Function performing experiment with ExponentiatedGradientStrategy.
 
   Ex. usage: ./oim --eg graph.txt 1 20 5 20 2
 */
@@ -344,7 +344,7 @@ void spread(int argc, const char * argv[]) {
 */
 void missing_mass(int argc, const char * argv[],
       std::vector<std::unique_ptr<GraphReduction>>& greduction) {
-  if (argc != 7) {
+  if (argc != 8) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --missing_mass "
               << "<graph> <policy> <reduction> <budget> <k> <n_experts>"
               << std::endl;

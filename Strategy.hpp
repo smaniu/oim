@@ -187,17 +187,17 @@ class MissingMassStrategy : public Strategy {
     vector<unsigned long> nb_neighbours(
         n_experts_, original_graph_.get_number_nodes());
     std::unique_ptr<Policy> policy;
-    if (n_policy_ == 0)
+    if (n_policy_ == 0) {
       policy = std::unique_ptr<Policy>(new RandomPolicy(n_experts_));
-    else if (n_policy_ == 1) {
+    } else if (n_policy_ == 1) {
       policy = std::unique_ptr<Policy>(
           new GoodUcbPolicy(n_experts_, nb_neighbours));
     }
+    policy->init();
 
     // 2. Sequentially select the best k nodes from missing mass estimator ucb
     std::unordered_set<unsigned long> spread;
     for (unsigned int stage = 0; stage < budget; stage++) {
-      policy->init();
       // 2. (a) Select k experts for this round
       timestamp_t t2;
       t0 = get_timestamp();

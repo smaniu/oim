@@ -66,13 +66,13 @@ class Policy {
     This method does not necessarly need to be overloaded by classes inheriting
     Policy (e.g. RandomPolicy).
   */
-  void updateState(unsigned int expert,
+  virtual void updateState(unsigned int expert,
                    const std::unordered_set<unsigned long>& stage_spread) {}
 
   /**
     Reinitialize the object to start parameters.
   */
-  void init() {}
+  virtual void init() {}
 };
 
 /**
@@ -120,7 +120,7 @@ class GoodUcbPolicy : public Policy {
  public:
   GoodUcbPolicy(unsigned int n_experts, std::vector<unsigned long>& nb_neighbours,
                 Sigma type=MEAN)
-      : Policy(n_experts_), nb_neighbours_(nb_neighbours),
+      : Policy(n_experts), nb_neighbours_(nb_neighbours),
         sigma_type_(type) { init(); }
 
   /**
