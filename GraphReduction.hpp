@@ -138,6 +138,7 @@ class DivRankReduction : public GraphReduction {
   double alpha_;
   int n_iter_;
   double d_ = 0.85;
+  double node_error_ = 1e-6;
 
   /**
     Get the `k` largest elements of a vector and returns them as unordered_set.
@@ -169,7 +170,6 @@ class DivRankReduction : public GraphReduction {
       : alpha_(alpha), n_iter_(n_iter) {}
 
   std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
-    std::vector<unsigned long> result(n_experts, 0);
     unsigned long n = graph.get_number_nodes();
     std::vector<float> pi(n, 1. / n);
     std::vector<float> p_star(n, 1. / n);
@@ -178,8 +178,6 @@ class DivRankReduction : public GraphReduction {
     std::vector<std::vector<std::pair<unsigned long, float>>> W(n);
     for (unsigned long i = 0; i < n; i++) {
       W[i] = std::vector<std::pair<unsigned long, float>>();
-      if (!graph.has_neighbours(i))
-        continue;
       float n_neighbours = (float)graph.get_neighbours(i).size();
       for (auto& edge : graph.get_neighbours(i))
         W[i].push_back(std::make_pair(edge.target, alpha_ / n_neighbours));
@@ -188,19 +186,21 @@ class DivRankReduction : public GraphReduction {
     for (int i = 0; i < n_iter_; i++) {
       std::vector<float> last_pi(pi);
       std::fill(pi.begin(), pi.end(), 0);
-      /*double danglesum = 0;
-      for (double elt : last_pi)
-        danglesum += d_ * elt;*/
       for (unsigned long u = 0; u < n; u++) {
         float D_t = 0;
-        for (auto& p : W[u])
-          D_t += p.second * last_pi[p.first]; // p = (neighbour, weight)
+        for (auto& p : W[u])  // p = pair (neighbour, weight)
+          D_t += p.second * last_pi[p.first]; // weight * last_pi[v]
         for (auto& p : W[u]) {
-          pi[p.first] += (d_ * p.second * last_pi[p.second] / D_t) * last_pi[p.second];
-          pi[p.first] += (1 - d_) * p_star[p.second] * last_pi[u];
+          pi[p.first] += (d_ * p.second * last_pi[p.first] / D_t) * last_pi[u];
         }
-        //pi[u] += /*danglesum * dangling_weights[u] +*/ (1 - d_) * p_star[u];
+        pi[u] += (1 - d_) * p_star[u];
       }
+      // Check convergence
+      float err = 0;
+      for (unsigned long u = 0; u < n; u++)
+        err += abs(pi[u] - last_pi[u]);
+      if (err < n * node_error_)
+        break;
     }
     return get_k_largest_arguments<unsigned long>(pi, n_experts);
   }
