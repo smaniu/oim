@@ -146,15 +146,15 @@ class DivRankReduction : public GraphReduction {
   */
   template<typename T>
   std::vector<T> get_k_largest_arguments(
-        std::vector<float>& vec, unsigned int k) {
-    std::priority_queue<std::pair<float, T>> q;
+        std::vector<double>& vec, unsigned int k) {
+    std::priority_queue<std::pair<double, T>> q;
     for (T i = 0; i < k; ++i) {
-      q.push(std::pair<float, T>(-vec[i], i));
+      q.push(std::pair<double, T>(-vec[i], i));
     }
     for (T i = k; i < vec.size(); ++i) {
       if (q.top().first > -vec[i]) {
         q.pop();
-        q.push(std::pair<float, T>(-vec[i], i));
+        q.push(std::pair<double, T>(-vec[i], i));
       }
     }
     std::vector<T> result;
@@ -166,52 +166,47 @@ class DivRankReduction : public GraphReduction {
   }
 
  public:
-  DivRankReduction(double alpha, int n_iter=1000)
+  DivRankReduction(double alpha, int n_iter=100)
       : alpha_(alpha), n_iter_(n_iter) {}
 
   std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
     unsigned long n = graph.get_number_nodes();
-    std::vector<float> pi(n, 1. / n);
-    std::vector<float> p_star(n, 1. / n);
-    // std::vector<unsigned long> dangling_nodes;
+    std::vector<double> pi(n, 1. / n);
+    std::vector<double> p_star(n, 1. / n);
+    ///std::vector<unsigned long> dangling_nodes;
     // W is the transition matrix: for a node u it gives the list of pairs
     // (neighbour, weight)
-    std::vector<std::vector<std::pair<unsigned long, float>>> W(n);
+    std::vector<std::vector<std::pair<unsigned long, double>>> W(n);
     for (unsigned long i = 0; i < n; i++) {
-      W[i] = std::vector<std::pair<unsigned long, float>>();
-      W[i].push_back(std::make_pair(i, 1 - alpha_));
-      if (!graph.has_neighbours(i)) {
-        // dangling_nodes.push_back(i);
+      W[i] = std::vector<std::pair<unsigned long, double>>();
+      if (!graph.has_neighbours(i, true)) {
+        ///dangling_nodes.push_back(i);
+        ///W[i].push_back(std::make_pair(i, 1. - alpha_));
+        W[i].push_back(std::make_pair(i, 1.));
         continue;
       }
-      float n_neighbours = (float)graph.get_neighbours(i).size();
-      for (auto& edge : graph.get_neighbours(i))
+      float n_neighbours = (double)graph.get_neighbours(i, true).size();
+      for (auto& edge : graph.get_neighbours(i, true))
         W[i].push_back(std::make_pair(edge.target, alpha_ / n_neighbours));
+      W[i].push_back(std::make_pair(i, 1 - alpha_));
     }
     for (int i = 0; i < n_iter_; i++) {
-      std::vector<float> last_pi(pi);
+      std::vector<double> last_pi(pi);
       std::fill(pi.begin(), pi.end(), 0);
       // Dangling nodes last state cumulative probability
-      //float cum_dangling = 0;
-      //for (auto dn : dangling_nodes)
-      //  cum_dangling += last_pi[dn];
-      //std::cerr << cum_dangling << std::endl;
+      ///float cum_dangling = 0;
+      ///for (auto dn : dangling_nodes)
+      ///  cum_dangling += last_pi[dn];
       for (unsigned long u = 0; u < n; u++) {
         // Normalization D_t
-        float D_t = 0;
+        double D_t = 0;
         for (auto& p : W[u])  // p = pair (neighbour, weight)
           D_t += p.second * last_pi[p.first]; // weight * last_pi[v]
         for (auto& p : W[u]) {
           pi[p.first] += (d_ * p.second * last_pi[p.first] / D_t) * last_pi[u];
         }
-        pi[u] += (/*d_ * cum_dangling +*/ (1 - d_)) * p_star[u];
+        pi[u] += (/*d_ * alpha_ * cum_dangling + */(1 - d_)) * p_star[u];
       }
-      // Check convergence
-      float err = 0;
-      for (unsigned long u = 0; u < n; u++)
-        err += abs(pi[u] - last_pi[u]);
-      if (err < n * node_error_)
-        break;
     }
     return get_k_largest_arguments<unsigned long>(pi, n_experts);
   }
