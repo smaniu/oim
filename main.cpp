@@ -216,7 +216,7 @@ void epsgreedy(int argc, const char * argv[]){
 }
 
 /**
-  TODO description
+  Function performing experiment with ExponentiatedGradientStrategy.
 
   Ex. usage: ./oim --eg graph.txt 1 20 5 20 2
 */
@@ -344,24 +344,31 @@ void spread(int argc, const char * argv[]) {
 */
 void missing_mass(int argc, const char * argv[],
       std::vector<std::unique_ptr<GraphReduction>>& greduction) {
-  if (argc != 7) {
+  if (argc != 8) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --missing_mass "
-              << "<graph> <reduction> <budget> <k> <n_experts>" << std::endl;
+              << "<graph> <policy> <reduction> <budget> <k> <n_experts>"
+              << std::endl;
     exit(1);
   }
   Graph original_graph;
   load_original_graph(argv[2], original_graph);
+  // Policy to choose expert
+  unsigned int n_policy = atoi(argv[3]);
+  if (n_policy >= 2) {
+    std::cerr << "Wrong type of policy." << std::endl;
+    exit(1);
+  }
   // Graph reduction method
-  unsigned int reduction = atoi(argv[3]);
+  unsigned int reduction = atoi(argv[4]);
   if (reduction >= greduction.size()) {
     std::cerr << "Wrong type of graph reduction." << std::endl;
     exit(1);
   }
-  unsigned int budget = atoi(argv[4]);
-  unsigned int k = atoi(argv[5]);
-  int n_experts = atoi(argv[6]);
+  unsigned int budget = atoi(argv[5]);
+  unsigned int k = atoi(argv[6]);
+  int n_experts = atoi(argv[7]);
   MissingMassStrategy strategy(
-      original_graph, *greduction.at(reduction), n_experts);
+      original_graph, *greduction.at(reduction), n_experts, n_policy);
   strategy.perform(budget, k);
 }
 
@@ -375,6 +382,8 @@ int main(int argc, const char * argv[]) {
   std::unique_ptr<Evaluator> evaluator(new PMCEvaluator(200));
   greductions.push_back(std::unique_ptr<GraphReduction>(
       new EvaluatorReduction(0.05, *evaluator)));
+  greductions.push_back(std::unique_ptr<GraphReduction>(
+      new DivRankReduction(0.25, 0.05, 100)));
 
   // Vector of different Evaluator implementations
   std::vector<std::unique_ptr<Evaluator>> evaluators;

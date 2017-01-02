@@ -30,6 +30,7 @@
 #include "Graph.hpp"
 #include "SampleManager.hpp"
 #include "GraphReduction.hpp"
+#include "Policy.hpp"
 
 #include <iostream>
 #include <unordered_set>
@@ -135,116 +136,6 @@ class OriginalGraphStrategy : public Strategy {
 };
 
 /**
-  Good-UCB policy for our problem. Each experts maintains a missing mass
-  estimator which is used to select the next expert to play. See paper for
-  details.
-*/
-class GoodUcbPolicy {
- private:
-  unsigned int nb_experts_;                   // Number of experts
-  std::vector<unsigned long>& nb_neighbours_; // Number of reachable nodes for each expert (useless so far)
-  unsigned int t_;                            // Number of rounds played
-  std::vector<float> n_plays_;                // Number of times experts were played
-  // For each expert, hashmap {node : #activations}
-  std::vector<std::unordered_map<unsigned long, unsigned int>> n_rewards_;
-  // float SIGMA = 0.1;  // TODO change that (should be an estimator or ??)
-
-  /**
-    Get the `k` largest elements of a vector and returns them as unordered_set.
-    Trick with negative weights to get the lowest element of the priority_queue.
-  */
-  template<typename T>
-  std::unordered_set<T> get_k_largest_arguments(
-        std::vector<float>& vec, unsigned int k) {
-    std::priority_queue<std::pair<float, T>> q;
-    for (T i = 0; i < k; ++i) {
-      q.push(std::pair<float, T>(-vec[i], i));
-    }
-    for (T i = k; i < vec.size(); ++i) {
-      if (q.top().first > -vec[i]) {
-        q.pop();
-        q.push(std::pair<float, T>(-vec[i], i));
-      }
-    }
-    std::unordered_set<T> result;
-    while (!q.empty()) {
-      result.insert(q.top().second);
-      q.pop();
-    }
-    return result;
-  }
-
- public:
-  GoodUcbPolicy(unsigned int nb_experts, std::vector<unsigned long>& nb_neighbours)
-      : nb_experts_(nb_experts), nb_neighbours_(nb_neighbours) { init(); }
-
-  /**
-    Selects `k` experts whose Good-UCB indices are the largest.
-  */
-  std::unordered_set<unsigned int> selectExpert(unsigned int k) {
-    // 1. Test if all experts were played at least once
-    std::unordered_set<unsigned int> chosen_experts;
-    unsigned int n_selected_experts = 0;
-    for (unsigned int i = 0; i < nb_experts_; i++) {
-      if (n_plays_[i] == 0) {
-        chosen_experts.insert(i);
-        n_selected_experts++;
-        if (n_selected_experts == k)
-          break;
-      }
-    }
-    if (chosen_experts.size() > 0) {
-      for (unsigned int i = 0; i < nb_experts_ && chosen_experts.size() < k;
-           i++) {
-        chosen_experts.insert(i);
-      }
-      return chosen_experts;
-    }
-    // 2. If all experts were played once, use missing mass estimator
-    std::vector<float> ucbs(nb_experts_, 0);
-    for (unsigned int i = 0; i < nb_experts_; i++) {
-      float missing_mass_i = (float)std::count_if(
-          n_rewards_[i].begin(), n_rewards_[i].end(), [](auto& elt) {
-            return elt.second == 1; // Count hapaxes
-          }) / n_plays_[i];
-      float sigma = 0;  // Estimator of expected diffusion from this expert
-      for (auto& elt : n_rewards_[i])
-        sigma += elt.second;
-      sigma /= n_plays_[i];
-      ucbs[i] = missing_mass_i + (1 + sqrt(2)) * sqrt(sigma * log(4 * t_) /
-          n_plays_[i]) + log(4 * t_) / (3 * n_plays_[i]);
-    }
-    return get_k_largest_arguments<unsigned int>(ucbs, k);
-  }
-
-  /**
-    Update statistics on the chosen expert (k == 1).
-  */
-  void updateState(unsigned int expert,
-                   const std::unordered_set<unsigned long>& stage_spread) {
-    t_++;
-    for (auto& activated_node : stage_spread) {
-      if (n_rewards_[expert].count(activated_node) == 0)
-        n_rewards_[expert][activated_node] = 0;
-      n_rewards_[expert][activated_node]++;
-    }
-    n_plays_[expert]++;
-  }
-
-  /**
-    Initialize datastructures required for computing UCB bounds. It is useful
-    when restarting the algorithm (to reset).
-  */
-  void init() {
-    t_ = 0;
-    n_plays_ = std::vector<float>(nb_experts_, 0);
-    for (unsigned int k = 0; k < nb_experts_; k++) {
-      n_rewards_.push_back(std::unordered_map<unsigned long, unsigned int>());
-    }
-  }
-};
-
-/**
   Strategy using the missing mass estimator to sequentially select the best k
   experts. See paper : TODO description
 
@@ -256,22 +147,27 @@ class MissingMassStrategy : public Strategy {
  private:
   GraphReduction& g_reduction_;
   int n_experts_;
+  unsigned int n_policy_;
 
  public:
   /**
-  Give the graph, the reduction method with the number of experts.
+    Give the graph, the reduction method with the number of experts.
+    The last argument refers to the Policy employed (must be chosen among
+    {RandomPolicy, GoodUCBPolicy}).
   */
   MissingMassStrategy(Graph& original_graph, GraphReduction& g_reduction,
-                      int n_experts)
+                      int n_experts, unsigned int n_policy=1)
       : Strategy(original_graph), g_reduction_(g_reduction),
-        n_experts_(n_experts) {}
+        n_experts_(n_experts), n_policy_(n_policy) {}
 
   /**
-  Performs the experiment with the missing mass strategy (good-UCB estimator).
+    Performs the experiment with the missing mass strategy (good-UCB estimator).
+    (Be careful, if `n_policy`=0, the policy selects randomly the experts at
+    each round: the strategy doesn't rely on missing mass anymore).
 
-  Output: stage <TAB> totalspread" <TAB> reductiontime <TAB> totaltime <TAB>
-          roundtime <TAB> selectingtime" <TAB> updatingtime <TAB>
-          memory <TAB> experts.
+    Output: stage <TAB> totalspread" <TAB> reductiontime <TAB> totaltime <TAB>
+            roundtime <TAB> selectingtime" <TAB> updatingtime <TAB>
+            memory <TAB> experts.
   */
   void perform(unsigned int budget, unsigned int k) {
     SpreadSampler exploit_spread(INFLUENCE_MED);
@@ -279,7 +175,7 @@ class MissingMassStrategy : public Strategy {
         updatingtime = 0, selectingtime = 0, reductiontime;
     std::unordered_set<unsigned long> total_spread;
 
-    // 1. Extract experts from graph
+    // 1. (a) Extract experts from graph
     timestamp_t t0, t1;
     t0 = get_timestamp();
     std::vector<unsigned long> experts = g_reduction_.extractExperts(
@@ -287,9 +183,17 @@ class MissingMassStrategy : public Strategy {
     t1 = get_timestamp();
     reductiontime = (double)(t1 - t0) / 1000000;
 
+    // 1. (b) Create the right policy object
     vector<unsigned long> nb_neighbours(
         n_experts_, original_graph_.get_number_nodes());
-    GoodUcbPolicy policy(n_experts_, nb_neighbours);
+    std::unique_ptr<Policy> policy;
+    if (n_policy_ == 0) {
+      policy = std::unique_ptr<Policy>(new RandomPolicy(n_experts_));
+    } else if (n_policy_ == 1) {
+      policy = std::unique_ptr<Policy>(
+          new GoodUcbPolicy(n_experts_, nb_neighbours));
+    }
+    policy->init();
 
     // 2. Sequentially select the best k nodes from missing mass estimator ucb
     std::unordered_set<unsigned long> spread;
@@ -297,7 +201,7 @@ class MissingMassStrategy : public Strategy {
       // 2. (a) Select k experts for this round
       timestamp_t t2;
       t0 = get_timestamp();
-      std::unordered_set<unsigned int> chosen_experts = policy.selectExpert(k);
+      std::unordered_set<unsigned int> chosen_experts = policy->selectExpert(k);
       t1 = get_timestamp();
       selectingtime = (double)(t1 - t0) / 1000000;
 
@@ -312,7 +216,7 @@ class MissingMassStrategy : public Strategy {
 
       // 3. (c) Update statistics of experts
       for (unsigned long expert : chosen_experts) {
-        policy.updateState(expert, stage_spread);
+        policy->updateState(expert, stage_spread);
       }
       t2 = get_timestamp();
       updatingtime = (double)(t2 - t1) / 1000000.;
@@ -513,7 +417,8 @@ class EpsilonGreedyStrategy {
 };
 
 /**
-  TODO description
+  Confidence bound strategy that dynamically updates the factor of exploration
+  theta using exponentiated gradients.
 */
 class ExponentiatedGradientStrategy : public Strategy {
  private:
@@ -650,8 +555,7 @@ class ExponentiatedGradientStrategy : public Strategy {
           }
           alpha += a;
           beta += t - a;
-        }
-        else if (learn_ == 2) { // MLE with alpha = 1
+        } else if (learn_ == 2) { // MLE with alpha = 1
           for (TrialType tt : result.trials) {
             long long edge = tt.source * 100000000LL + tt.target;
             if (tt.trial == 0) {
@@ -701,9 +605,9 @@ class ExponentiatedGradientStrategy : public Strategy {
 
       // Printing results
       std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
-          /*hits << "\t" << misses << "\t" <<*/ totaltime << "\t" << roundtime <<
-          /*"\t" << sampling_time << "\t" << choosing_time << "\t" <<
-          selecting_time << "\t" << updating_time << "\t" << alpha << "\t" <<
+          /*hits << "\t" << misses << "\t" <<*/ totaltime << "\t" << roundtime <</*
+          "\t" << sampling_time << "\t" << choosing_time <<*/ "\t" <<
+          selecting_time << "\t" << updating_time <</* "\t" << alpha << "\t" <<
           beta << "\t" << mse <<*/ "\t" << (int)cur_theta - THETA_OFFSET - 1 <<
           "\t" << /*reused_ratio << "\t" <<*/ memory << "\t";
       for (auto seed : seeds)

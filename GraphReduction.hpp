@@ -96,7 +96,7 @@ class HighestDegreeReduction : public GraphReduction {
 
 /**
  This method greedily selects n_experts nodes to maximize the cover of the
- graph. Specifically, the algorithm is as follows:
+ model graph. Specifically, the algorithm is as follows:
    1. Pick node with highest degree
    2. Remove all neighbours of selected node (to avoid intersecting support)
    3. Restart from 1.
@@ -129,13 +129,98 @@ class GreedyMaxCoveringReduction : public GraphReduction {
 };
 
 /**
-  TODO DivRank graph reduction.
+  DivRank graph reduction. Implementation of `DivRank: the Interplay of Prestige
+  and Diversity in Information Networks` by Q. Mei, J. Guo and D. Radev, SIGKDD
+  2010.
 */
 class DivRankReduction : public GraphReduction {
- public:
-  std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
-    std::vector<unsigned long> result(n_experts, 0);
+ private:
+  double alpha_;
+  double p_;
+  int n_iter_;
+  double d_ = 0.85;
+  double node_error_ = 1e-6;
+
+  /**
+    Get the `k` largest elements of a vector and returns them as unordered_set.
+    Trick with negative weights to get the lowest element of the priority_queue.
+  */
+  template<typename T>
+  std::vector<T> get_k_largest_arguments(
+        std::vector<double>& vec, unsigned int k) {
+    std::priority_queue<std::pair<double, T>> q;
+    for (T i = 0; i < k; ++i) {
+      q.push(std::pair<double, T>(-vec[i], i));
+    }
+    for (T i = k; i < vec.size(); ++i) {
+      if (q.top().first > -vec[i]) {
+        q.pop();
+        q.push(std::pair<double, T>(-vec[i], i));
+      }
+    }
+    std::vector<T> result;
+    while (!q.empty()) {
+      result.push_back(q.top().second);
+      q.pop();
+    }
     return result;
+  }
+
+ public:
+  DivRankReduction(double alpha, double p=0.05, int n_iter=100)
+      : alpha_(alpha), p_(p), n_iter_(n_iter) {}
+
+  std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
+    // 1. Copy graph assigning probability `p_` on every edge
+    Graph model_graph;
+    for (unsigned long i = 0; i < graph.get_number_nodes(); i++) {
+      if (!graph.has_neighbours(i))
+        continue;
+      for (auto& edge : graph.get_neighbours(i)) {
+        std::shared_ptr<InfluenceDistribution> dst(new SingleInfluence(p_));
+        model_graph.add_edge(edge.source, edge.target, dst);
+      }
+    }
+    // 2. DivRank on the model graph.
+    unsigned long n = model_graph.get_number_nodes();
+    std::vector<double> pi(n, 1. / n);
+    std::vector<double> p_star(n, 1. / n);
+    ///std::vector<unsigned long> dangling_nodes;
+    // W is the transition matrix: for a node u it gives the list of pairs
+    // (neighbour, weight)
+    std::vector<std::vector<std::pair<unsigned long, double>>> W(n);
+    for (unsigned long i = 0; i < n; i++) {
+      W[i] = std::vector<std::pair<unsigned long, double>>();
+      if (!model_graph.has_neighbours(i, true)) {
+        ///dangling_nodes.push_back(i);
+        ///W[i].push_back(std::make_pair(i, 1. - alpha_));
+        W[i].push_back(std::make_pair(i, 1.));
+        continue;
+      }
+      float n_neighbours = (double)model_graph.get_neighbours(i, true).size();
+      for (auto& edge : model_graph.get_neighbours(i, true))
+        W[i].push_back(std::make_pair(edge.target, alpha_ / n_neighbours));
+      W[i].push_back(std::make_pair(i, 1 - alpha_));
+    }
+    for (int i = 0; i < n_iter_; i++) {
+      std::vector<double> last_pi(pi);
+      std::fill(pi.begin(), pi.end(), 0);
+      // Dangling nodes last state cumulative probability
+      ///float cum_dangling = 0;
+      ///for (auto dn : dangling_nodes)
+      ///  cum_dangling += last_pi[dn];
+      for (unsigned long u = 0; u < n; u++) {
+        // Normalization D_t
+        double D_t = 0;
+        for (auto& p : W[u])  // p = pair (neighbour, weight)
+          D_t += p.second * last_pi[p.first]; // weight * last_pi[v]
+        for (auto& p : W[u]) {
+          pi[p.first] += (d_ * p.second * last_pi[p.first] / D_t) * last_pi[u];
+        }
+        pi[u] += (/*d_ * alpha_ * cum_dangling + */(1 - d_)) * p_star[u];
+      }
+    }
+    return get_k_largest_arguments<unsigned long>(pi, n_experts);
   }
 };
 
