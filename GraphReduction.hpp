@@ -96,7 +96,7 @@ class HighestDegreeReduction : public GraphReduction {
 
 /**
  This method greedily selects n_experts nodes to maximize the cover of the
- graph. Specifically, the algorithm is as follows:
+ model graph. Specifically, the algorithm is as follows:
    1. Pick node with highest degree
    2. Remove all neighbours of selected node (to avoid intersecting support)
    3. Restart from 1.
@@ -136,6 +136,7 @@ class GreedyMaxCoveringReduction : public GraphReduction {
 class DivRankReduction : public GraphReduction {
  private:
   double alpha_;
+  double p_;
   int n_iter_;
   double d_ = 0.85;
   double node_error_ = 1e-6;
@@ -166,11 +167,22 @@ class DivRankReduction : public GraphReduction {
   }
 
  public:
-  DivRankReduction(double alpha, int n_iter=100)
-      : alpha_(alpha), n_iter_(n_iter) {}
+  DivRankReduction(double alpha, double p=0.05, int n_iter=100)
+      : alpha_(alpha), p_(p), n_iter_(n_iter) {}
 
   std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
-    unsigned long n = graph.get_number_nodes();
+    // 1. Copy graph assigning probability `p_` on every edge
+    Graph model_graph;
+    for (unsigned long i = 0; i < graph.get_number_nodes(); i++) {
+      if (!graph.has_neighbours(i))
+        continue;
+      for (auto& edge : graph.get_neighbours(i)) {
+        std::shared_ptr<InfluenceDistribution> dst(new SingleInfluence(p_));
+        model_graph.add_edge(edge.source, edge.target, dst);
+      }
+    }
+    // 2. DivRank on the model graph.
+    unsigned long n = model_graph.get_number_nodes();
     std::vector<double> pi(n, 1. / n);
     std::vector<double> p_star(n, 1. / n);
     ///std::vector<unsigned long> dangling_nodes;
@@ -179,14 +191,14 @@ class DivRankReduction : public GraphReduction {
     std::vector<std::vector<std::pair<unsigned long, double>>> W(n);
     for (unsigned long i = 0; i < n; i++) {
       W[i] = std::vector<std::pair<unsigned long, double>>();
-      if (!graph.has_neighbours(i, true)) {
+      if (!model_graph.has_neighbours(i, true)) {
         ///dangling_nodes.push_back(i);
         ///W[i].push_back(std::make_pair(i, 1. - alpha_));
         W[i].push_back(std::make_pair(i, 1.));
         continue;
       }
-      float n_neighbours = (double)graph.get_neighbours(i, true).size();
-      for (auto& edge : graph.get_neighbours(i, true))
+      float n_neighbours = (double)model_graph.get_neighbours(i, true).size();
+      for (auto& edge : model_graph.get_neighbours(i, true))
         W[i].push_back(std::make_pair(edge.target, alpha_ / n_neighbours));
       W[i].push_back(std::make_pair(i, 1 - alpha_));
     }

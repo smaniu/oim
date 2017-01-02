@@ -383,7 +383,7 @@ int main(int argc, const char * argv[]) {
   greductions.push_back(std::unique_ptr<GraphReduction>(
       new EvaluatorReduction(0.05, *evaluator)));
   greductions.push_back(std::unique_ptr<GraphReduction>(
-      new DivRankReduction(0.25, 100)));
+      new DivRankReduction(0.25, 0.05, 100)));
 
   // Vector of different Evaluator implementations
   std::vector<std::unique_ptr<Evaluator>> evaluators;
