@@ -74,7 +74,7 @@ class EvaluatorReduction : public GraphReduction {
 };
 
 /**
- This method selects `n_experts` nodes with the highest degrees as experts.
+  This method selects `n_experts` nodes with the highest degrees as experts.
 */
 class HighestDegreeReduction : public GraphReduction {
  public:
@@ -95,11 +95,11 @@ class HighestDegreeReduction : public GraphReduction {
 };
 
 /**
- This method greedily selects n_experts nodes to maximize the cover of the
- model graph. Specifically, the algorithm is as follows:
-   1. Pick node with highest degree
-   2. Remove all neighbours of selected node (to avoid intersecting support)
-   3. Restart from 1.
+  This method greedily selects n_experts nodes to maximize the cover of the
+  model graph. Specifically, the algorithm is as follows:
+    1. Pick node with highest degree
+    2. Remove all neighbours of selected node (to avoid intersecting support)
+    3. Restart from 1.
 */
 class GreedyMaxCoveringReduction : public GraphReduction {
  public:
