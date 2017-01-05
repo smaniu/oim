@@ -38,7 +38,7 @@
 using namespace std;
 
 /**
-  Independent Cascade Model Sampler of the graph (does a *real* sample).
+  LT or Independent Cascade Model Sampler of the graph (does a *real* sample).
 */
 class SpreadSampler : public Sampler {
  private:
@@ -47,8 +47,8 @@ class SpreadSampler : public Sampler {
   double stdev_;
 
  public:
-  SpreadSampler(unsigned int type)
-      : Sampler(type), gen_(seed_ns()), dist_(gen_) {};
+  SpreadSampler(unsigned int type, int model)
+      : Sampler(type, model), gen_(seed_ns()), dist_(gen_) {};
 
   /**
     Samples `n_samples` from seeds.

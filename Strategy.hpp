@@ -57,13 +57,15 @@ struct TrialData {
 */
 class Strategy {
  protected:
-  Graph& original_graph_;  // The real graph (unknown from the decision maker)
+  Graph& original_graph_; // The real graph (unknown from the decision maker)
+  int model_;    // 0 for linear threshold, 1 for cascade model
   boost::mt19937 gen_;
   boost::uniform_01<boost::mt19937> dist_;
 
  public:
-  Strategy(Graph &original_graph)
-      : original_graph_(original_graph), gen_(seed_ns()), dist_(gen_) {}
+  Strategy(Graph &original_graph, int model)
+      : original_graph_(original_graph), model_(model),
+        gen_(seed_ns()), dist_(gen_) {}
 
   virtual void perform(unsigned int budget, unsigned int k) = 0;
 };
@@ -81,12 +83,12 @@ class OriginalGraphStrategy : public Strategy {
 
  public:
   OriginalGraphStrategy(Graph& original_graph, Evaluator& evaluator,
-                        double n_samples, bool incremental=0)
-      : Strategy(original_graph), evaluator_(evaluator),
+                        double n_samples, bool incremental=0, int model=1)
+      : Strategy(original_graph, model), evaluator_(evaluator),
         samples_(n_samples), incremental_(incremental) {}
 
   void perform(unsigned int budget, unsigned int k) {
-    SpreadSampler sampler(INFLUENCE_MED);
+    SpreadSampler sampler(INFLUENCE_MED, model_);
     std::unordered_set<unsigned long> activated;
     double expected = 0, real = 0, time_min = 0;
     for (unsigned int stage = 0; stage < budget; stage++) {
@@ -156,8 +158,8 @@ class MissingMassStrategy : public Strategy {
     {RandomPolicy, GoodUCBPolicy}).
   */
   MissingMassStrategy(Graph& original_graph, GraphReduction& g_reduction,
-                      int n_experts, unsigned int n_policy=1)
-      : Strategy(original_graph), g_reduction_(g_reduction),
+                      int n_experts, unsigned int n_policy=1, int model=1)
+      : Strategy(original_graph, model), g_reduction_(g_reduction),
         n_experts_(n_experts), n_policy_(n_policy) {}
 
   /**
@@ -170,7 +172,7 @@ class MissingMassStrategy : public Strategy {
             memory <TAB> experts.
   */
   void perform(unsigned int budget, unsigned int k) {
-    SpreadSampler exploit_spread(INFLUENCE_MED);
+    SpreadSampler exploit_spread(INFLUENCE_MED, model_);
     double totaltime = 0, roundtime = 0, memory = 0,
         updatingtime = 0, selectingtime = 0, reductiontime;
     std::unordered_set<unsigned long> total_spread;
@@ -248,22 +250,24 @@ class EpsilonGreedyStrategy {
   unsigned long samples;
   double epsilon;
   bool INCREMENTAL;
+  int model_;
 
  public:
   EpsilonGreedyStrategy(Graph& model_graph, Graph& original_graph,
                         Evaluator& eval_explore, Evaluator& eval_exploit,
-                        double number_samples, double eps, bool INCREMENTAL)
+                        double number_samples, double eps, bool INCREMENTAL,
+                        int model=1)
       : model_g(model_graph), original_g(original_graph),
         explore_e(eval_explore), exploit_e(eval_exploit),
-        samples(number_samples), epsilon(eps), INCREMENTAL(INCREMENTAL)  {}
+        samples(number_samples), epsilon(eps), INCREMENTAL(INCREMENTAL), model_(model)  {}
 
   void perform(unsigned int budget, unsigned int k, bool update=true,
                unsigned int learn=0,
                unsigned int interval_exploit=INFLUENCE_MED,
                unsigned int interval_explore=INFLUENCE_MED) {
-    SpreadSampler exploit_s(INFLUENCE_MED);
-    PathSampler exploit_p(interval_exploit);
-    PathSampler explore_p(interval_explore);
+    SpreadSampler exploit_s(INFLUENCE_MED, model_);
+    PathSampler exploit_p(interval_exploit, model_);
+    PathSampler explore_p(interval_explore, model_);
     std::unordered_set<unsigned long> activated;
     boost::mt19937 gen((int)time(0));
     boost::uniform_01<boost::mt19937> dst(gen);
@@ -424,17 +428,15 @@ class ExponentiatedGradientStrategy : public Strategy {
  private:
   Graph& model_graph_;
   Evaluator& evaluator_;
-  bool incremental_;
   bool update_;
   unsigned int learn_;
 
  public:
   ExponentiatedGradientStrategy(Graph& model_graph, Graph& original_graph,
-                                Evaluator& evaluator, bool incremental,
-                                bool update=true, unsigned int learn=0)
-      : Strategy(original_graph), model_graph_(model_graph),
-        evaluator_(evaluator), incremental_(incremental), update_(update),
-        learn_(learn) {}
+                                Evaluator& evaluator, bool update=true,
+                                unsigned int learn=0, int model=1)
+      : Strategy(original_graph, model), model_graph_(model_graph),
+        evaluator_(evaluator), update_(update), learn_(learn) {}
 
   void perform(unsigned int budget, unsigned int k) {
     std::vector<double> p(3, 0.333);
@@ -443,7 +445,7 @@ class ExponentiatedGradientStrategy : public Strategy {
     double mu = log(300.0) / (3 * budget);
     double tau = 12 * mu / (3.0 + mu);
     double lambda = tau / 6.0;
-    SpreadSampler exploit_sampler(INFLUENCE_MED); // Sampler for *real* graph
+    SpreadSampler exploit_sampler(INFLUENCE_MED, model_); // Sampler for *real* graph
     std::unordered_set<unsigned long> activated;
     double expected = 0, real = 0, totaltime = 0, roundtime = 0, memory = 0;
     double alpha = 1, beta = 1;
@@ -451,9 +453,6 @@ class ExponentiatedGradientStrategy : public Strategy {
     std::unordered_map<long long, int> edge_hit, edge_miss;
 
     for (unsigned int stage = 0; stage < budget; stage++) {
-      if (incremental_)
-        SampleManager::reset(stage);
-
       timestamp_t t0, t1, t2;
       t0 = get_timestamp();
       // sampling the distribution
@@ -462,8 +461,7 @@ class ExponentiatedGradientStrategy : public Strategy {
       std::cerr << "type_ == " << cur_theta << std::endl;
 
       // PathSampler path_sampler(cur_theta); (version with path sampler, not used anymore)
-      SpreadSampler explore_sampler(cur_theta);
-      evaluator_.setIncremental(incremental_);
+      SpreadSampler explore_sampler(cur_theta, model_);
 
       // Selecting seeds using explore or exploit
       std::unordered_set<unsigned long> seeds;
@@ -509,8 +507,6 @@ class ExponentiatedGradientStrategy : public Strategy {
         if (update_)
           model_graph_.update_edge(tt.source, tt.target, tt.trial);
       }
-      if (incremental_)
-        SampleManager::update_node_age(nodes_to_update);
 
       // TODO learning the graph
       if (learn_ > 0) {

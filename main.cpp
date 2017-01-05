@@ -75,88 +75,6 @@ void real(int argc, const char * argv[],
   strategy.perform(budget, k);
 }
 
-void prior(int argc, const char * argv[]) {
-  std::string file_name_graph(argv[2]);
-  double alpha = atof(argv[3]);
-  double beta = atof(argv[4]);
-  std::ifstream file(file_name_graph);
-  Graph original_graph;
-  unsigned long src, tgt;
-  double prob;
-  unsigned long edges = 0;
-  while (file >> src >> tgt >> prob) {
-    std::shared_ptr<InfluenceDistribution>\
-      dst_model(new BetaInfluence(alpha, beta, prob));
-    original_graph.add_edge(src, tgt, dst_model);
-    edges++;
-  }
-  unsigned int exploit = atoi(argv[5]);
-  unsigned int budget = atoi(argv[6]);
-  unsigned int k = atoi(argv[7]);
-
-  SpreadSampler s_exploit(INFLUENCE_MED);
-  int samples = 100;
-  if (argc > 9)
-    samples = atoi(argv[9]);
-  std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator(samples)));
-  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
-  OriginalGraphStrategy strategy(original_graph, *evals.at(exploit), samples);
-  strategy.perform(budget, k);
-}
-
-void explore(int argc, const char * argv[]){
-  std::string file_name_graph(argv[2]);
-  double alpha = atof(argv[3]);
-  double beta = atof(argv[4]);
-  std::ifstream file(file_name_graph);
-  Graph original_graph, model_graph;
-  unsigned long src, tgt;
-  double prob;
-  unsigned long edges = 0;
-  while (file >> src >> tgt >> prob) {
-    shared_ptr<InfluenceDistribution> dst_original(new SingleInfluence(prob));
-    shared_ptr<InfluenceDistribution> dst_model(
-        new BetaInfluence(alpha, beta, prob));
-    original_graph.add_edge(src, tgt, dst_original);
-    model_graph.add_edge(src, tgt, dst_model);
-    edges++;
-  }
-
-  SampleManager::setInstance(model_graph);
-  model_graph.set_prior(alpha, beta);
-  model_graph.update_rounds(alpha+beta);
-
-  unsigned int explore = atoi(argv[5]);
-  unsigned int budget = atoi(argv[6]);
-  unsigned int k = atoi(argv[7]);
-  double eps = 1.0;
-  int samples = 1000;
-  bool update = true;
-  unsigned int learn = 0;
-  unsigned int int_explore = INFLUENCE_MED;
-  int inc = 0;
-  if(argc>8){
-    int orig_explore = atoi(argv[8]);
-    if(orig_explore>0) int_explore = orig_explore+2;
-  }
-  if(argc>9)
-    learn = atoi(argv[9]);
-  std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator(samples)));
-  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
-  EpsilonGreedyStrategy strategy(model_graph, original_graph,
-                                 *evals.at(explore), *evals.at(explore),
-                                 samples, eps, inc);
-  strategy.perform(budget, k, update, learn, int_explore, int_explore);
-}
-
 void epsgreedy(int argc, const char * argv[]){
   std::string file_name_graph(argv[2]);
   double alpha = atof(argv[3]);
@@ -258,85 +176,6 @@ void expgr(int argc, const char * argv[],
   strategy.perform(budget, k);
 }
 
-void benchmark(int argc, const char * argv[]){
-  std::cout<<"loading graph...";
-  std::string file_name_graph(argv[2]);
-  double alpha = atoi(argv[3]);
-  double beta = atoi(argv[4]);
-  std::ifstream file(file_name_graph);
-  timestamp_t t0, t1;
-  double time_msec, time_min;
-  Graph graph;
-  unsigned long src, tgt;
-  double prob;
-  unsigned long edges = 0;
-  while (file >> src >> tgt >> prob) {
-    std::shared_ptr<InfluenceDistribution>
-        dst(new BetaInfluence(alpha, beta, prob));
-    graph.add_edge(src, tgt, dst);
-    edges++;
-  }
-  std::cout << " done." << std::endl;
-  unsigned long nodes = graph.get_nodes().size();
-  std::cout << "\t" << nodes << " nodes, " << edges << " edges" << std::endl;
-  int samples = 100;
-  if (argc > 6)
-    samples = atoi(argv[6]);
-  std::cout<<"done."<<std::endl;
-  SpreadSampler sampler(INFLUENCE_MED);
-  std::cout<<"sampling... "<< std::flush;
-  std::unordered_set<unsigned long> activated;
-  t0 = get_timestamp();
-  for (unsigned long node : graph.get_nodes()) {
-    std::unordered_set<unsigned long> seeds;
-    seeds.insert(node);
-    sampler.sample(graph, activated, seeds, samples);
-  }
-  t1 = get_timestamp();
-  std::cout << "done." << std::endl;
-  time_min = (t1 - t0) / 60000000.0L;
-  time_msec = ((t1-t0)/1000.0L) / (double)nodes/(double)samples;
-  std::cout << "total time " << time_min << "min" <<std::endl;
-  std::cout << "time/sample/node " << time_msec << "ms" << std::endl;
-}
-
-void spread(int argc, const char * argv[]) {
-  std::string file_name_graph(argv[2]);
-  unsigned long alpha = atoi(argv[3]);
-  unsigned long beta = atoi(argv[4]);
-  unsigned int k = atoi(argv[5]);
-  std::ifstream file(file_name_graph);
-  timestamp_t t0, t1;
-  double time_min_celf, time_min_random;
-  Graph graph;
-  unsigned long src, tgt;
-  double prob;
-  unsigned long edges = 0;
-  while(file >> src >> tgt >> prob) {
-    std::shared_ptr<InfluenceDistribution>
-        dst(new BetaInfluence(alpha, beta, prob));
-    graph.add_edge(src, tgt, dst);
-    edges++;
-  }
-  int samples = 100;
-  if (argc > 6)
-    samples = atoi(argv[6]);
-  std::unordered_set<unsigned long> activated;
-  PathSampler sampler(INFLUENCE_MED);
-  CELFEvaluator evaluator_celf(samples);
-  t0 = get_timestamp();
-  evaluator_celf.select(graph, sampler, activated, k);
-  t1 = get_timestamp();
-  time_min_celf = (t1 - t0) / 60000000.0L;
-  RandomEvaluator evaluator_random;
-  t0 = get_timestamp();
-  evaluator_random.select(graph, sampler, activated, k);
-  t1 = get_timestamp();
-  time_min_random = (t1-t0)/60000000.0L;
-  std::cout << k << "\t" << time_min_celf << "\t" <<
-    time_min_random <<std::endl;
-}
-
 /**
   Function performing experiment with MissingMassStrategy.
 
@@ -381,7 +220,7 @@ int main(int argc, const char * argv[]) {
       new HighestDegreeReduction()));
   std::unique_ptr<Evaluator> evaluator(new PMCEvaluator(200));
   greductions.push_back(std::unique_ptr<GraphReduction>(
-      new EvaluatorReduction(0.05, *evaluator)));
+      new EvaluatorReduction(0.05, *evaluator, 1)));  // TODO allow change on the model expected to select experts
   greductions.push_back(std::unique_ptr<GraphReduction>(
       new DivRankReduction(0.25, 0.05, 100)));
 
@@ -396,12 +235,8 @@ int main(int argc, const char * argv[]) {
   evaluators.push_back(std::unique_ptr<Evaluator>(new PMCEvaluator(200)));
 
   std::string experiment(argv[1]);
-  if (experiment == "--benchmark") benchmark(argc, argv);
-  else if (experiment == "--spread") spread(argc, argv);
-  else if (experiment == "--egreedy") epsgreedy(argc, argv);
-  else if (experiment == "--explore") explore(argc, argv);
+  if  (experiment == "--egreedy") epsgreedy(argc, argv);
   else if (experiment == "--real") real(argc, argv, evaluators);
-  else if (experiment == "--prior") prior(argc, argv);
   else if (experiment == "--eg") expgr(argc, argv, evaluators);
   else if (experiment == "--missing_mass") missing_mass(argc, argv, greductions);
 }

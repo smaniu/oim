@@ -46,12 +46,14 @@ class EvaluatorReduction : public GraphReduction {
  private:
   double p_;  // transmission probability (same for all edges)
   Evaluator& evaluator_;
+  int model_;
 
  public:
-  EvaluatorReduction(double p, Evaluator& evaluator)
-      : p_(p), evaluator_(evaluator) {}
+  EvaluatorReduction(double p, Evaluator& evaluator, int model=1)
+      : p_(p), evaluator_(evaluator), model_(model) {}
 
-  std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
+  std::vector<unsigned long> extractExperts(
+      const Graph& graph, int n_experts) {
     // 1. Copy graph assigning probability `p_` on every edge
     Graph model_graph;
     for (unsigned long i = 0; i < graph.get_number_nodes(); i++) {
@@ -63,7 +65,7 @@ class EvaluatorReduction : public GraphReduction {
       }
     }
     // 2. Select experts using the evaluator
-    SpreadSampler sampler(INFLUENCE_MED);
+    SpreadSampler sampler(INFLUENCE_MED, model_);
     std::unordered_set<unsigned long> activated;
     auto experts = evaluator_.select(model_graph, sampler, activated, n_experts);
     std::vector<unsigned long> result;
