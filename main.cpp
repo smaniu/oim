@@ -48,13 +48,13 @@ using namespace std;
   Function performing diffusion with *known* graph. The seeds are selected with
   one of the Evaluators.
 
-  Ex. usage: ./oim --real graph.txt 5 20 2
+  Ex. usage: ./oim --real graph.txt 5 20 2 1
 */
 void real(int argc, const char * argv[],
           std::vector<std::unique_ptr<Evaluator>>& evaluators) {
   if (argc < 6) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --real <graph> "
-              << "<exploit> <budget> <k> [<samples>]" << std::endl;
+              << "<exploit> <budget> <k> [<model>]" << std::endl;
     exit(1);
   }
   Graph original_graph;
@@ -65,13 +65,11 @@ void real(int argc, const char * argv[],
   unsigned int budget = atoi(argv[4]);
   unsigned int k = atoi(argv[5]);
   int samples = 100;
-  int inc = 0;
+  int model = 1;
   if (argc > 6)
-    inc = atoi(argv[6]);
-  if (argc > 7)
-    samples = atoi(argv[7]);
+    model = atoi(argv[6]);
   OriginalGraphStrategy strategy(original_graph, *evaluators.at(exploit),
-                                 samples, inc);
+                                 samples, model);
   strategy.perform(budget, k);
 }
 
@@ -142,16 +140,15 @@ void expgr(int argc, const char * argv[],
            std::vector<std::unique_ptr<Evaluator>>& evaluators) {
   if (argc < 8) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --eg <graph> "
-              << "<alpha> <beta> <exploit> <trials> <k> [<update> "
-              << "<update_type> <samples>]" << std::endl;
+              << "<alpha> <beta> <exploit> <trials> <k> [<model> <update> "
+              << "<update_type>]" << std::endl;
     exit(1);
   }
   // Take parameters
   bool update = true;
   unsigned int learn = 0;
-  int inc = 0;
-  double alpha = atof(argv[3]);
-  double beta = atof(argv[4]);
+  int model = 1;
+  double alpha = atof(argv[3]), beta = atof(argv[4]);
   unsigned int exploit = atoi(argv[5]);
   if (exploit > 6) {
     std::cerr << "Error: <exploit> must be in range 0..6" << std::endl;
@@ -159,12 +156,15 @@ void expgr(int argc, const char * argv[],
   }
   unsigned int budget = atoi(argv[6]);
   unsigned int k = atoi(argv[7]);
-  if (argc > 8)
-    update = (atoi(argv[8]) == 1) ? true : false;
+  if (argc > 8) {
+    model = atoi(argv[8]);
+    // TODO Check that the selected Evaluator implemented the LT if chosen
+  }
   if (argc > 9)
-    learn = atoi(argv[9]);
+    update = (atoi(argv[9]) == 1) ? true : false;
   if (argc > 10)
-    inc = atoi(argv[10]);
+    learn = atoi(argv[10]);
+
   // Load model and original graphs
   Graph original_graph, model_graph;
   load_model_and_original_graph(argv[2], alpha, beta,
@@ -172,21 +172,22 @@ void expgr(int argc, const char * argv[],
   SampleManager::setInstance(model_graph);
   // Run experiment with Exponentiated Gradient strategy
   ExponentiatedGradientStrategy strategy(
-      model_graph, original_graph, *evaluators.at(exploit), inc, update, learn);
+      model_graph, original_graph, *evaluators.at(exploit),
+      update, learn, model);
   strategy.perform(budget, k);
 }
 
 /**
   Function performing experiment with MissingMassStrategy.
 
-  Ex. usage: ./oim --missing_mass graph.txt 0 20 2 5
+  Ex. usage: ./oim --missing_mass graph.txt 1 0 20 2 5
 */
 void missing_mass(int argc, const char * argv[],
       std::vector<std::unique_ptr<GraphReduction>>& greduction) {
-  if (argc != 8) {
+  if (argc < 8) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --missing_mass "
-              << "<graph> <policy> <reduction> <budget> <k> <n_experts>"
-              << std::endl;
+              << "<graph> <policy> <reduction> <budget> <k> <n_experts> "
+              << "[<model>]" << std::endl;
     exit(1);
   }
   Graph original_graph;
@@ -206,8 +207,9 @@ void missing_mass(int argc, const char * argv[],
   unsigned int budget = atoi(argv[5]);
   unsigned int k = atoi(argv[6]);
   int n_experts = atoi(argv[7]);
+  int model = argc > 8 ? atoi(argv[8]) : 1;
   MissingMassStrategy strategy(
-      original_graph, *greduction.at(reduction), n_experts, n_policy);
+      original_graph, *greduction.at(reduction), n_experts, n_policy, model);
   strategy.perform(budget, k);
 }
 

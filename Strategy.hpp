@@ -79,13 +79,12 @@ class OriginalGraphStrategy : public Strategy {
  private:
   Evaluator& evaluator_;
   unsigned long samples_;
-  bool incremental_;
 
  public:
   OriginalGraphStrategy(Graph& original_graph, Evaluator& evaluator,
-                        double n_samples, bool incremental=0, int model=1)
+                        double n_samples, int model=1)
       : Strategy(original_graph, model), evaluator_(evaluator),
-        samples_(n_samples), incremental_(incremental) {}
+        samples_(n_samples) {}
 
   void perform(unsigned int budget, unsigned int k) {
     SpreadSampler sampler(INFLUENCE_MED, model_);
@@ -95,17 +94,17 @@ class OriginalGraphStrategy : public Strategy {
       timestamp_t t0, t1;
       t0 = get_timestamp();
 
-      if (incremental_)
-        SampleManager::reset(stage);
-
       // Select seeds using explore or exploit
       std::unordered_set<unsigned long> seeds =
           evaluator_.select(original_graph_, sampler, activated, k);
-      //evaluating the expected and real spread on the seeds
-      expected += sampler.sample(original_graph_, activated, seeds, samples_);
-      real += sampler.trial(original_graph_, activated, seeds);
+      // Evaluating the expected and real spread on the seeds
+      double new_expected = 0;
+      for (unsigned int i = 0; i < samples_; i++)
+        new_expected += sampler.perform_diffusion(original_graph_, seeds).size();
+      expected += new_expected / samples_;
+      real += sampler.perform_diffusion(original_graph_, seeds).size();
 
-      //updating the model graph
+      // Updating the model graph
       std::unordered_set<unsigned long> nodes_to_update;
       for (unsigned long node : seeds) {
         activated.insert(node);
@@ -121,9 +120,6 @@ class OriginalGraphStrategy : public Strategy {
           misses++;
         }
       }
-
-      if (incremental_)
-        SampleManager::update_node_age(nodes_to_update);
 
       t1 = get_timestamp();
       // Printing results
@@ -422,7 +418,7 @@ class EpsilonGreedyStrategy {
 
 /**
   Confidence bound strategy that dynamically updates the factor of exploration
-  theta using exponentiated gradients.
+  theta using exponentiated gradients. TODO see if i can remove `learn`
 */
 class ExponentiatedGradientStrategy : public Strategy {
  private:

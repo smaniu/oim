@@ -36,16 +36,17 @@ The following methods are currently supported:
 
 2. *exponentiated gradient*, which is run as follows:
 
-        ./oim --eg <graph> <alpha> <beta> <exploit> <trials> <k> <update>
-        <update_type> [<samples>]
+        ./oim --eg <graph> <alpha> <beta> <exploit> <trials> <k> [<model>
+        <update> <update_type>]
 
 3. *missing mass*, which runs as follows:
 
-        ./oim --missing_mass <graph> <policy> <reduction> <budget> <k> <n_experts>
+        ./oim --missing_mass <graph> <policy> <reduction> <budget> <k>
+        <n_experts> [<model>]
 
 4. *real graph*, which executes on the real graph:
 
-        ./oim --real <graph> <exploit> <trials> <k> [<samples>]
+        ./oim --real <graph> <exploit> <trials> <k> [<model>]
 
 There are other options, mainly used for debug purposes. Consult the source code
 for details.
@@ -66,10 +67,13 @@ The parameters are set as follows:
 * *reduction* can take the following values: **0** max cover, **1** highest
   degree
 * *policy* can take the following values: **0** random, **1** Good-UCB
+* *model* can take the following values: **0** Linear Threshold, **1**
+  Independent Cascade
 
 # License
 
-The source code is provided as-is under an MIT License. If it is useful to you, please cite [our paper][1].
+The source code is provided as-is under an MIT License. If it is useful to you,
+please cite [our paper][1].
 
 [1]: <http://arxiv.org/pdf/1506.01188v1.pdf> "S. Lei, S. Maniu, L. Mo, R. Cheng, P. Senellart. Online Influence Maximization. KDD 2015"
 
