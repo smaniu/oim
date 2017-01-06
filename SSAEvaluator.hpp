@@ -90,7 +90,7 @@ class SSAEvaluator : public Evaluator {
               (/*k * */epsilon_2 * epsilon_2));   // k dropped like in the paper
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
                                                 k, T_max);
-        std::cerr << "Unbiased estimator " << unbiased_estimator << std::endl;
+        // std::cerr << "Unbiased estimator " << unbiased_estimator << std::endl;
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
           return seed_set_;
         }

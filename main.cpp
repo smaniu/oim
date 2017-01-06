@@ -58,16 +58,12 @@ void real(int argc, const char * argv[],
     exit(1);
   }
   Graph original_graph;
-  load_original_graph(argv[2], original_graph);
-  SampleManager::setInstance(original_graph);
-  original_graph.set_prior(1.0, 1.0); // TODO Why ?
   unsigned int exploit = atoi(argv[3]);
   unsigned int budget = atoi(argv[4]);
   unsigned int k = atoi(argv[5]);
   int samples = 100;
-  int model = 1;
-  if (argc > 6)
-    model = atoi(argv[6]);
+  int model = (argc > 6) ? atoi(argv[6]) : 1;
+  load_original_graph(argv[2], original_graph, model);
   OriginalGraphStrategy strategy(original_graph, *evaluators.at(exploit),
                                  samples, model);
   strategy.perform(budget, k);

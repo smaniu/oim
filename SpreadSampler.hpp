@@ -92,19 +92,14 @@ class SpreadSampler : public Sampler {
       cur = nodes_activated[cur_pos];
       cur_pos++;
       if (model_ == 0) { // Linear threshold model
-        double theta = dist_();  // Random threshold for current node
-        if (graph.has_neighbours(cur, inv)) { // TODO CHANGE HERE SO THAT AN ALREADY FOUND NODE STOPS EVERYTHING
-          for (auto& neighbour : graph.get_neighbours(cur, inv)) {
-            theta -= neighbour.dist->sample(type_);
-            if (theta > 0)
-              continue;
-            if (!bool_activated[neighbour.target]) {
-              bool_activated[neighbour.target] = true;
-              nodes_activated[num_marked] = neighbour.target;
-              num_marked++;
-            }
-            break;
-          }
+        int index = graph.sample_living_edge(cur, gen_);
+        if (index == -1)  // Unconnected node or sample with weights summing to less than 1
+          continue;
+        unsigned long living_node = graph.get_neighbours(cur, true)[index].target;
+        if (!bool_activated[living_node]) {
+          bool_activated[living_node] = true;
+          nodes_activated[num_marked] = living_node;
+          num_marked++;
         }
       } else if (model_ == 1) { // Independent Cascade model
         if (graph.has_neighbours(cur, inv)) {
@@ -140,18 +135,10 @@ class SpreadSampler : public Sampler {
     if (model_ == 0) {
       std::unordered_map<unsigned long, std::vector<unsigned long>> live_edges;
       for (unsigned long u = 0; u < graph.get_number_nodes(); u++) {
-        if (graph.has_neighbours(u, true)) {
-          double theta = dist_();  // Random threshold for current node
-          for (auto& neighbour : graph.get_neighbours(u, true)) {
-            theta -= neighbour.dist->sample(type_);
-            if (theta > 0)
-              continue;
-            if (live_edges.find(neighbour.target) == live_edges.end())
-              live_edges[neighbour.target] = std::vector<unsigned long>();
-            live_edges[neighbour.target].push_back(neighbour.source);
-            break;
-          }
-        }
+        int index = graph.sample_living_edge(u, gen_);
+        if (index == -1)  // Unconnected node or sample with weights summing to less than 1
+          continue;
+        live_edges[graph.get_neighbours(u, true)[index].target].push_back(u);
       }
       for (auto source : seeds) {
         queue.push(source);
@@ -161,8 +148,10 @@ class SpreadSampler : public Sampler {
         auto node_id = queue.front();
         visited.insert(node_id);
         if (live_edges.find(node_id) != live_edges.end()) {
-          for (auto& neighbour : live_edges[node_id])
-            queue.push(neighbour);
+          for (auto& neighbour : live_edges[node_id]) {
+            if (visited.find(neighbour) == visited.end())
+              queue.push(neighbour);
+          }
         }
         queue.pop();
       }

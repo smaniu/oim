@@ -99,8 +99,9 @@ class OriginalGraphStrategy : public Strategy {
           evaluator_.select(original_graph_, sampler, activated, k);
       // Evaluating the expected and real spread on the seeds
       double new_expected = 0;
-      for (unsigned int i = 0; i < samples_; i++)
+      for (unsigned int i = 0; i < samples_; i++) {
         new_expected += sampler.perform_diffusion(original_graph_, seeds).size();
+      }
       expected += new_expected / samples_;
       real += sampler.perform_diffusion(original_graph_, seeds).size();
 

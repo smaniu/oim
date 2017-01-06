@@ -55,7 +55,7 @@ class Graph {
   // For each node, if LT model was activated in graph loading, we have the
   // distribution to sample an incoming edge according to its weight.
   std::unordered_map<
-      unsigned long, std::discrete_distribution<>> lt_dist_;
+      unsigned long, std::discrete_distribution<>> mutable lt_dist_;
   std::unordered_set<unsigned long> node_set_;
   unsigned long num_edges_ = 0;
   unsigned long num_nodes_ = 0;
@@ -277,7 +277,7 @@ class Graph {
     neighbours of `node`. If weights do not sum to 1, we can return -1 for no
     sample.
   */
-  int sample_living_edge(unsigned long node, boost::mt19937& gen) {
+  int sample_living_edge(unsigned long node, boost::mt19937& gen) const {
     if (has_neighbours(node, true)) {
       int index = lt_dist_[node](gen);
       if (index < (int)get_neighbours(node, true).size())
