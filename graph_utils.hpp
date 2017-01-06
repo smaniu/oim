@@ -33,7 +33,8 @@
 
 
 // Load the graph from file and returns the number of nodes
-unsigned long load_original_graph(std::string filename, Graph& graph) {
+unsigned long load_original_graph(
+      std::string filename, Graph& graph, int model=1) {
   std::ifstream file(filename);
   unsigned long src, tgt;
   double prob;
@@ -44,6 +45,8 @@ unsigned long load_original_graph(std::string filename, Graph& graph) {
     graph.add_edge(src, tgt, dst_original);
     edges++;
   }
+  if (model == 0) // If LT model, we need to create distributions for each nodes
+    graph.build_lt_distribution(INFLUENCE_MED);
   return edges;
 }
 
@@ -54,7 +57,7 @@ unsigned long load_original_graph(std::string filename, Graph& graph) {
 */
 unsigned long load_model_and_original_graph(
       std::string filename, double alpha, double beta,
-      Graph& original_graph, Graph& model_graph) {
+      Graph& original_graph, Graph& model_graph, int model=1) {
   std::ifstream file(filename);
   unsigned long src, tgt;
   double prob;
@@ -66,6 +69,10 @@ unsigned long load_model_and_original_graph(
         new BetaInfluence(alpha, beta, prob));
     original_graph.add_edge(src, tgt, dst_original);
     model_graph.add_edge(src, tgt, dst_model);
+    if (model == 0) { // If LT model, we need to create distributions for each nodes
+      original_graph.build_lt_distribution(INFLUENCE_MED);
+      model_graph.build_lt_distribution(INFLUENCE_MED);
+    }
     edges++;
   }
   model_graph.set_prior(alpha, beta);

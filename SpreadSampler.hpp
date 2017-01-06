@@ -92,8 +92,20 @@ class SpreadSampler : public Sampler {
       cur = nodes_activated[cur_pos];
       cur_pos++;
       if (model_ == 0) { // Linear threshold model
-        std::cerr << "Error: this part is only run by IC model." << std::endl;
-        exit(1);
+        double theta = dist_();  // Random threshold for current node
+        if (graph.has_neighbours(cur, inv)) { // TODO CHANGE HERE SO THAT AN ALREADY FOUND NODE STOPS EVERYTHING
+          for (auto& neighbour : graph.get_neighbours(cur, inv)) {
+            theta -= neighbour.dist->sample(type_);
+            if (theta > 0)
+              continue;
+            if (!bool_activated[neighbour.target]) {
+              bool_activated[neighbour.target] = true;
+              nodes_activated[num_marked] = neighbour.target;
+              num_marked++;
+            }
+            break;
+          }
+        }
       } else if (model_ == 1) { // Independent Cascade model
         if (graph.has_neighbours(cur, inv)) {
           for (auto& neighbour : graph.get_neighbours(cur, inv)) {
@@ -217,31 +229,9 @@ class SpreadSampler : public Sampler {
                              std::queue<unsigned long>& queue,
                              std::unordered_set<unsigned long>& visited,
                              bool trial, bool inv=false) {
-    //std::cerr << node << std::endl;
-    if (model_ == 0) { // Linear threshold model
-      double theta = dist_();  // Random threshold for current node
-      std::cerr << theta << std::endl;
-      if (graph.has_neighbours(node, inv)) {
-        for (auto& neighbour : graph.get_neighbours(node, inv)) {
-          //std::cerr << "Neighbour : " << neighbour.target << ", weight : " << neighbour.dist->sample(type_) << std::endl;
-          theta -= neighbour.dist->sample(type_);
-          if (theta > 0)
-            continue;
-          if (visited.find(neighbour.target) == visited.end()) {
-            visited.insert(neighbour.target);
-            queue.push(neighbour.target);
-            if (trial) {  // If trial, we want to save the generated RR set sample
-              TrialType tt;
-              tt.source = node;
-              tt.target = neighbour.target;
-              tt.trial = 1;
-              trials_.push_back(tt);
-            }
-            //std::cerr << "Chosen." << std::endl;
-          }
-          break;
-        }
-      }
+    if (model_ == 0) { // Linear threshold model, this method isn't implemented for LT
+      std::cerr << "Error: this part is only run by IC model." << std::endl;
+      exit(1);
     } else if (model_ == 1) { // Independent Cascade model
       if (graph.has_neighbours(node, inv)) {
         for (auto edge : graph.get_neighbours(node, inv)) {
