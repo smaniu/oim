@@ -38,7 +38,6 @@
 
 #define THETA_OFFSET 5
 #define MAX_R 10000000
-#define NUM_THREADS_MAX 4
 
 extern double sampling_time;
 extern double choosing_time;
