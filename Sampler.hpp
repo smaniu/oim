@@ -33,12 +33,13 @@ class Sampler {
  protected:
   unsigned int type_;
   std::vector<TrialType> trials_;
+  int model_;  // 0 for linear threshold, 1 for cascade model
 
  public:
-  Sampler(unsigned int type) : type_(type) {};
+  Sampler(unsigned int type, int model) : type_(type), model_(model) {}
 
   /**
-  Method to estimate the standard deviation of TODO
+    Method to estimate the standard deviation of TODO
   */
   virtual double sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,

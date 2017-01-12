@@ -8,3 +8,4 @@
 prng_engine.hpp
 oim
 test/main_test
+*.txt

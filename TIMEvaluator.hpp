@@ -83,7 +83,7 @@ class TIMEvaluator : public Evaluator {
       }
     }
 
-    PathSampler sampler_s(sampler.get_type());
+    PathSampler sampler_s(sampler.get_type(), 1);
     std::uniform_int_distribution<int> dst(0, (int)graph_nodes_.size() - 1);
     double ep_step2, ep_step3;
     ep_step2 = ep_step3 = epsilon_;

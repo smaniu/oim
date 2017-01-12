@@ -46,12 +46,14 @@ class EvaluatorReduction : public GraphReduction {
  private:
   double p_;  // transmission probability (same for all edges)
   Evaluator& evaluator_;
+  int model_;
 
  public:
-  EvaluatorReduction(double p, Evaluator& evaluator)
-      : p_(p), evaluator_(evaluator) {}
+  EvaluatorReduction(double p, Evaluator& evaluator, int model=1)
+      : p_(p), evaluator_(evaluator), model_(model) {}
 
-  std::vector<unsigned long> extractExperts(const Graph& graph, int n_experts) {
+  std::vector<unsigned long> extractExperts(
+      const Graph& graph, int n_experts) {
     // 1. Copy graph assigning probability `p_` on every edge
     Graph model_graph;
     for (unsigned long i = 0; i < graph.get_number_nodes(); i++) {
@@ -63,7 +65,7 @@ class EvaluatorReduction : public GraphReduction {
       }
     }
     // 2. Select experts using the evaluator
-    SpreadSampler sampler(INFLUENCE_MED);
+    SpreadSampler sampler(INFLUENCE_MED, model_);
     std::unordered_set<unsigned long> activated;
     auto experts = evaluator_.select(model_graph, sampler, activated, n_experts);
     std::vector<unsigned long> result;
@@ -74,7 +76,7 @@ class EvaluatorReduction : public GraphReduction {
 };
 
 /**
- This method selects `n_experts` nodes with the highest degrees as experts.
+  This method selects `n_experts` nodes with the highest degrees as experts.
 */
 class HighestDegreeReduction : public GraphReduction {
  public:
@@ -84,7 +86,7 @@ class HighestDegreeReduction : public GraphReduction {
       users[node].first = node;
       users[node].second = graph.get_neighbours(node).size();
     }
-    std::sort(users.begin(), users.end(), [](auto &v1, auto &v2) -> bool {
+    std::sort(users.begin(), users.end(), [](auto& v1, auto& v2) -> bool {
         return v1.second > v2.second; // Inversed sort
       });
     std::vector<unsigned long> result(n_experts, 0);
@@ -95,11 +97,11 @@ class HighestDegreeReduction : public GraphReduction {
 };
 
 /**
- This method greedily selects n_experts nodes to maximize the cover of the
- model graph. Specifically, the algorithm is as follows:
-   1. Pick node with highest degree
-   2. Remove all neighbours of selected node (to avoid intersecting support)
-   3. Restart from 1.
+  This method greedily selects n_experts nodes to maximize the cover of the
+  model graph. Specifically, the algorithm is as follows:
+    1. Pick node with highest degree
+    2. Remove all neighbours of selected node (to avoid intersecting support)
+    3. Restart from 1.
 */
 class GreedyMaxCoveringReduction : public GraphReduction {
  public:

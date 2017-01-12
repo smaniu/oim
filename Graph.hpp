@@ -31,6 +31,7 @@
 
 #include "common.hpp"
 #include "InfluenceDistribution.hpp"
+#include <boost/random/mersenne_twister.hpp>
 
 
 class EdgeType {
@@ -51,6 +52,10 @@ class Graph {
  private:
   std::unordered_map<unsigned long, std::vector<EdgeType>> adj_list_;
   std::unordered_map<unsigned long, std::vector<EdgeType>> inv_adj_list_;
+  // For each node, if LT model was activated in graph loading, we have the
+  // distribution to sample an incoming edge according to its weight.
+  std::unordered_map<
+      unsigned long, std::discrete_distribution<>> mutable lt_dist_;
   std::unordered_set<unsigned long> node_set_;
   unsigned long num_edges_ = 0;
   unsigned long num_nodes_ = 0;
@@ -62,14 +67,14 @@ class Graph {
 
   Graph(const Graph& g)
       : adj_list_(g.adj_list_), inv_adj_list_(g.inv_adj_list_),
-        node_set_(g.node_set_), num_edges_(g.num_edges_),
+        lt_dist_(g.lt_dist_), node_set_(g.node_set_), num_edges_(g.num_edges_),
         num_nodes_(g.num_nodes_) {}
 
   Graph(Graph&& g)
       : adj_list_(std::move(g.adj_list_)),
         inv_adj_list_(std::move(g.inv_adj_list_)),
-        node_set_(std::move(g.node_set_)), num_edges_(std::move(g.num_edges_)),
-        num_nodes_(std::move(g.num_nodes_)) {}
+        lt_dist_(std::move(g.lt_dist_)), node_set_(std::move(g.node_set_)),
+        num_edges_(std::move(g.num_edges_)), num_nodes_(std::move(g.num_nodes_)) {}
 
   void set_prior(double alpha, double beta) {
     alpha_prior = alpha;
@@ -201,9 +206,9 @@ class Graph {
       return inv_adj_list_.find(node) != inv_adj_list_.end();
   }
 
-  /*
-  * Get the list of neighbours for the `node` given in parameter. To obtain the
-  * reversed neighbors for TIM-like algorithms, set inv to `true`.
+  /**
+    Get the list of neighbours for the `node` given in parameter. To obtain the
+    reversed neighbors for TIM-like algorithms, set inv to `true`.
   */
   const std::vector<EdgeType>& get_neighbours(
       unsigned long node, bool inv=false) const {
@@ -220,21 +225,70 @@ class Graph {
     return node_set_;
   }
 
-  /*
+  /**
     Test if a node is in the graph.
   */
   bool has_node(unsigned long node) {
     return node_set_.find(node) != node_set_.end();
   }
 
+  /**
+    Get number of nodes in the graph.
+  */
   unsigned long get_number_nodes() const {
     return num_nodes_;
   }
 
+  /**
+    Get number of edges in the graph.
+  */
   unsigned long get_number_edges() const {
     return num_edges_;
   }
 
+  /**
+    Build the distribution on each node to sample incoming living edges for the
+    LT model. It requires the graph has been entirely loaded. This method can
+    also be called after an update of
+  */
+  void build_lt_distribution(unsigned int type) {
+    for (unsigned long u = 0; u < num_nodes_; u++) {
+      if (has_neighbours(u, true)) {  // Only reversed edges are interesting
+        auto& neighbours = get_neighbours(u, true);
+        std::vector<double> w(neighbours.size() + 1, 0);
+        double total = 0;
+        for (unsigned int i = 0; i < neighbours.size(); i++) {
+          double cur_weight = neighbours[i].dist->sample(type);
+          total += cur_weight;
+          w[i] = cur_weight;
+        }
+        if (total < 1) {  // Weights do not sum to 1, we can sample no edge
+          w[neighbours.size()] = 1 - total;
+        }
+        // Note, the UCB-like case is handled automatically by discrete_distribution
+        lt_dist_[u] = std::discrete_distribution<>(w.begin(), w.end());
+      }
+    }
+  }
+
+  /**
+    Sample a living edge from a given node. This is used for LT algorithms.
+    Be careful, it returns the INDEX of the chosen node in the list of inverted
+    neighbours of `node`. If weights do not sum to 1, we can return -1 for no
+    sample.
+  */
+  int sample_living_edge(unsigned long node, boost::mt19937& gen) const {
+    if (has_neighbours(node, true)) {
+      int index = lt_dist_[node](gen);
+      if (index < (int)get_neighbours(node, true).size())
+        return index;
+    }
+    return -1;
+  }
+
+  /**
+    Display graph edges for debug purposes.
+  */
   void write_err(int type) {
     for (unsigned long i = 0; i < get_number_nodes(); i++) {
       if (!has_neighbours(i))

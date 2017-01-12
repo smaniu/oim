@@ -38,7 +38,7 @@
 using namespace std;
 
 /**
-  Independent Cascade Model Sampler of the graph (does a *real* sample).
+  LT or Independent Cascade Model Sampler of the graph (does a *real* sample).
 */
 class SpreadSampler : public Sampler {
  private:
@@ -47,8 +47,8 @@ class SpreadSampler : public Sampler {
   double stdev_;
 
  public:
-  SpreadSampler(unsigned int type)
-      : Sampler(type), gen_(seed_ns()), dist_(gen_) {};
+  SpreadSampler(unsigned int type, int model)
+      : Sampler(type, model), gen_(seed_ns()), dist_(gen_) {};
 
   /**
     Samples `n_samples` from seeds.
@@ -73,7 +73,7 @@ class SpreadSampler : public Sampler {
 
   /**
     Performs a unique sample from `source`. This method is used for sampling
-    RR sets in SSAEvaluator.
+    RR sets in SSAEvaluator. It implements both LT and IC models.
 
     @param nodes_activated Reserved vector of size the number of nodes. It is
         used as queue while performing the sample
@@ -82,22 +82,34 @@ class SpreadSampler : public Sampler {
   */
   std::shared_ptr<vector<unsigned long>> perform_unique_sample(
         const Graph& graph, std::vector<unsigned long>& nodes_activated,
-        std::vector<bool>& bool_activated, unsigned long source, bool inv=false) {
+        std::vector<bool>& bool_activated, unsigned long source,
+        bool inv=false) {
     unsigned long cur = source;
     unsigned long num_marked = 1, cur_pos = 0;
     bool_activated[cur] = true;
     nodes_activated[0] = cur;
     while (cur_pos < num_marked) {
       cur = nodes_activated[cur_pos];
-  		cur_pos++;
-      if (graph.has_neighbours(cur, inv)) {
-        const vector<EdgeType>& neighbours = graph.get_neighbours(cur, inv);
-        for (auto& neighbour : neighbours) {
-          if (dist_() < neighbour.dist->sample(type_)) {
-            if (!bool_activated[neighbour.target]) {
-              bool_activated[neighbour.target] = true;
-              nodes_activated[num_marked] = neighbour.target;
-              num_marked++;
+      cur_pos++;
+      if (model_ == 0) { // Linear threshold model
+        int index = graph.sample_living_edge(cur, gen_);
+        if (index == -1)  // Unconnected node or sample with weights summing to less than 1
+          continue;
+        unsigned long living_node = graph.get_neighbours(cur, true)[index].target;
+        if (!bool_activated[living_node]) {
+          bool_activated[living_node] = true;
+          nodes_activated[num_marked] = living_node;
+          num_marked++;
+        }
+      } else if (model_ == 1) { // Independent Cascade model
+        if (graph.has_neighbours(cur, inv)) {
+          for (auto& neighbour : graph.get_neighbours(cur, inv)) {
+            if (dist_() < neighbour.dist->sample(type_)) {
+              if (!bool_activated[neighbour.target]) {
+                bool_activated[neighbour.target] = true;
+                nodes_activated[num_marked] = neighbour.target;
+                num_marked++;
+              }
             }
           }
         }
@@ -114,25 +126,50 @@ class SpreadSampler : public Sampler {
 
   /**
     Performs the real diffusion from selected seeds.
-    Returns the set of actiavted users.
+    Returns the set of activated users.
   */
   std::unordered_set<unsigned long> perform_diffusion(const Graph& graph,
         const std::unordered_set<unsigned long>& seeds) {
-    std::queue<unsigned long> queue;
     std::unordered_set<unsigned long> visited;
-    for (auto source : seeds) {
-      queue.push(source);
-      visited.insert(source);
-    }
-    while (queue.size() > 0) {
-      auto node_id = queue.front();
-      sample_outgoing_edges(graph, node_id, queue, visited, false, false);
-      queue.pop();
+    std::queue<unsigned long> queue;
+    if (model_ == 0) {
+      std::unordered_map<unsigned long, std::vector<unsigned long>> live_edges;
+      for (unsigned long u = 0; u < graph.get_number_nodes(); u++) {
+        int index = graph.sample_living_edge(u, gen_);
+        if (index == -1)  // Unconnected node or sample with weights summing to less than 1
+          continue;
+        live_edges[graph.get_neighbours(u, true)[index].target].push_back(u);
+      }
+      for (auto source : seeds) {
+        queue.push(source);
+        visited.insert(source);
+      }
+      while (queue.size() > 0) {
+        auto node_id = queue.front();
+        visited.insert(node_id);
+        if (live_edges.find(node_id) != live_edges.end()) {
+          for (auto& neighbour : live_edges[node_id]) {
+            if (visited.find(neighbour) == visited.end())
+              queue.push(neighbour);
+          }
+        }
+        queue.pop();
+      }
+    } else if (model_ == 1) {
+      for (auto source : seeds) {
+        queue.push(source);
+        visited.insert(source);
+      }
+      while (queue.size() > 0) {
+        auto node_id = queue.front();
+        sample_outgoing_edges(graph, node_id, queue, visited, false, false);
+        queue.pop();
+      }
     }
     return visited; // Potentially a copy, depending on compiler's optimzations
   }
 
-  double get_stdev() { return stdev_; }
+  //double get_stdev() { return stdev_; }
 
  private:
   /**
@@ -144,6 +181,7 @@ class SpreadSampler : public Sampler {
                         unsigned long n_samples, bool trial, bool inv=false) {
     trials_.clear();
     double spread = 0;
+    double outspread = 0;
     stdev_ = 0;
     for (unsigned long sample = 1; sample <= n_samples; sample++) {
       double reached_round = 0; // Number of nodes activated
@@ -160,39 +198,48 @@ class SpreadSampler : public Sampler {
         if (activated.find(node_id) == activated.end())
           reached_round++;
       }
+      //exit(1);
       double os = spread;
       spread += (reached_round - os) / (double)sample;  // TODO Don't understand this line ERROR
+      outspread += reached_round;
       stdev_ += (reached_round - os) * (reached_round - spread);
     }
     stdev_ = sqrt(stdev_ / (double)(n_samples - 1));
-    return spread;
+    return outspread / n_samples;
   }
 
   /**
     Samples outgoing edges from `node`. New activated nodes are added to
     `visited`. If `trial` is true, we add sampled edges in the vector `trials_`.
+    This method is implemented for both linear threshold and independent cascade
+    models.
   */
-  void sample_outgoing_edges(const Graph& graph, const unsigned long node,
+  void sample_outgoing_edges(const Graph& graph, unsigned long node,
                              std::queue<unsigned long>& queue,
                              std::unordered_set<unsigned long>& visited,
                              bool trial, bool inv=false) {
-    if (graph.has_neighbours(node, inv)) {
-      for (auto edge : graph.get_neighbours(node, inv)) {
-        if (visited.find(edge.target) == visited.end()) {
-          double dice_dst = edge.dist->sample(type_);
-          unsigned int act = 0;
-          double dice = dist_();
-          if (dice < dice_dst) {
-            visited.insert(edge.target);
-            queue.push(edge.target);
-            act = 1;
-          }
-          if (trial) {  // If trial, we want to save the generated RR set sample
-            TrialType tt;
-            tt.source = node;
-            tt.target = edge.target;
-            tt.trial = act;
-            trials_.push_back(tt);
+    if (model_ == 0) { // Linear threshold model, this method isn't implemented for LT
+      std::cerr << "Error: this part is only run by IC model." << std::endl;
+      exit(1);
+    } else if (model_ == 1) { // Independent Cascade model
+      if (graph.has_neighbours(node, inv)) {
+        for (auto edge : graph.get_neighbours(node, inv)) {
+          if (visited.find(edge.target) == visited.end()) {
+            double dice_dst = edge.dist->sample(type_);
+            unsigned int act = 0;
+            double dice = dist_();
+            if (dice < dice_dst) {
+              visited.insert(edge.target);
+              queue.push(edge.target);
+              act = 1;
+            }
+            if (trial) {  // If trial, we want to save the generated RR set sample
+              TrialType tt;
+              tt.source = node;
+              tt.target = edge.target;
+              tt.trial = act;
+              trials_.push_back(tt);
+            }
           }
         }
       }

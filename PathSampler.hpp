@@ -45,14 +45,14 @@ class PathSampler : public Sampler {
   struct NodeType {
     unsigned long id;
     double prob;
-    bool operator<(const NodeType &a) const {
+    bool operator<(const NodeType& a) const {
       return (prob < a.prob) ? true : ((prob > a.prob) ? false : id > a.id);
     }
   };
 
  public:
-  PathSampler(unsigned int type)
-      : Sampler(type) {};
+  PathSampler(unsigned int type, int model)
+      : Sampler(type, model) {};
 
   double sample(const Graph& graph,
                 const std::unordered_set<unsigned long>& activated,
