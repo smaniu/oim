@@ -187,14 +187,14 @@ class GoodUcbPolicy : public Policy {
         sigma += elt.second;
       sigma /= n_plays_[i];
       if (sigma_type_ == SAMPLE_STD) {  // If we estimate sum of p(x) by the sample mean + std
-        double empirical_variance = 0;
+        double empirical_std = 0;
         for (auto elt : spreads_[i])
-          empirical_variance += (elt - sigma) * (elt - sigma);
+          empirical_std += (elt - sigma) * (elt - sigma);
         if (n_plays_[i] == 1)
-          empirical_variance = sigma;
+          empirical_std = sigma;
         else
-          empirical_variance = sqrt(empirical_variance / (n_plays_[i] - 1));
-        sigma += empirical_variance;
+          empirical_std = sqrt(empirical_std / (n_plays_[i] - 1));
+        sigma += empirical_std;
       } else if (sigma_type_ == INTERSECTING_SUPPORT) {
         missing_mass_i = 0;
         for (auto& elt : n_rewards_[i]) {

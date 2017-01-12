@@ -214,8 +214,15 @@ class MissingMassStrategy : public Strategy {
       total_spread.insert(stage_spread.begin(), stage_spread.end());
 
       // 3. (c) Update statistics of experts
-      for (unsigned long expert : chosen_experts) {
-        policy->updateState(expert, stage_spread);
+      std::vector<unsigned long> expert_nodes;  // For each expert, the associated node in the graph
+      for (unsigned int chosen_expert : chosen_experts)
+        expert_nodes.push_back(experts[chosen_expert]);
+      //auto expert_spreads = extract_expert_spreads(
+      //      stage_spread, expert_nodes, k);  // Spread associated to each expert
+      int n_expert = 0;
+      for (unsigned int expert : chosen_experts) {
+        policy->updateState(expert, stage_spread);//expert_spreads[n_expert]);
+        n_expert++;
       }
       t2 = get_timestamp();
       updatingtime = (double)(t2 - t1) / 1000000.;
@@ -232,6 +239,51 @@ class MissingMassStrategy : public Strategy {
         std::cout << seed << ".";
       std::cout << std::endl << std::flush;
     }
+  }
+
+ private:
+  /**
+    Returns the spread associated to each selected expert.
+
+    We assign each activated node to the closest expert using the geodesic
+    distance (graph distance == shortest path).
+  */
+  std::vector<std::unordered_set<unsigned long>> extract_expert_spreads(
+      std::unordered_set<unsigned long>& stage_spread,
+      const std::vector<unsigned long>& expert_nodes, unsigned int k) {
+    std::vector<std::unordered_set<unsigned long>> res;
+    std::vector<std::queue<unsigned long>> queues;
+    // Initialization
+    for (unsigned int i = 0; i < k; i++) {
+      queues.push_back(std::queue<unsigned long>());
+      queues[i].push(expert_nodes[i]);
+      res.push_back(std::unordered_set<unsigned long>());
+      res[i].insert(expert_nodes[i]);
+      stage_spread.erase(expert_nodes[i]);
+    }
+    // While we haven't assigned each activated node to an expert
+    while (stage_spread.size() > 0) {
+      std::unordered_set<unsigned long> seen_round;
+      for (unsigned int i = 0; i < k; i++) {
+        unsigned int queue_size = queues[i].size(); // Number of elements to inspect at this round
+        for (unsigned j = 0; j < queue_size; j++) {
+          auto node = queues[i].front();
+          queues[i].pop();
+          if (!original_graph_.has_neighbours(node))
+            continue;
+          for (auto& neighbour : original_graph_.get_neighbours(node)) {
+            if (stage_spread.find(neighbour.target) == stage_spread.end())  // This node has not been activated
+              continue;
+            seen_round.insert(neighbour.target);
+            queues[i].push(neighbour.target);
+            res[i].insert(neighbour.target);
+          }
+        }
+      }
+      for (auto elt : seen_round)
+        stage_spread.erase(elt);
+    }
+    return res;
   }
 };
 
