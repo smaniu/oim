@@ -69,7 +69,7 @@ void real(int argc, const char * argv[],
   strategy.perform(budget, k);
 }
 
-void epsgreedy(int argc, const char * argv[]){
+void epsgreedy(int argc, const char * argv[]) {
   std::string file_name_graph(argv[2]);
   double alpha = atof(argv[3]);
   double beta = atof(argv[4]);
@@ -141,9 +141,6 @@ void expgr(int argc, const char * argv[],
     exit(1);
   }
   // Take parameters
-  bool update = true;
-  unsigned int learn = 0;
-  int model = 1;
   double alpha = atof(argv[3]), beta = atof(argv[4]);
   unsigned int exploit = atoi(argv[5]);
   if (exploit > 6) {
@@ -152,20 +149,15 @@ void expgr(int argc, const char * argv[],
   }
   unsigned int budget = atoi(argv[6]);
   unsigned int k = atoi(argv[7]);
-  if (argc > 8) {
-    model = atoi(argv[8]);
-    // TODO Check that the selected Evaluator implemented the LT if chosen
-  }
-  if (argc > 9)
-    update = (atoi(argv[9]) == 1) ? true : false;
-  if (argc > 10)
-    learn = atoi(argv[10]);
+  int model = (argc > 8) ? atoi(argv[8]) : 1;
+  // TODO Check that the selected Evaluator implemented the LT if chosen
+  bool update = (argc > 9) ? (atoi(argv[9]) == 1) : true;
+  unsigned int learn = (argc > 10) ? atoi(argv[10]) : 0;
 
   // Load model and original graphs
   Graph original_graph, model_graph;
-  load_model_and_original_graph(argv[2], alpha, beta,
-                                original_graph, model_graph);
-  SampleManager::setInstance(model_graph);
+  load_model_and_original_graph(argv[2], alpha, beta, original_graph,
+                                model_graph, model);
   // Run experiment with Exponentiated Gradient strategy
   ExponentiatedGradientStrategy strategy(
       model_graph, original_graph, *evaluators.at(exploit),
@@ -186,8 +178,6 @@ void missing_mass(int argc, const char * argv[],
               << "[<model>]" << std::endl;
     exit(1);
   }
-  Graph original_graph;
-  load_original_graph(argv[2], original_graph);
   // Policy to choose expert
   unsigned int n_policy = atoi(argv[3]);
   if (n_policy >= 2) {
@@ -204,6 +194,9 @@ void missing_mass(int argc, const char * argv[],
   unsigned int k = atoi(argv[6]);
   int n_experts = atoi(argv[7]);
   int model = argc > 8 ? atoi(argv[8]) : 1;
+
+  Graph original_graph;
+  load_original_graph(argv[2], original_graph, model);
   MissingMassStrategy strategy(
       original_graph, *greduction.at(reduction), n_experts, n_policy, model);
   strategy.perform(budget, k);

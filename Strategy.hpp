@@ -426,7 +426,7 @@ class ExponentiatedGradientStrategy : public Strategy {
   Graph& model_graph_;
   Evaluator& evaluator_;
   bool update_;
-  unsigned int learn_;
+  unsigned int learn_;  // Corresponds to update_type
 
  public:
   ExponentiatedGradientStrategy(Graph& model_graph, Graph& original_graph,
