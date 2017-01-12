@@ -217,11 +217,11 @@ class MissingMassStrategy : public Strategy {
       std::vector<unsigned long> expert_nodes;  // For each expert, the associated node in the graph
       for (unsigned int chosen_expert : chosen_experts)
         expert_nodes.push_back(experts[chosen_expert]);
-      //auto expert_spreads = extract_expert_spreads(
-      //      stage_spread, expert_nodes, k);  // Spread associated to each expert
+      auto expert_spreads = extract_expert_spreads(
+            stage_spread, expert_nodes, k);  // Spread associated to each expert
       int n_expert = 0;
       for (unsigned int expert : chosen_experts) {
-        policy->updateState(expert, stage_spread);//expert_spreads[n_expert]);
+        policy->updateState(expert, expert_spreads[n_expert]);
         n_expert++;
       }
       t2 = get_timestamp();
