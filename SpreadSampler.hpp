@@ -120,12 +120,12 @@ class SpreadSampler : public Sampler {
       if (activated.find(nodes_activated[i]) == activated.end())
         result.push_back(nodes_activated[i]);
     }
-    std::shared_ptr<vector<unsigned long> > rr_sample =
+    std::shared_ptr<vector<unsigned long>> rr_sample =
         std::make_shared<vector<unsigned long>>(result);
         // std::make_shared<vector<unsigned long>>(vector<unsigned long>(
         // nodes_activated.begin(), nodes_activated.begin() + num_marked));
     for (unsigned int i = 0; i < num_marked; i++) {
-      bool_activated[(*rr_sample)[i]] = false;
+      bool_activated[nodes_activated[i]] = false;
     }
     return rr_sample;
   }
