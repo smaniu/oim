@@ -94,26 +94,13 @@ void epsgreedy(int argc, const char * argv[]) {
   unsigned int budget = atoi(argv[7]);
   unsigned int k = atoi(argv[8]);
   double eps = atof(argv[9]);
-  int samples = 1000;
-  bool update = true;
-  unsigned int learn = 0;
-  if (argc > 10) {
-    unsigned int upd = atoi(argv[10]);
-    update = (upd == 1) ? true : false;
-  }
-  unsigned int int_explore = INFLUENCE_MED;
-  unsigned int int_exploit = INFLUENCE_MED;
-  int inc = 0;
-  if (argc > 11)
-    learn = atoi(argv[11]);
-  if (argc > 12)
-    int_exploit = atoi(argv[12]);
-  if (argc > 13)
-    int_explore = atoi(argv[13]);
-  if (argc > 14)
-    inc = atoi(argv[14]);
-  if (argc > 15)
-    samples = atoi(argv[15]);
+  bool update = (argc > 10) ? (atoi(argv[10]) == 1) : true;
+  unsigned int learn = (argc > 11) ? atoi(argv[11]) : 0;
+  unsigned int int_exploit = (argc > 12) ? atoi(argv[12]) : INFLUENCE_MED;
+  unsigned int int_explore = (argc > 13) ? atoi(argv[13]) : INFLUENCE_MED;
+  int inc = (argc > 14) ? atoi(argv[14]) : 0;
+  int samples = (argc > 15) ? atoi(argv[15]) : 1000;
+
   std::vector<std::unique_ptr<Evaluator>> evals;
   evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator(samples)));
   evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));

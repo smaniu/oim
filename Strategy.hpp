@@ -507,7 +507,6 @@ class ExponentiatedGradientStrategy : public Strategy {
       // sampling the distribution
       std::discrete_distribution<int> prob(p.begin(), p.end());
       cur_theta = prob(gen_) + THETA_OFFSET;
-      std::cerr << "type_ == " << cur_theta << std::endl;
 
       // PathSampler path_sampler(cur_theta); (version with path sampler, not used anymore)
       SpreadSampler explore_sampler(cur_theta, model_);
