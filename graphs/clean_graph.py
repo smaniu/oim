@@ -12,7 +12,7 @@ Specifically, it
 """
 
 import sys
-import networkx as nx
+#import networkx as nx
 
 
 def load_graph(graph, directed=True):
@@ -40,17 +40,17 @@ def load_graph(graph, directed=True):
                     G[u2] = set()
                 G[u2].add(u1)
     # Translation to networkx format
-    G2 = nx.DiGraph()
-    for u1 in G:
-        for u2 in G[u1]:
-            G2.add_edge(u1, u2)
-    return G2
+    # G2 = nx.DiGraph()
+    # for u1 in G:
+    #     for u2 in G[u1]:
+    #         G2.add_edge(u1, u2)
+    return G
 
 def write_cleaned_graph(giant):
     new_mapping = dict()
     n, m = 0, 0
-    for u1 in giant:
-        for u2 in giant[u1]:
+    for u1 in G:
+        for u2 in G[u1]:
             if u1 not in new_mapping:
                 new_mapping[u1] = n
                 n += 1
@@ -68,5 +68,5 @@ if __name__ == '__main__':
     if len(sys.argv) >= 3:
         directed = (int(sys.argv[2]) == 1)
     G = load_graph(sys.argv[1], directed)
-    giant = max(nx.weakly_connected_component_subgraphs(G), key=len)
-    write_cleaned_graph(giant)
+    #giant = max(nx.weakly_connected_component_subgraphs(G), key=len)
+    write_cleaned_graph(G)
