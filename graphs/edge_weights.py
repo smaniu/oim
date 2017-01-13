@@ -3,7 +3,7 @@
 
 import sys
 import random
-import numpy as np
+# import numpy as np
 
 
 def load_reversed_graph(graph):
@@ -11,7 +11,7 @@ def load_reversed_graph(graph):
     with open(graph, 'r') as fin:
         for l in fin:
             u1, u2 = map(int, l.rstrip().split()[:2])
-            if u1 not in G:
+            if u2 not in G:
                 G[u2] = list()
             G[u2].append(u1)
     return G
@@ -20,32 +20,32 @@ def constant_ic(graph, p):
     with open(graph, 'r') as fin:
         for l in fin:
             u1, u2 = map(int, l.rstrip().split()[:2])
-            print '%d\t%d\t%f' % (u1, u2, p)
+            print '%d\t%d\t%.3g' % (u1, u2, p)
 
 def weighted_cascade(graph):
-    G = load_graph(graph)
+    G = load_reversed_graph(graph)
     for u2 in G:
         for u1 in G[u2]:
-            print '%d\t%d\t%f' % (u1, u2, 1. / len(G[u2]))
+            print '%d\t%d\t%.3g' % (u1, u2, 1. / len(G[u2]))
 
 def tri_valency_ic(graph, p):
     with open(graph, 'r') as fin:
         for l in fin:
             u1, u2 = map(int, l.rstrip().split()[:2])
-            print '%d\t%d\t%f' % (u1, u2, random.choice(p))
+            print '%d\t%d\t%.3g' % (u1, u2, random.choice(p))
 
 def uniform_lt(graph):
     # This is exactly the same as Weighted Cascade for the IC model
     weighted_cascade(graph)
 
 def random_lt(graph):
-    G = load_graph(graph)
+    G = load_reversed_graph(graph)
     for u2 in G:
         indegree = len(G[u2])
-        weights = np.random.uniform(size=indegree)
-        weights /= sum(weights)
+        weights = [random.random() for a in xrange(indegree)]
+        weights = [w / sum(weights) for w in weights]
         for i in xrange(indegree):
-            print '%d\t%d\t%f' % (G[u1][i], u2, weights[i])
+            print '%d\t%d\t%.3g' % (G[u2][i], u2, weights[i])
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
