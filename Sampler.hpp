@@ -54,7 +54,7 @@ class Sampler {
   virtual std::shared_ptr<std::vector<unsigned long>> perform_unique_sample(
       const Graph& graph, std::vector<unsigned long>& nodes_activated,
       std::vector<bool>& bool_activated, const unsigned long source,
-      bool inv=false) = 0;
+      const std::unordered_set<unsigned long> activated, bool inv=false) = 0;
 
   virtual std::unordered_set<unsigned long> perform_diffusion(
       const Graph& graph, const std::unordered_set<unsigned long>& seeds) = 0;
