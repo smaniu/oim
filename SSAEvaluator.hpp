@@ -89,7 +89,7 @@ class SSAEvaluator : public Evaluator {
               (1 + epsilon_2) / (1 - epsilon_2) * epsilon_3 * epsilon_3 /
               (/*k * */epsilon_2 * epsilon_2));   // k dropped like in the paper
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
-                                                k, T_max);
+                                                k, T_max, activated);
         // std::cerr << "Unbiased estimator " << unbiased_estimator << std::endl;
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
           return seed_set_;
@@ -104,7 +104,8 @@ class SSAEvaluator : public Evaluator {
     Influence estimation of a given seed set seed_set_
   */
   double estimateInf(const Graph &graph, Sampler &sampler, double epsilon_2,
-                     unsigned int k, unsigned int T_max) {  // delta_2 = delta_3
+                     unsigned int k, unsigned int T_max,
+                     const std::unordered_set<unsigned long> activated) {  // delta_2 = delta_3
     vector<unsigned long> nodes_activated(graph.get_number_nodes(), 0);
     vector<bool> bool_activated(graph.get_number_nodes(), false);
     unsigned long n = graph.get_number_nodes();
@@ -118,7 +119,7 @@ class SSAEvaluator : public Evaluator {
       unsigned long source = dst_(gen_);
       // We sample a new RR set
       shared_ptr<vector<unsigned long>> rr_sample = sampler.perform_unique_sample(
-          graph, nodes_activated, bool_activated, source, true);  // TODO can be improved because if we found a node from seed_set, we can stop diffusion
+          graph, nodes_activated, bool_activated, source, activated, true);  // TODO can be improved because if we found a node from seed_set, we can stop diffusion
       for (unsigned long sampled_node : *rr_sample) {
         if (seed_set_.find(sampled_node) != seed_set_.end()) {
           cov += 1;
@@ -147,7 +148,7 @@ class SSAEvaluator : public Evaluator {
         source = dst_(gen_);
       }
       shared_ptr<vector<unsigned long>> rr_sample = sampler.perform_unique_sample(
-            graph, nodes_activated, bool_activated, source, true);
+            graph, nodes_activated, bool_activated, source, activated, true);
       rr_samples_.push_back(rr_sample);
       for (unsigned long node : *rr_sample) {
         hyper_graph_[node].push_back(nb_rr_samples);

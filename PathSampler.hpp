@@ -69,7 +69,8 @@ class PathSampler : public Sampler {
 
   std::shared_ptr<vector<unsigned long>> perform_unique_sample(
       const Graph& graph, vector<unsigned long>& nodes_activated,
-      vector<bool>& bool_activated, const unsigned long source, bool inv=false) {
+      vector<bool>& bool_activated, const unsigned long source,
+      const std::unordered_set<unsigned long> activated, bool inv=false) {
     return shared_ptr<vector<unsigned long>>(NULL);
   }
 

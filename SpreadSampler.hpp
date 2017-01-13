@@ -83,7 +83,7 @@ class SpreadSampler : public Sampler {
   std::shared_ptr<vector<unsigned long>> perform_unique_sample(
         const Graph& graph, std::vector<unsigned long>& nodes_activated,
         std::vector<bool>& bool_activated, unsigned long source,
-        bool inv=false) {
+        const std::unordered_set<unsigned long> activated, bool inv=false) {
     unsigned long cur = source;
     unsigned long num_marked = 1, cur_pos = 0;
     bool_activated[cur] = true;
@@ -115,9 +115,15 @@ class SpreadSampler : public Sampler {
         }
       }
     }
+    std::vector<unsigned long> result;
+    for (unsigned long i = 0; i < num_marked; i++) {
+      if (activated.find(nodes_activated[i]) == activated.end())
+        result.push_back(nodes_activated[i]);
+    }
     std::shared_ptr<vector<unsigned long> > rr_sample =
-        std::make_shared<vector<unsigned long>>(vector<unsigned long>(
-        nodes_activated.begin(), nodes_activated.begin() + num_marked));
+        std::make_shared<vector<unsigned long>>(result);
+        // std::make_shared<vector<unsigned long>>(vector<unsigned long>(
+        // nodes_activated.begin(), nodes_activated.begin() + num_marked));
     for (unsigned int i = 0; i < num_marked; i++) {
       bool_activated[(*rr_sample)[i]] = false;
     }
