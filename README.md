@@ -48,9 +48,6 @@ The following methods are currently supported:
 
         ./oim --real <graph> <exploit> <trials> <k> [<model>]
 
-There are other options, mainly used for debug purposes. Consult the source code
-for details.
-
 ## Parameters
 
 The parameters are set as follows:
