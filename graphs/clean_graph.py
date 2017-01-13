@@ -46,6 +46,21 @@ def load_graph(graph, directed=True):
             G2.add_edge(u1, u2)
     return G2
 
+def write_cleaned_graph(giant):
+    new_mapping = dict()
+    n, m = 0, 0
+    for u1 in giant:
+        for u2 in giant[u1]:
+            if u1 not in new_mapping:
+                new_mapping[u1] = n
+                n += 1
+            if u2 not in new_mapping:
+                new_mapping[u2] = n
+                n += 1
+            m += 1
+            print '%d\t%d' % (new_mapping[u1], new_mapping[u2])
+    sys.stderr.write('%d nodes, %d edges' % (n, m))
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print 'Usage: python clean_graph.py <graph> [<directed>]'
@@ -53,7 +68,5 @@ if __name__ == '__main__':
     if len(sys.argv) >= 3:
         directed = (int(sys.argv[2]) == 1)
     G = load_graph(sys.argv[1], directed)
-    giant = max(nx.connected_component_subgraphs(G), key=len)
-    for u1 in giant:
-        for u2 in giant[u1]:
-            print '%d\t%d' % (u1, u2)
+    giant = max(nx.weakly_connected_component_subgraphs(G), key=len)
+    write_cleaned_graph(giant)
