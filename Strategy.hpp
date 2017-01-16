@@ -149,6 +149,7 @@ class MissingMassStrategy : public Strategy {
   GraphReduction& g_reduction_;
   int n_experts_;
   unsigned int n_policy_;
+  int n_graph_reduction_;
 
  public:
   /**
@@ -237,11 +238,20 @@ class MissingMassStrategy : public Strategy {
                 << reductiontime << "\t" << selectingtime << "\t"
                 << updatingtime << "\t" << roundtime << "\t"
                 << totaltime << "\t" << memory << "\t" << k << "\t"
-                << n_experts_ << "\t" << n_policy_ << "\t" << model_ << "\t";
+                << n_experts_ << "\t" << n_policy_ << "\t"
+                << n_graph_reduction_ << "\t" << model_ << "\t";
       for (auto seed : seeds)
         std::cout << seed << ".";
       std::cout << std::endl << std::flush;
     }
+  }
+
+  /**
+    Set the Graph reduction method number in order to write it on the standard
+    output (useful for experiments).
+  */
+  void set_graph_reduction(int n_reduction) {
+    n_graph_reduction_ = n_reduction;
   }
 
  private:
