@@ -89,7 +89,7 @@ class OriginalGraphStrategy : public Strategy {
   void perform(unsigned int budget, unsigned int k) {
     SpreadSampler sampler(INFLUENCE_MED, model_);
     std::unordered_set<unsigned long> activated;
-    double expected = 0, real = 0, time_min = 0;
+    double expected = 0, real = 0, roundtime = 0, timetotal = 0;
     for (unsigned int stage = 0; stage < budget; stage++) {
       timestamp_t t0, t1;
       t0 = get_timestamp();
@@ -124,9 +124,11 @@ class OriginalGraphStrategy : public Strategy {
 
       t1 = get_timestamp();
       // Printing results
-      time_min += (double)(t1 - t0) / 1000000;
-      std::cout << stage << "\t" << real << "\t" << expected << "\t" << hits
-                << "\t" << misses << "\t" << time_min << "\t";
+      timetotal += (double)(t1 - t0) / 1000000;
+      roundtime = (double)(t1 - t0) / 1000000;
+      std::cout << stage << "\t" << real << "\t" << expected << "\t"
+                << roundtime << "\t" << timetotal << "\t" << k << "\t"
+                << model_ << "\t";
       for (auto seed : seeds)
         std::cout << seed << ".";
       std::cout << std::endl << std::flush;
@@ -232,9 +234,10 @@ class MissingMassStrategy : public Strategy {
 
       // 4. Printing results
       std::cout << stage << "\t" << total_spread.size() << '\t'
-                << reductiontime << "\t" << totaltime << "\t"
-                << roundtime << "\t" << selectingtime << "\t"
-                << updatingtime << "\t" << memory << "\t";
+                << reductiontime << "\t" << selectingtime << "\t"
+                << updatingtime << "\t" << roundtime << "\t"
+                << totaltime << "\t" << memory << "\t" << k << "\t"
+                << n_experts_ << "\t" << n_policy_ << "\t" << model_ << "\t";
       for (auto seed : seeds)
         std::cout << seed << ".";
       std::cout << std::endl << std::flush;
@@ -648,12 +651,10 @@ class ExponentiatedGradientStrategy : public Strategy {
       //double mse = model_graph_.get_mse();
 
       // Printing results
-      std::cout << stage << "\t" << real << "\t" << expected << "\t" <<
-          /*hits << "\t" << misses << "\t" <<*/ totaltime << "\t" << roundtime <</*
-          "\t" << sampling_time << "\t" << choosing_time <<*/ "\t" <<
-          selecting_time << "\t" << updating_time <</* "\t" << alpha << "\t" <<
-          beta << "\t" << mse <<*/ "\t" << (int)cur_theta - THETA_OFFSET - 1 <<
-          "\t" << /*reused_ratio << "\t" <<*/ memory << "\t";
+      std::cout << stage << "\t" << real << "\t" << expected << "\t"
+          << selecting_time << "\t" << updating_time << "\t" << roundtime << "\t"
+          << totaltime  << "\t" << (int)cur_theta - THETA_OFFSET - 1 << "\t"
+          << memory << "\t" << k << "\t" << model_ << "\t";
       for (auto seed : seeds)
         std::cout << seed << ".";
       std::cout << std::endl << std::flush;
