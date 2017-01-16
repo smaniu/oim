@@ -71,26 +71,21 @@ The parameters are set as follows:
 
 The different methods write on the standard output with the following format:
 
-1. *epsilon-greedy*:
+### Epsilon-greedy
 
-      TODO
+    TODO
 
-2. *exponentiated gradient*:
+### Exponentiated gradient
 
-      stage <TAB> cumulative spread <TAB> expected spread <TAB> tselection <TAB>
-      tupdate <TAB> tround <TAB> ttotal <TAB> theta <TAB> memory <TAB> k <TAB>
-      model <TAB> seeds
+    stage <TAB> cumulative spread <TAB> expected spread <TAB> tselection <TAB> tupdate <TAB> tround <TAB> ttotal <TAB> theta <TAB> memory <TAB> k <TAB> model <TAB> seeds
 
-3. *missing mass*:
+### Missing mass
 
-      stage <TAB> cumulative spread <TAB> treduction <TAB> tselection <TAB>
-      tupdate <TAB> tround <TAB> ttotal <TAB> memory <TAB> k <TAB>
-      n_experts <TAB> n_policy <TAB> n_reduction <TAB> model <TAB> seeds
+    stage <TAB> cumulative spread <TAB> treduction <TAB> tselection <TAB> tupdate <TAB> tround <TAB> ttotal <TAB> memory <TAB> k <TAB> n_experts <TAB> n_policy <TAB> n_reduction <TAB> model <TAB> seeds
 
-4. *real graph*:
+### Real graph
 
-      stage <TAB> cumulative spread <TAB> expected spread <TAB> tround <TAB>
-      ttotal <TAB> k <TAB> model <TAB> seeds
+    stage <TAB> cumulative spread <TAB> expected spread <TAB> tround <TAB> ttotal <TAB> k <TAB> model <TAB> seeds
 
 # License
 
