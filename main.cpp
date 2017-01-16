@@ -186,6 +186,8 @@ void missing_mass(int argc, const char * argv[],
   load_original_graph(argv[2], original_graph, model);
   MissingMassStrategy strategy(
       original_graph, *greduction.at(reduction), n_experts, n_policy, model);
+  // Give strategy the reduction method for output
+  strategy.set_graph_reduction(reduction);
   strategy.perform(budget, k);
 }
 
