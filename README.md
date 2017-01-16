@@ -67,6 +67,31 @@ The parameters are set as follows:
 * *model* can take the following values: **0** Linear Threshold, **1**
   Independent Cascade
 
+## Output
+
+The different methods write on the standard output with the following format:
+
+1. *epsilon-greedy*:
+
+    TODO
+
+2. *exponentiated gradient*:
+
+    stage <TAB> cumulative spread <TAB> expected spread <TAB> tselection <TAB>
+    tupdate <TAB> tround <TAB> ttotal <TAB> theta <TAB> memory <TAB> k <TAB>
+    model <TAB> seeds
+
+3. *missing mass*:
+
+    stage <TAB> cumulative spread <TAB> treduction <TAB> tselection <TAB>
+    tupdate <TAB> tround <TAB> ttotal <TAB> memory <TAB> k <TAB> n_experts <TAB>
+    n_policy <TAB> model <TAB> seeds
+
+4. *real graph*:
+
+    stage <TAB> cumulative spread <TAB> expected spread <TAB> tround <TAB>
+    ttotal <TAB> k <TAB> model <TAB> seeds
+
 # License
 
 The source code is provided as-is under an MIT License. If it is useful to you,
