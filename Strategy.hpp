@@ -103,12 +103,14 @@ class OriginalGraphStrategy : public Strategy {
         new_expected += sampler.perform_diffusion(original_graph_, seeds).size();
       }
       expected += new_expected / samples_;
-      real += sampler.perform_diffusion(original_graph_, seeds).size();
+      auto diffusion = sampler.perform_diffusion(original_graph_, seeds);
+      for (auto& node : diffusion)
+        activated.insert(node);
+      real = activated.size();
 
       // Updating the model graph
       std::unordered_set<unsigned long> nodes_to_update;
       for (unsigned long node : seeds) {
-        activated.insert(node);
         nodes_to_update.insert(node);
       }
       unsigned int hits = 0, misses = 0;
@@ -116,7 +118,6 @@ class OriginalGraphStrategy : public Strategy {
         nodes_to_update.insert(tt.target);
         if (tt.trial == 1) {
           hits++;
-          activated.insert(tt.target);
         } else {
           misses++;
         }
