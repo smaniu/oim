@@ -471,7 +471,7 @@ class EpsilonGreedyStrategy {
 
 /**
   Confidence bound strategy that dynamically updates the factor of exploration
-  theta using exponentiated gradients. TODO see if i can remove `learn`
+  theta using exponentiated gradients.
 */
 class ExponentiatedGradientStrategy : public Strategy {
  private:
