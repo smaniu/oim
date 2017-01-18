@@ -68,14 +68,14 @@ class PathSampler : public Sampler {
   }
 
   std::shared_ptr<vector<unsigned long>> perform_unique_sample(
-      const Graph& graph, vector<unsigned long>& nodes_activated,
-      vector<bool>& bool_activated, const unsigned long source,
-      const std::unordered_set<unsigned long> activated, bool inv=false) {
+      const Graph&, vector<unsigned long>&,
+      vector<bool>&, const unsigned long,
+      const std::unordered_set<unsigned long>&, bool) {
     return shared_ptr<vector<unsigned long>>(NULL);
   }
 
   std::unordered_set<unsigned long> perform_diffusion(
-      const Graph& graph, const std::unordered_set<unsigned long>& seeds) {
+      const Graph&, const std::unordered_set<unsigned long>&) {
     return std::unordered_set<unsigned long>();
   }
 
@@ -83,7 +83,7 @@ private:
   double perform_sample(const Graph& graph,
                         const std::unordered_set<unsigned long>& activated,
                         const std::unordered_set<unsigned long>& seeds,
-                        unsigned long samples, bool trial, bool inv=false) {
+                        unsigned long, bool trial, bool inv=false) {
     trials_.clear();
     boost::heap::fibonacci_heap<NodeType> queue;
     std::unordered_map<unsigned long,

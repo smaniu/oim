@@ -38,8 +38,8 @@ class HighestDegreeEvaluator : public Evaluator {
   }
 
   std::unordered_set<unsigned long> select(
-        const Graph& graph, Sampler& sampler,
-        const std::unordered_set<unsigned long>& activated, unsigned int k) {
+        const Graph& graph, Sampler&,
+        const std::unordered_set<unsigned long>&, unsigned int k) {
     std::unordered_set<unsigned long> set;
     boost::heap::fibonacci_heap<NodeType> queue;
     for (unsigned long node : graph.get_nodes()) {
