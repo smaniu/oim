@@ -66,8 +66,8 @@ class Policy {
     This method does not necessarly need to be overloaded by classes inheriting
     Policy (e.g. RandomPolicy).
   */
-  virtual void updateState(unsigned int expert,
-                   const std::unordered_set<unsigned long>& stage_spread) {}
+  virtual void updateState(unsigned int,
+                           const std::unordered_set<unsigned long>&) {}
 
   /**
     Reinitialize the object to start parameters.

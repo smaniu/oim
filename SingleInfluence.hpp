@@ -38,7 +38,7 @@ class SingleInfluence : public InfluenceDistribution {
 
   double mean() { return value_; }
 
-  double sample(unsigned int interval) { return value_; }
+  double sample(unsigned int) { return value_; }
 };
 
 #endif /* defined(__oim__SingleInfluence__) */
