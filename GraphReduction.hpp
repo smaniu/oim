@@ -69,8 +69,11 @@ class EvaluatorReduction : public GraphReduction {
     std::unordered_set<unsigned long> activated;
     auto experts = evaluator_.select(model_graph, sampler, activated, n_experts);
     std::vector<unsigned long> result;
-    for (auto expert : experts)
+    for (auto expert : experts) {
       result.push_back(expert);
+      std::cerr << expert << ".";
+    }
+    std::cerr << std::endl;
     return result;
   }
 };

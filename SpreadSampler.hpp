@@ -175,8 +175,6 @@ class SpreadSampler : public Sampler {
     return visited; // Potentially a copy, depending on compiler's optimzations
   }
 
-  //double get_stdev() { return stdev_; }
-
  private:
   /**
     Performs `n_samples` samples starting from `seeds`. // TODO depreciated, remove its use everywhere
@@ -204,7 +202,6 @@ class SpreadSampler : public Sampler {
         if (activated.find(node_id) == activated.end())
           reached_round++;
       }
-      //exit(1);
       double os = spread;
       spread += (reached_round - os) / (double)sample;  // TODO Don't understand this line ERROR
       outspread += reached_round;

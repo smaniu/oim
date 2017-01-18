@@ -29,6 +29,7 @@
 #include "Sampler.hpp"
 
 #include <math.h>
+#include <chrono>
 
 using namespace std;
 
@@ -63,6 +64,7 @@ class SSAEvaluator : public Evaluator {
   std::unordered_set<unsigned long> select(
         const Graph& graph, Sampler& sampler,
         const std::unordered_set<unsigned long>& activated, unsigned int k) {
+    // std::chrono::steady_clock::time_point begin, end;
     hyper_graph_.clear();
     rr_samples_.clear();
     delta_ = 1. / graph.get_number_nodes();
@@ -78,24 +80,30 @@ class SSAEvaluator : public Evaluator {
         (2 + 2 / 3 * epsilon_3) * log(3 / delta_) / (epsilon_3 * epsilon_3));
     unsigned long n_samples = 2 * lambda_1;
     // Algorithm here
-    unsigned long n_new_samples = 0;
-    while (n_new_samples < THRESHOLD) {
-      n_new_samples = n_samples - rr_samples_.size();
-      buildSamples(n_new_samples, graph, sampler, activated);
+    // unsigned long n_new_samples = 0;
+    do {
+      // n_new_samples = n_samples - rr_samples_.size();
+      // begin = std::chrono::steady_clock::now();
+      buildSamples(n_samples, graph, sampler, activated);
+      // end = std::chrono::steady_clock::now();
+      // std::cerr << "Samples = " << n_samples << " => " << "t = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() / 1000000. << std::endl;
       n_samples *= 2;
       double biased_estimator = buildSeedSet(graph, k);
       if (biased_estimator * rr_samples_.size() / graph.get_number_nodes() >= lambda_1) {
         unsigned int T_max = (unsigned int)(2 * rr_samples_.size() *
               (1 + epsilon_2) / (1 - epsilon_2) * epsilon_3 * epsilon_3 /
               (/*k * */epsilon_2 * epsilon_2));   // k dropped like in the paper
+        // begin = std::chrono::steady_clock::now();
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
                                                 k, T_max, activated);
-        // std::cerr << "Unbiased estimator " << unbiased_estimator << std::endl;
+        // end = std::chrono::steady_clock::now();
+        // std::cerr << "Tmax = " << T_max << " => " << "t = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() / 1000000. << std::endl;
+        // std::cerr << "Unbiased estimator " << unbiased_estimator << ", biased_estimator = " << biased_estimator << std::endl;
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
           return seed_set_;
         }
       }
-    }
+    } while (n_samples < THRESHOLD);
     return seed_set_;
   }
 
@@ -103,9 +111,9 @@ class SSAEvaluator : public Evaluator {
   /**
     Influence estimation of a given seed set seed_set_
   */
-  double estimateInf(const Graph &graph, Sampler &sampler, double epsilon_2,
+  double estimateInf(const Graph &graph, Sampler& sampler, double epsilon_2,
                      unsigned int k, unsigned int T_max,
-                     const std::unordered_set<unsigned long> activated) {  // delta_2 = delta_3
+                     const std::unordered_set<unsigned long>& activated) {  // delta_2 = delta_3
     vector<unsigned long> nodes_activated(graph.get_number_nodes(), 0);
     vector<bool> bool_activated(graph.get_number_nodes(), false);
     unsigned long n = graph.get_number_nodes();
@@ -135,7 +143,6 @@ class SSAEvaluator : public Evaluator {
 
   /**
     Samples n_samples new RR sets and add them to set of RR samples rr_samples_
-    TODO Pretty sure I don't use `activated` properly.
   */
   void buildSamples(unsigned long n_samples, const Graph& graph, Sampler& sampler,
                     const unordered_set<unsigned long>& activated) {
