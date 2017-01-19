@@ -30,15 +30,15 @@
 
 class DiscountDegreeEvaluator : public Evaluator {
  public:
-  std::unordered_set<unsigned long> select(
+  std::unordered_set<unode_int> select(
         const Graph& graph, Sampler& sampler,
-        const std::unordered_set<unsigned long>& activated, unsigned int k) {
-    std::unordered_set<unsigned long> set;
+        const std::unordered_set<unode_int>& activated, unsigned int k) {
+    std::unordered_set<unode_int> set;
     unsigned int type = sampler.get_type();
     boost::heap::fibonacci_heap<NodeType> queue;
-    std::unordered_map<unsigned long,
+    std::unordered_map<unode_int,
         boost::heap::fibonacci_heap<NodeType>::handle_type> queue_nodes;
-    for (unsigned long node : graph.get_nodes()) {
+    for (unode_int node : graph.get_nodes()) {
       NodeType nstruct;
         nstruct.id = node;
         nstruct.deg = activated.find(node) == activated.end() ? 1.0f : 0.0f;

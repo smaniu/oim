@@ -48,7 +48,7 @@ class BetaInfluence: public InfluenceDistribution {
     update_quartiles();
   }
 
-  void update(unsigned long hit, unsigned long miss) {
+  void update(unode_int hit, unode_int miss) {
     alpha_ += (double)hit;
     beta_ += (double)miss;
     hits_ += hit;

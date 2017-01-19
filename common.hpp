@@ -31,9 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
-#include "InfluenceDistribution.hpp"
-#include "SingleInfluence.hpp"
+#include <cstdint>
 
 
 #define THETA_OFFSET 5
@@ -43,11 +41,11 @@ extern double sampling_time;
 extern double choosing_time;
 extern double reused_ratio;
 
-typedef long long int64;
+typedef uint32_t unode_int; // Type for node ids (can be changed into 32 or 64 bits)
 
 typedef struct {
-  unsigned long source;
-  unsigned long target;
+  unode_int source;
+  unode_int target;
   unsigned int trial;
 } TrialType;
 
@@ -60,7 +58,7 @@ int seed_ns() {
   return (int)ts.tv_nsec;
 }
 
-typedef unsigned long long timestamp_t;
+typedef unode_int long timestamp_t;
 
 /**
   Returns number of microseconds since the Epoch.
@@ -93,7 +91,7 @@ void process_mem_usage(double &vm_usage, double &resident_set) {
    string O, itrealvalue, starttime;
 
    // the two fields we want
-   unsigned long vsize;
+   unode_int vsize;
    long rss;
 
    stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr

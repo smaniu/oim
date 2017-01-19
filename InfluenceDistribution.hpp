@@ -23,6 +23,8 @@
 #ifndef __oim__InfluenceDistribution__
 #define __oim__InfluenceDistribution__
 
+#include "common.hpp"
+
 #define INFLUENCE_MED  0
 #define INFLUENCE_UPPER  1
 #define INFLUENCE_ADAPTIVE 2
@@ -31,12 +33,12 @@
 
 class InfluenceDistribution {
  protected:
-  unsigned long hits_ = 0;
-  unsigned long misses_ = 0;
+  unode_int hits_ = 0;
+  unode_int misses_ = 0;
   double round_ = 0;
 
  public:
-  virtual void update(unsigned long, unsigned long) {};
+  virtual void update(unode_int, unode_int) {};
 
   virtual void update_prior(double, double) {};
 
@@ -48,9 +50,9 @@ class InfluenceDistribution {
 
   void set_round(double new_round) { round_ += new_round; }
 
-  unsigned long get_hits() { return hits_; }
+  unode_int get_hits() { return hits_; }
 
-  unsigned long get_misses() { return misses_; }
+  unode_int get_misses() { return misses_; }
 };
 
 #endif /* defined(__oim__InfluenceDistribution__) */

@@ -67,7 +67,7 @@ class Policy {
     Policy (e.g. RandomPolicy).
   */
   virtual void updateState(unsigned int,
-                           const std::unordered_set<unsigned long>&) {}
+                           const std::unordered_set<unode_int>&) {}
 
   /**
     Reinitialize the object to start parameters.
@@ -112,16 +112,16 @@ enum Sigma {
 */
 class GoodUcbPolicy : public Policy {
  private:
-  std::vector<unsigned long>& nb_neighbours_; // Number of reachable nodes for each expert
+  std::vector<unode_int>& nb_neighbours_; // Number of reachable nodes for each expert
   unsigned int t_;                            // Number of rounds played
   std::vector<float> n_plays_;                // Number of times experts were played
   // For each expert, hashmap {node : #activations}
-  std::vector<std::unordered_map<unsigned long, unsigned int>> n_rewards_;
+  std::vector<std::unordered_map<unode_int, unsigned int>> n_rewards_;
   std::vector<std::vector<double>> spreads_;  // List of sampled spreads for each experts
   Sigma sigma_type_;        // Type of estimation of expert expected diffusion
 
  public:
-  GoodUcbPolicy(unsigned int n_experts, std::vector<unsigned long>& nb_neighbours,
+  GoodUcbPolicy(unsigned int n_experts, std::vector<unode_int>& nb_neighbours,
                 Sigma type=MEAN)
       : Policy(n_experts), nb_neighbours_(nb_neighbours),
         sigma_type_(type) { init(); }
@@ -130,7 +130,7 @@ class GoodUcbPolicy : public Policy {
     TODO Handle this remaining stuff I don't remember why I did that.
   */
   void printdebug() {
-    std::unordered_map<unsigned long, std::vector<int>> activations;  // {user: [expert 1, expert 2]}
+    std::unordered_map<unode_int, std::vector<int>> activations;  // {user: [expert 1, expert 2]}
     for (unsigned int i = 0; i < n_experts_; i++) {
       for (auto& elt : n_rewards_[i]) {
         if (activations.count(elt.first) == 0)
@@ -140,7 +140,7 @@ class GoodUcbPolicy : public Policy {
       }
     }
     std::cerr << "Number of plays\n===============" << std::endl;
-    for (unsigned long i = 0; i < n_experts_; i++)
+    for (unode_int i = 0; i < n_experts_; i++)
       std::cerr << i << "\t" << n_plays_[i] << std::endl;
     std::cerr << "\nNumber of activations\n===============" << std::endl;
     for (auto& elt : activations) {
@@ -223,7 +223,7 @@ class GoodUcbPolicy : public Policy {
     Update statistics on the chosen expert (k == 1).
   */
   void updateState(unsigned int expert,
-                   const std::unordered_set<unsigned long>& stage_spread) {
+                   const std::unordered_set<unode_int>& stage_spread) {
     t_++;
     for (auto& activated_node : stage_spread) {
       if (n_rewards_[expert].count(activated_node) == 0)
@@ -243,7 +243,7 @@ class GoodUcbPolicy : public Policy {
     n_plays_ = std::vector<float>(n_experts_, 0);
     spreads_ = std::vector<std::vector<double>>(n_experts_);
     for (unsigned int k = 0; k < n_experts_; k++) {
-      n_rewards_.push_back(std::unordered_map<unsigned long, unsigned int>());
+      n_rewards_.push_back(std::unordered_map<unode_int, unsigned int>());
     }
   }
 };

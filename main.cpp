@@ -75,9 +75,9 @@ void epsgreedy(int argc, const char * argv[]) {
   double beta = atof(argv[4]);
   std::ifstream file(file_name_graph);
   Graph original_graph, model_graph;
-  unsigned long src, tgt;
+  unode_int src, tgt;
   double prob;
-  unsigned long edges = 0;
+  unode_int edges = 0;
   while (file >> src >> tgt >> prob) {
     std::shared_ptr<InfluenceDistribution> dst_original(new SingleInfluence(prob));
     std::shared_ptr<InfluenceDistribution> dst_model(new BetaInfluence(alpha, beta, prob));
