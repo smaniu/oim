@@ -523,7 +523,7 @@ class ExponentiatedGradientStrategy : public Strategy {
       cur_theta = prob(gen_) + THETA_OFFSET;
 
       // PathSampler path_sampler(cur_theta); (version with path sampler, not used anymore)
-      SpreadSampler explore_sampler(cur_theta, model_);
+      SpreadSampler explore_sampler(cur_theta, 1);  // For expgr, only model cascade can be handled
 
       // Selecting seeds using explore or exploit
       std::unordered_set<unode_int> seeds;
