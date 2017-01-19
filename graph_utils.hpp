@@ -71,7 +71,7 @@ unode_int load_model_and_original_graph(
     model_graph.add_edge(src, tgt, dst_model);
     if (model == 0) { // If LT model, we need to create distributions for each nodes
       original_graph.build_lt_distribution(INFLUENCE_MED);
-      model_graph.build_lt_distribution(INFLUENCE_MED);
+      //model_graph.build_lt_distribution(INFLUENCE_MED); (not for model graph as it is used only by expg that does not handle LT)
     }
     edges++;
   }

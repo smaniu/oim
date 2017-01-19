@@ -266,6 +266,7 @@ class Graph {
           w[neighbours.size()] = 1 - total;
         }
         // Note, the UCB-like case is handled automatically by discrete_distribution
+        // because one can have weights > 1
         lt_dist_[u] = std::discrete_distribution<>(w.begin(), w.end());
       }
     }
