@@ -37,26 +37,27 @@
 
 using namespace std;
 
+
 /**
   LT or Independent Cascade Model Sampler of the graph (does a *real* sample).
 */
 class SpreadSampler : public Sampler {
  private:
   boost::mt19937 gen_;
-  boost::uniform_01<boost::mt19937> dist_;
+  Xorshift dist_;
   double stdev_;
 
  public:
   SpreadSampler(unsigned int type, int model)
-      : Sampler(type, model), gen_(seed_ns()), dist_(gen_) {};
+      : Sampler(type, model), gen_(seed_ns()), dist_(Xorshift(seed_ns())) {};
 
   /**
     Samples `n_samples` from seeds.
   */
   double sample(const Graph& graph,
-                const std::unordered_set<unsigned long>& activated,
-                const std::unordered_set<unsigned long>& seeds,
-                unsigned long n_samples) {
+                const std::unordered_set<unode_int>& activated,
+                const std::unordered_set<unode_int>& seeds,
+                unode_int n_samples) {
     return perform_sample(graph, activated, seeds, n_samples, false);
   }
 
@@ -65,8 +66,8 @@ class SpreadSampler : public Sampler {
     seeds. Compared to the sample method, it saves sampled edges in `trials_`.
   */
   double trial(const Graph& graph,
-               const std::unordered_set<unsigned long>& activated,
-               const std::unordered_set<unsigned long>& seeds,
+               const std::unordered_set<unode_int>& activated,
+               const std::unordered_set<unode_int>& seeds,
                bool inv=false) {
     return perform_sample(graph, activated, seeds, 1, true, inv);
   }
@@ -80,12 +81,12 @@ class SpreadSampler : public Sampler {
     @param bool_activated When a node is activated, mark its corresponding index
     @return Vector containing activated nodes in this sample.
   */
-  std::shared_ptr<vector<unsigned long>> perform_unique_sample(
-        const Graph& graph, std::vector<unsigned long>& nodes_activated,
-        std::vector<bool>& bool_activated, unsigned long source,
-        const std::unordered_set<unsigned long>& activated, bool inv=false) {
-    unsigned long cur = source;
-    unsigned long num_marked = 1, cur_pos = 0;
+  std::shared_ptr<vector<unode_int>> perform_unique_sample(
+        const Graph& graph, std::vector<unode_int>& nodes_activated,
+        std::vector<bool>& bool_activated, unode_int source,
+        const std::unordered_set<unode_int>& activated, bool inv=false) {
+    unode_int cur = source;
+    unode_int num_marked = 1, cur_pos = 0;
     bool_activated[cur] = true;
     nodes_activated[0] = cur;
     while (cur_pos < num_marked) {
@@ -95,7 +96,7 @@ class SpreadSampler : public Sampler {
         int index = graph.sample_living_edge(cur, gen_);
         if (index == -1)  // Unconnected node or sample with weights summing to less than 1
           continue;
-        unsigned long living_node = graph.get_neighbours(cur, true)[index].target;
+        unode_int living_node = graph.get_neighbours(cur, true)[index].target;
         if (!bool_activated[living_node]) {
           bool_activated[living_node] = true;
           nodes_activated[num_marked] = living_node;
@@ -104,7 +105,7 @@ class SpreadSampler : public Sampler {
       } else if (model_ == 1) { // Independent Cascade model
         if (graph.has_neighbours(cur, inv)) {
           for (auto& neighbour : graph.get_neighbours(cur, inv)) {
-            if (dist_() < neighbour.dist->sample(type_)) {
+            if (dist_.gen_double() < neighbour.dist->sample(type_)) {
               if (!bool_activated[neighbour.target]) {
                 bool_activated[neighbour.target] = true;
                 nodes_activated[num_marked] = neighbour.target;
@@ -115,14 +116,14 @@ class SpreadSampler : public Sampler {
         }
       }
     }
-    std::vector<unsigned long> result;
-    for (unsigned long i = 0; i < num_marked; i++) {
+    std::vector<unode_int> result;
+    for (unode_int i = 0; i < num_marked; i++) {
       if (activated.find(nodes_activated[i]) == activated.end())
         result.push_back(nodes_activated[i]);
     }
-    std::shared_ptr<vector<unsigned long>> rr_sample =
-        std::make_shared<vector<unsigned long>>(result);
-        // std::make_shared<vector<unsigned long>>(vector<unsigned long>(
+    std::shared_ptr<vector<unode_int>> rr_sample =
+        std::make_shared<vector<unode_int>>(result);
+        // std::make_shared<vector<unode_int>>(vector<unode_int>(
         // nodes_activated.begin(), nodes_activated.begin() + num_marked));
     for (unsigned int i = 0; i < num_marked; i++) {
       bool_activated[nodes_activated[i]] = false;
@@ -134,13 +135,13 @@ class SpreadSampler : public Sampler {
     Performs the real diffusion from selected seeds.
     Returns the set of activated users.
   */
-  std::unordered_set<unsigned long> perform_diffusion(const Graph& graph,
-        const std::unordered_set<unsigned long>& seeds) {
-    std::unordered_set<unsigned long> visited;
-    std::queue<unsigned long> queue;
+  std::unordered_set<unode_int> perform_diffusion(const Graph& graph,
+        const std::unordered_set<unode_int>& seeds) {
+    std::unordered_set<unode_int> visited;
+    std::queue<unode_int> queue;
     if (model_ == 0) {
-      std::unordered_map<unsigned long, std::vector<unsigned long>> live_edges;
-      for (unsigned long u = 0; u < graph.get_number_nodes(); u++) {
+      std::unordered_map<unode_int, std::vector<unode_int>> live_edges;
+      for (unode_int u = 0; u < graph.get_number_nodes(); u++) {
         int index = graph.sample_living_edge(u, gen_);
         if (index == -1)  // Unconnected node or sample with weights summing to less than 1
           continue;
@@ -180,23 +181,23 @@ class SpreadSampler : public Sampler {
     Performs `n_samples` samples starting from `seeds`. // TODO depreciated, remove its use everywhere
   */
   double perform_sample(const Graph& graph,
-                        const std::unordered_set<unsigned long>& activated,
-                        const std::unordered_set<unsigned long>& seeds,
-                        unsigned long n_samples, bool trial, bool inv=false) {
+                        const std::unordered_set<unode_int>& activated,
+                        const std::unordered_set<unode_int>& seeds,
+                        unode_int n_samples, bool trial, bool inv=false) {
     trials_.clear();
     double spread = 0;
     double outspread = 0;
     stdev_ = 0;
-    for (unsigned long sample = 1; sample <= n_samples; sample++) {
+    for (unode_int sample = 1; sample <= n_samples; sample++) {
       double reached_round = 0; // Number of nodes activated
-      std::queue<unsigned long> queue;
-      std::unordered_set<unsigned long> visited;
-      for (unsigned long source : seeds) {
+      std::queue<unode_int> queue;
+      std::unordered_set<unode_int> visited;
+      for (unode_int source : seeds) {
         queue.push(source);
         visited.insert(source);
       }
       while (queue.size() > 0) {
-        unsigned long node_id = queue.front();
+        unode_int node_id = queue.front();
         sample_outgoing_edges(graph, node_id, queue, visited, trial, inv);
         queue.pop();
         if (activated.find(node_id) == activated.end())
@@ -217,9 +218,9 @@ class SpreadSampler : public Sampler {
     This method is implemented for both linear threshold and independent cascade
     models.
   */
-  void sample_outgoing_edges(const Graph& graph, unsigned long node,
-                             std::queue<unsigned long>& queue,
-                             std::unordered_set<unsigned long>& visited,
+  void sample_outgoing_edges(const Graph& graph, unode_int node,
+                             std::queue<unode_int>& queue,
+                             std::unordered_set<unode_int>& visited,
                              bool trial, bool inv=false) {
     if (model_ == 0) { // Linear threshold model, this method isn't implemented for LT
       std::cerr << "Error: this part is only run by IC model." << std::endl;
@@ -230,7 +231,7 @@ class SpreadSampler : public Sampler {
           if (visited.find(edge.target) == visited.end()) {
             double dice_dst = edge.dist->sample(type_);
             unsigned int act = 0;
-            double dice = dist_();
+            double dice = dist_.gen_double();
             if (dice < dice_dst) {
               visited.insert(edge.target);
               queue.push(edge.target);

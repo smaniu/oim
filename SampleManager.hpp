@@ -33,7 +33,7 @@
 using namespace std;
 
 struct SampleType {
-  shared_ptr<vector<unsigned long>> sample;
+  shared_ptr<vector<unode_int>> sample;
   int age; // this sample is generated at trial #age
   int lastUsedTrial;
   double alpha, beta; // this sample is generated under prior (alpha, beta)
@@ -93,7 +93,7 @@ class SampleManager {
     }
   }
 
-  static void update_node_age(const unordered_set<unsigned long>& trials) {
+  static void update_node_age(const unordered_set<unode_int>& trials) {
     if (hit + miss > 0.1) {
       reused_ratio = (hit) / (hit + miss);
     }
@@ -112,9 +112,9 @@ class SampleManager {
   }
 
   // hardcoded for reverse set
-  shared_ptr<vector<unsigned long>> getSample(
-      const vector<unsigned long>& graph_nodes, Sampler& sampler,
-      const unordered_set<unsigned long>& activated,
+  shared_ptr<vector<unode_int>> getSample(
+      const vector<unode_int>& graph_nodes, Sampler& sampler,
+      const unordered_set<unode_int>& activated,
       std::uniform_int_distribution<int>& dst) {
     bool goodSampleFlag = true;
     // check whether there is sample that can be reused
@@ -147,12 +147,12 @@ class SampleManager {
     } while (false);
 
     miss += 1;
-    std::unordered_set<unsigned long> seeds;
-    unsigned long nd = graph_nodes[dst(gen_)];
+    std::unordered_set<unode_int> seeds;
+    unode_int nd = graph_nodes[dst(gen_)];
     seeds.insert(nd);
     sampler.trial(graph_, activated, seeds, true);
 
-    shared_ptr<vector<unsigned long>>sample (new vector<unsigned long>());
+    shared_ptr<vector<unode_int>>sample (new vector<unode_int>());
     sample->push_back(nd);
     for (TrialType tt : sampler.get_trials()) {
       if (tt.trial == 1) {

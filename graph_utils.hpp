@@ -33,12 +33,12 @@
 
 
 // Load the graph from file and returns the number of nodes
-unsigned long load_original_graph(
+unode_int load_original_graph(
       std::string filename, Graph& graph, int model=1) {
   std::ifstream file(filename);
-  unsigned long src, tgt;
+  unode_int src, tgt;
   double prob;
-  unsigned long edges = 0;
+  unode_int edges = 0;
   while (file >> src >> tgt >> prob) {
     std::shared_ptr<InfluenceDistribution> dst_original(
         new SingleInfluence(prob));
@@ -55,13 +55,13 @@ unsigned long load_original_graph(
   graph) (b) model graph (graph estimation).
   Returns the number of nodes.
 */
-unsigned long load_model_and_original_graph(
+unode_int load_model_and_original_graph(
       std::string filename, double alpha, double beta,
       Graph& original_graph, Graph& model_graph, int model=1) {
   std::ifstream file(filename);
-  unsigned long src, tgt;
+  unode_int src, tgt;
   double prob;
-  unsigned long edges = 0;
+  unode_int edges = 0;
   while (file >> src >> tgt >> prob) {
     std::shared_ptr<InfluenceDistribution> dst_original(
         new SingleInfluence(prob));

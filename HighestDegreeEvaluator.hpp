@@ -30,19 +30,19 @@
 
 class HighestDegreeEvaluator : public Evaluator {
  private:
-  static std::unordered_set<unsigned long> seedSets;
+  static std::unordered_set<unode_int> seedSets;
 
  public:
   static void init() {
     seedSets.clear();
   }
 
-  std::unordered_set<unsigned long> select(
+  std::unordered_set<unode_int> select(
         const Graph& graph, Sampler&,
-        const std::unordered_set<unsigned long>&, unsigned int k) {
-    std::unordered_set<unsigned long> set;
+        const std::unordered_set<unode_int>&, unsigned int k) {
+    std::unordered_set<unode_int> set;
     boost::heap::fibonacci_heap<NodeType> queue;
-    for (unsigned long node : graph.get_nodes()) {
+    for (unode_int node : graph.get_nodes()) {
       NodeType nstruct;
       nstruct.id = node;
       nstruct.deg = 0;
@@ -64,7 +64,7 @@ class HighestDegreeEvaluator : public Evaluator {
   }
 };
 
-std::unordered_set<unsigned long> HighestDegreeEvaluator::seedSets
-    = std::unordered_set<unsigned long>();
+std::unordered_set<unode_int> HighestDegreeEvaluator::seedSets
+    = std::unordered_set<unode_int>();
 
 #endif /* defined(__oim__HighestDegreeEvaluator__) */

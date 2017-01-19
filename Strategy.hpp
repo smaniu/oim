@@ -47,7 +47,7 @@ double updating_time = 0;
 double reused_ratio = 0;
 
 struct TrialData {
-  std::unordered_set<unsigned long> seeds;
+  std::unordered_set<unode_int> seeds;
   double spread;
   std::vector<TrialType> trials;
 };
@@ -78,7 +78,7 @@ class Strategy {
 class OriginalGraphStrategy : public Strategy {
  private:
   Evaluator& evaluator_;
-  unsigned long samples_;
+  unode_int samples_;
 
  public:
   OriginalGraphStrategy(Graph& original_graph, Evaluator& evaluator,
@@ -88,14 +88,14 @@ class OriginalGraphStrategy : public Strategy {
 
   void perform(unsigned int budget, unsigned int k) {
     SpreadSampler sampler(INFLUENCE_MED, model_);
-    std::unordered_set<unsigned long> activated;
+    std::unordered_set<unode_int> activated;
     double expected = 0, real = 0, roundtime = 0, timetotal = 0;
     for (unsigned int stage = 0; stage < budget; stage++) {
       timestamp_t t0, t1;
       t0 = get_timestamp();
 
       // Select seeds using explore or exploit
-      std::unordered_set<unsigned long> seeds =
+      std::unordered_set<unode_int> seeds =
           evaluator_.select(original_graph_, sampler, activated, k);
       // Evaluating the expected and real spread on the seeds
       double new_expected = 0;
@@ -109,8 +109,8 @@ class OriginalGraphStrategy : public Strategy {
       real = activated.size();
 
       // Updating the model graph
-      std::unordered_set<unsigned long> nodes_to_update;
-      for (unsigned long node : seeds) {
+      std::unordered_set<unode_int> nodes_to_update;
+      for (unode_int node : seeds) {
         nodes_to_update.insert(node);
       }
       unsigned int hits = 0, misses = 0;
@@ -176,18 +176,18 @@ class MissingMassStrategy : public Strategy {
     SpreadSampler exploit_spread(INFLUENCE_MED, model_);
     double totaltime = 0, roundtime = 0, memory = 0,
         updatingtime = 0, selectingtime = 0, reductiontime;
-    std::unordered_set<unsigned long> total_spread;
+    std::unordered_set<unode_int> total_spread;
 
     // 1. (a) Extract experts from graph
     timestamp_t t0, t1;
     t0 = get_timestamp();
-    std::vector<unsigned long> experts = g_reduction_.extractExperts(
+    std::vector<unode_int> experts = g_reduction_.extractExperts(
         original_graph_, n_experts_); // So far, we do not give children of experts
     t1 = get_timestamp();
     reductiontime = (double)(t1 - t0) / 1000000;
 
     // 1. (b) Create the right policy object
-    vector<unsigned long> nb_neighbours(
+    vector<unode_int> nb_neighbours(
         n_experts_, original_graph_.get_number_nodes());
     std::unique_ptr<Policy> policy;
     if (n_policy_ == 0) {
@@ -199,7 +199,7 @@ class MissingMassStrategy : public Strategy {
     policy->init();
 
     // 2. Sequentially select the best k nodes from missing mass estimator ucb
-    std::unordered_set<unsigned long> spread;
+    std::unordered_set<unode_int> spread;
     for (unsigned int stage = 0; stage < budget; stage++) {
       // 2. (a) Select k experts for this round
       timestamp_t t2;
@@ -209,7 +209,7 @@ class MissingMassStrategy : public Strategy {
       selectingtime = (double)(t1 - t0) / 1000000;
 
       // 2. (b) Apply diffusion
-      std::unordered_set<unsigned long> seeds;
+      std::unordered_set<unode_int> seeds;
       for (unsigned int chosen_expert : chosen_experts) {
         seeds.insert(experts[chosen_expert]); // We add the associated node
       }
@@ -218,7 +218,7 @@ class MissingMassStrategy : public Strategy {
       total_spread.insert(stage_spread.begin(), stage_spread.end());
 
       // 3. (c) Update statistics of experts
-      std::vector<unsigned long> expert_nodes;  // For each expert, the associated node in the graph
+      std::vector<unode_int> expert_nodes;  // For each expert, the associated node in the graph
       for (unsigned int chosen_expert : chosen_experts)
         expert_nodes.push_back(experts[chosen_expert]);
       auto expert_spreads = extract_expert_spreads(
@@ -262,22 +262,22 @@ class MissingMassStrategy : public Strategy {
     We assign each activated node to the closest expert using the geodesic
     distance (graph distance == shortest path).
   */
-  std::vector<std::unordered_set<unsigned long>> extract_expert_spreads(
-      std::unordered_set<unsigned long>& stage_spread,
-      const std::vector<unsigned long>& expert_nodes, unsigned int k) {
-    std::vector<std::unordered_set<unsigned long>> res;
-    std::vector<std::queue<unsigned long>> queues;
+  std::vector<std::unordered_set<unode_int>> extract_expert_spreads(
+      std::unordered_set<unode_int>& stage_spread,
+      const std::vector<unode_int>& expert_nodes, unsigned int k) {
+    std::vector<std::unordered_set<unode_int>> res;
+    std::vector<std::queue<unode_int>> queues;
     // Initialization
     for (unsigned int i = 0; i < k; i++) {
-      queues.push_back(std::queue<unsigned long>());
+      queues.push_back(std::queue<unode_int>());
       queues[i].push(expert_nodes[i]);
-      res.push_back(std::unordered_set<unsigned long>());
+      res.push_back(std::unordered_set<unode_int>());
       res[i].insert(expert_nodes[i]);
       stage_spread.erase(expert_nodes[i]);
     }
     // While we haven't assigned each activated node to an expert
     while (stage_spread.size() > 0) {
-      std::unordered_set<unsigned long> seen_round;
+      std::unordered_set<unode_int> seen_round;
       for (unsigned int i = 0; i < k; i++) {
         unsigned int queue_size = queues[i].size(); // Number of elements to inspect at this round
         for (unsigned j = 0; j < queue_size; j++) {
@@ -310,7 +310,7 @@ class EpsilonGreedyStrategy {
   Graph& original_g;
   Evaluator& explore_e;
   Evaluator& exploit_e;
-  unsigned long samples;
+  unode_int samples;
   double epsilon;
   bool INCREMENTAL;
   int model_;
@@ -331,7 +331,7 @@ class EpsilonGreedyStrategy {
     SpreadSampler exploit_s(INFLUENCE_MED, model_);
     PathSampler exploit_p(interval_exploit, model_);
     PathSampler explore_p(interval_explore, model_);
-    std::unordered_set<unsigned long> activated;
+    std::unordered_set<unode_int> activated;
     boost::mt19937 gen((int)time(0));
     boost::uniform_01<boost::mt19937> dst(gen);
     double expected = 0;
@@ -346,7 +346,7 @@ class EpsilonGreedyStrategy {
       timestamp_t t0, t1;
       t0 = get_timestamp();
       //selecting seeds using explore or exploit
-      std::unordered_set<unsigned long> seeds;
+      std::unordered_set<unode_int> seeds;
       double dice = dst();
 
       if (INCREMENTAL)
@@ -365,9 +365,9 @@ class EpsilonGreedyStrategy {
       real += cur_real;
 
       // updating the model graph
-      std::unordered_set<unsigned long> nodes_to_update;
+      std::unordered_set<unode_int> nodes_to_update;
 
-      for (unsigned long node : seeds) {
+      for (unode_int node : seeds) {
         activated.insert(node);
         nodes_to_update.insert(node);
       }
@@ -390,7 +390,7 @@ class EpsilonGreedyStrategy {
       //TODO learning the graph
       if (learn > 0) {
         TrialData result;
-        for (unsigned long seed : seeds) result.seeds.insert(seed);
+        for (unode_int seed : seeds) result.seeds.insert(seed);
         result.spread = cur_real;
         for (TrialType tt:exploit_s.get_trials()) result.trials.push_back(tt);
         results.push_back(result);
@@ -406,7 +406,7 @@ class EpsilonGreedyStrategy {
           for (TrialData res : results){
             double x = res.spread - 1;
             double y = 0.0;
-            for (unsigned long seed : res.seeds) {
+            for (unode_int seed : res.seeds) {
               double o = 0.0, t = 0.0, h = 0.0;
               for (auto node : model_g.get_neighbours(seed)) {
                 o += 1.0;
@@ -509,7 +509,7 @@ class ExponentiatedGradientStrategy : public Strategy {
     double tau = 12 * mu / (3.0 + mu);
     double lambda = tau / 6.0;
     SpreadSampler exploit_sampler(INFLUENCE_MED, model_); // Sampler for *real* graph
-    std::unordered_set<unsigned long> activated;
+    std::unordered_set<unode_int> activated;
     double expected = 0, real = 0, totaltime = 0, roundtime = 0, memory = 0;
     double alpha = 1, beta = 1;
     std::vector<TrialData> results;
@@ -526,7 +526,7 @@ class ExponentiatedGradientStrategy : public Strategy {
       SpreadSampler explore_sampler(cur_theta, model_);
 
       // Selecting seeds using explore or exploit
-      std::unordered_set<unsigned long> seeds;
+      std::unordered_set<unode_int> seeds;
       // seeds = evaluator_.select(model_graph_, path_sampler, activated, k, 100); (version with path sampler, not used anymore)
       seeds = evaluator_.select(model_graph_, explore_sampler, activated, k);
       // Evaluating the expected and real spread on the seeds
@@ -552,8 +552,8 @@ class ExponentiatedGradientStrategy : public Strategy {
       t1 = get_timestamp();
       selecting_time = (double)(t1 - t0) / 1000000;
 
-      std::unordered_set<unsigned long> nodes_to_update;
-      for (unsigned long node : seeds) {
+      std::unordered_set<unode_int> nodes_to_update;
+      for (unode_int node : seeds) {
         activated.insert(node);
         nodes_to_update.insert(node);
       }
@@ -573,7 +573,7 @@ class ExponentiatedGradientStrategy : public Strategy {
       // TODO learning the graph
       if (learn_ > 0) {
         TrialData result;
-        for (unsigned long seed : seeds)
+        for (unode_int seed : seeds)
           result.seeds.insert(seed);
         result.spread = cur_real;
         for (TrialType tt : exploit_sampler.get_trials())
@@ -591,7 +591,7 @@ class ExponentiatedGradientStrategy : public Strategy {
           for (TrialData res : results) {
             double x = res.spread - 1;
             double y = 0;
-            for (unsigned long seed : res.seeds) {
+            for (unode_int seed : res.seeds) {
               double o = 0, t = 0, h = 0;
               for (auto node : model_graph_.get_neighbours(seed)) {
                 o += 1;

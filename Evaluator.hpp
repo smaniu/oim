@@ -30,8 +30,8 @@
 
 
 struct NodeType {
-  unsigned long id;
-  unsigned long deg;
+  unode_int id;
+  unode_int deg;
   bool operator<(const NodeType &a) const {
     return deg < a.deg ? true : (deg > a.deg ? false : id > a.id);
   }
@@ -46,9 +46,9 @@ class Evaluator {
   bool incremental_;
 
  public:
-  virtual std::unordered_set<unsigned long> select(
+  virtual std::unordered_set<unode_int> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated, unsigned int k) = 0;
+      const std::unordered_set<unode_int>& activated, unsigned int k) = 0;
 
   void setIncremental(bool inc) { incremental_ = inc; }
 };

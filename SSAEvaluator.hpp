@@ -40,14 +40,14 @@ using namespace std;
 */
 class SSAEvaluator : public Evaluator {
  private:
-  std::unordered_set<unsigned long> seed_set_;  // Set of k selected nodes
-  vector<shared_ptr<vector<unsigned long>>> rr_samples_;  // List of RR samples
+  std::unordered_set<unode_int> seed_set_;  // Set of k selected nodes
+  vector<shared_ptr<vector<unode_int>>> rr_samples_;  // List of RR samples
   vector<vector<unsigned int>> hyper_graph_;    // RR samples where appear each node
   std::random_device rd_;
   std::mt19937 gen_;
   double epsilon_;
   double delta_;
-  std::uniform_int_distribution<unsigned long> dst_;
+  std::uniform_int_distribution<unode_int> dst_;
   unsigned int THRESHOLD = 10000000;            // To avoid too long computations
 
  public:
@@ -57,18 +57,17 @@ class SSAEvaluator : public Evaluator {
   /**
     Selects `k` nodes from the graph using the sampler given in parameter.
     -> `samples` isn't used and should be removed.
-    -> `activated` is used to avoid sampling already activated nodes, I think I
-       made a mistake and it should be used to count only unactivated nodes in
-       the diffusion process. TODO
+    -> `activated` is used to avoid sampling already activated nodes and to
+       estimate properly the value of each node, taking into account that
+       previsouly activated nodes don't yield further rewards.
   */
-  std::unordered_set<unsigned long> select(
+  std::unordered_set<unode_int> select(
         const Graph& graph, Sampler& sampler,
-        const std::unordered_set<unsigned long>& activated, unsigned int k) {
-    // std::chrono::steady_clock::time_point begin, end;
+        const std::unordered_set<unode_int>& activated, unsigned int k) {
     hyper_graph_.clear();
     rr_samples_.clear();
-    delta_ = 1. / graph.get_number_nodes();
-    dst_ = uniform_int_distribution<unsigned long>(0, graph.get_number_nodes() - 1);
+    delta_ = 5e-3; // 1. / graph.get_number_nodes();
+    dst_ = uniform_int_distribution<unode_int>(0, graph.get_number_nodes() - 1);
 
     for (unsigned int i = 0; i < graph.get_number_nodes(); i++) {
       hyper_graph_.push_back(vector<unsigned int>());
@@ -76,34 +75,31 @@ class SSAEvaluator : public Evaluator {
     double epsilon_1 = epsilon_ / 6, epsilon_2 = epsilon_ / 2;
     double epsilon_3 = (epsilon_ - epsilon_1 - epsilon_2 -
         epsilon_1 * epsilon_2) / (1 - 1 / exp(1));
-    unsigned long lambda_1 = (unsigned long)((1 + epsilon_1) * (1 + epsilon_2) *
+    unode_int lambda_1 = (unode_int)((1 + epsilon_1) * (1 + epsilon_2) *
         (2 + 2 / 3 * epsilon_3) * log(3 / delta_) / (epsilon_3 * epsilon_3));
-    unsigned long n_samples = 2 * lambda_1;
+    unode_int n_samples = 2 * lambda_1;
+
     // Algorithm here
-    // unsigned long n_new_samples = 0;
     do {
-      // n_new_samples = n_samples - rr_samples_.size();
-      // begin = std::chrono::steady_clock::now();
       buildSamples(n_samples, graph, sampler, activated);
-      // end = std::chrono::steady_clock::now();
-      // std::cerr << "Samples = " << n_samples << " => " << "t = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() / 1000000. << std::endl;
+      // std::cerr << "Samples = " << rr_samples_.size() << " => " << "t = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() / 1000000. << std::endl;
       n_samples *= 2;
       double biased_estimator = buildSeedSet(graph, k);
+      // std::cerr << "biased_estimator = " << biased_estimator << std::endl;
+      // std::cerr << "lambda 1 = " << lambda_1 << ", coverage = " << (biased_estimator * rr_samples_.size() / graph.get_number_nodes()) << std::endl;
       if (biased_estimator * rr_samples_.size() / graph.get_number_nodes() >= lambda_1) {
         unsigned int T_max = (unsigned int)(2 * rr_samples_.size() *
               (1 + epsilon_2) / (1 - epsilon_2) * epsilon_3 * epsilon_3 /
               (/*k * */epsilon_2 * epsilon_2));   // k dropped like in the paper
-        // begin = std::chrono::steady_clock::now();
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
                                                 k, T_max, activated);
-        // end = std::chrono::steady_clock::now();
         // std::cerr << "Tmax = " << T_max << " => " << "t = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() / 1000000. << std::endl;
         // std::cerr << "Unbiased estimator " << unbiased_estimator << ", biased_estimator = " << biased_estimator << std::endl;
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
           return seed_set_;
         }
       }
-    } while (n_samples < THRESHOLD);
+    } while (rr_samples_.size() < THRESHOLD);
     return seed_set_;
   }
 
@@ -113,10 +109,10 @@ class SSAEvaluator : public Evaluator {
   */
   double estimateInf(const Graph &graph, Sampler& sampler, double epsilon_2,
                      unsigned int k, unsigned int T_max,
-                     const std::unordered_set<unsigned long>& activated) {  // delta_2 = delta_3
-    vector<unsigned long> nodes_activated(graph.get_number_nodes(), 0);
+                     const std::unordered_set<unode_int>& activated) {  // delta_2 = delta_3
+    vector<unode_int> nodes_activated(graph.get_number_nodes(), 0);
     vector<bool> bool_activated(graph.get_number_nodes(), false);
-    unsigned long n = graph.get_number_nodes();
+    unode_int n = graph.get_number_nodes();
     // This is copied from the original code, not clear yet
     double f = (log(2 / delta_) + lgamma(n + 1) - lgamma(k + 1) -
           lgamma(n - k + 1)) / (k * log(2 / delta_));
@@ -124,11 +120,11 @@ class SSAEvaluator : public Evaluator {
           (log(3 / delta_) + log(f)) / (epsilon_2 * epsilon_2);
     double cov = 0;
     for (unsigned int i = 0; i < T_max; i++) {
-      unsigned long source = dst_(gen_);
+      unode_int source = dst_(gen_);
       // We sample a new RR set
-      shared_ptr<vector<unsigned long>> rr_sample = sampler.perform_unique_sample(
+      shared_ptr<vector<unode_int>> rr_sample = sampler.perform_unique_sample(
           graph, nodes_activated, bool_activated, source, activated, true);  // TODO can be improved because if we found a node from seed_set, we can stop diffusion
-      for (unsigned long sampled_node : *rr_sample) {
+      for (unode_int sampled_node : *rr_sample) {
         if (seed_set_.find(sampled_node) != seed_set_.end()) {
           cov += 1;
           break;
@@ -144,20 +140,20 @@ class SSAEvaluator : public Evaluator {
   /**
     Samples n_samples new RR sets and add them to set of RR samples rr_samples_
   */
-  void buildSamples(unsigned long n_samples, const Graph& graph, Sampler& sampler,
-                    const unordered_set<unsigned long>& activated) {
-    vector<unsigned long> nodes_activated(graph.get_number_nodes(), 0);
+  void buildSamples(unode_int n_samples, const Graph& graph, Sampler& sampler,
+                    const unordered_set<unode_int>& activated) {
+    vector<unode_int> nodes_activated(graph.get_number_nodes(), 0);
     vector<bool> bool_activated(graph.get_number_nodes(), false);
     unsigned int nb_rr_samples = rr_samples_.size();
     for (unsigned int i = 0; i < n_samples; i++) {
-      unsigned long source = dst_(gen_);
+      unode_int source = dst_(gen_);
       while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
         source = dst_(gen_);
       }
-      shared_ptr<vector<unsigned long>> rr_sample = sampler.perform_unique_sample(
+      shared_ptr<vector<unode_int>> rr_sample = sampler.perform_unique_sample(
             graph, nodes_activated, bool_activated, source, activated, true);
       rr_samples_.push_back(rr_sample);
-      for (unsigned long node : *rr_sample) {
+      for (unode_int node : *rr_sample) {
         hyper_graph_[node].push_back(nb_rr_samples);
       }
       nb_rr_samples += 1;
@@ -165,7 +161,7 @@ class SSAEvaluator : public Evaluator {
   }
 
   /**
-  * Greedy algorithm computing the maximum coverage
+    Greedy algorithm computing the maximum coverage
   */
   double buildSeedSet(const Graph &graph, unsigned int k) {
     seed_set_.clear();
@@ -175,12 +171,12 @@ class SSAEvaluator : public Evaluator {
       degree[i] = hyper_graph_[i].size();
     }
     for (unsigned int i = 0; i < k; i++) {
-      unsigned long max_node = max_element(degree.begin(), degree.end()) - degree.begin();
+      unode_int max_node = max_element(degree.begin(), degree.end()) - degree.begin();
       seed_set_.insert(max_node);
       for (unsigned int rr_sample_id : hyper_graph_[max_node]) {
         if (!visited_samples[rr_sample_id]) {
           visited_samples[rr_sample_id] = true;
-          for (unsigned long node : *rr_samples_[rr_sample_id]) {
+          for (unode_int node : *rr_samples_[rr_sample_id]) {
             degree[node]--;
           }
         }

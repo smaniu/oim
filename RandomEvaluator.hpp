@@ -32,13 +32,13 @@
 
 class RandomEvaluator : public Evaluator {
  public:
-  std::unordered_set<unsigned long> select(
+  std::unordered_set<unode_int> select(
       const Graph& graph, Sampler&,
-      const std::unordered_set<unsigned long>& activated, unsigned int k) {
+      const std::unordered_set<unode_int>& activated, unsigned int k) {
     boost::mt19937 gen((int)time(0));
-    std::vector<unsigned long> reservoir;
+    std::vector<unode_int> reservoir;
     unsigned int index = 0;
-    for (unsigned long node : graph.get_nodes()) {
+    for (unode_int node : graph.get_nodes()) {
       if (activated.find(node) == activated.end()) {
         if (index < k) {
           reservoir.push_back(node);
@@ -50,8 +50,8 @@ class RandomEvaluator : public Evaluator {
         index++;
       }
     }
-    std::unordered_set<unsigned long> set;
-    for (unsigned long node : reservoir) set.insert(node);
+    std::unordered_set<unode_int> set;
+    for (unode_int node : reservoir) set.insert(node);
     return set;
   }
 };
