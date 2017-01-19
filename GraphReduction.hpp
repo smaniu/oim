@@ -72,9 +72,7 @@ class EvaluatorReduction : public GraphReduction {
     std::vector<unode_int> result;
     for (auto expert : experts) {
       result.push_back(expert);
-      std::cerr << expert << ".";
     }
-    std::cerr << std::endl;
     return result;
   }
 };

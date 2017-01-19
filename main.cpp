@@ -200,7 +200,7 @@ int main(int argc, const char * argv[]) {
       new HighestDegreeReduction()));
   std::unique_ptr<Evaluator> evaluator(new PMCEvaluator(200));
   greductions.push_back(std::unique_ptr<GraphReduction>(
-      new EvaluatorReduction(0.05, *evaluator, 1)));  // TODO allow change on the model expected to select experts
+      new EvaluatorReduction(0.01, *evaluator, 1)));  // TODO allow change on the model expected to select experts
   greductions.push_back(std::unique_ptr<GraphReduction>(
       new DivRankReduction(0.25, 0.05, 100)));
 

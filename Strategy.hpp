@@ -530,8 +530,10 @@ class ExponentiatedGradientStrategy : public Strategy {
       // seeds = evaluator_.select(model_graph_, path_sampler, activated, k, 100); (version with path sampler, not used anymore)
       seeds = evaluator_.select(model_graph_, explore_sampler, activated, k);
       // Evaluating the expected and real spread on the seeds
-      double cur_expected = explore_sampler.sample(
-            model_graph_, activated, seeds, 100);
+      double cur_expected = 0.1;
+      if (update_) {  // We don't compute for Random and HighestDegree because it's useless
+        cur_expected = explore_sampler.sample(model_graph_, activated, seeds, 100);
+      }
       expected += cur_expected;
       double cur_real = exploit_sampler.trial(original_graph_, activated, seeds);
       double cur_gain = 1.0 - std::abs(cur_real - cur_expected) / cur_expected;
