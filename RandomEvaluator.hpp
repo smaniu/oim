@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2017 Paul Lagrée (Université Paris-Sud)
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -31,28 +31,24 @@
 #include <boost/random/uniform_int_distribution.hpp>
 
 class RandomEvaluator : public Evaluator {
+ private:
+  std::mt19937 gen_;
+  std::uniform_int_distribution<unode_int> dst_;
+
  public:
+  RandomEvaluator() : gen_(seed_ns()) {};
+
   std::unordered_set<unode_int> select(
       const Graph& graph, Sampler&,
-      const std::unordered_set<unode_int>& activated, unsigned int k) {
-    boost::mt19937 gen((int)time(0));
-    std::vector<unode_int> reservoir;
-    unsigned int index = 0;
-    for (unode_int node : graph.get_nodes()) {
-      if (activated.find(node) == activated.end()) {
-        if (index < k) {
-          reservoir.push_back(node);
-        } else {
-          boost::random::uniform_int_distribution<> dist(0, index);
-          unsigned int dice = dist(gen);
-          if (dice < k) reservoir[dice] = node;
-        }
-        index++;
-      }
+      const std::unordered_set<unode_int>&, unsigned int k) {
+    dst_ = std::uniform_int_distribution<unode_int>(
+        0, graph.get_number_nodes() - 1);
+    std::unordered_set<unode_int> seeds;
+    while (seeds.size() < k) {
+      unode_int seed = dst_(gen_);
+      seeds.insert(seed);
     }
-    std::unordered_set<unode_int> set;
-    for (unode_int node : reservoir) set.insert(node);
-    return set;
+    return seeds;
   }
 };
 

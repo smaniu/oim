@@ -43,16 +43,14 @@ class SSAEvaluator : public Evaluator {
   std::unordered_set<unode_int> seed_set_;  // Set of k selected nodes
   vector<shared_ptr<vector<unode_int>>> rr_samples_;  // List of RR samples
   vector<vector<unsigned int>> hyper_graph_;    // RR samples where appear each node
-  std::random_device rd_;
   std::mt19937 gen_;
   double epsilon_;
   double delta_;
   std::uniform_int_distribution<unode_int> dst_;
-  unsigned int THRESHOLD = 10000000;            // To avoid too long computations
+  const unsigned int THRESHOLD = 10000000;      // To avoid too long computations
 
  public:
-  SSAEvaluator(double epsilon)
-      : gen_(rd_()), epsilon_(epsilon) {};
+  SSAEvaluator(double epsilon) : gen_(seed_ns()), epsilon_(epsilon) {};
 
   /**
     Selects `k` nodes from the graph using the sampler given in parameter.

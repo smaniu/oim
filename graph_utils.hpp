@@ -69,11 +69,11 @@ unode_int load_model_and_original_graph(
         new BetaInfluence(alpha, beta, prob));
     original_graph.add_edge(src, tgt, dst_original);
     model_graph.add_edge(src, tgt, dst_model);
-    if (model == 0) { // If LT model, we need to create distributions for each nodes
-      original_graph.build_lt_distribution(INFLUENCE_MED);
-      //model_graph.build_lt_distribution(INFLUENCE_MED); (not for model graph as it is used only by expg that does not handle LT)
-    }
     edges++;
+  }
+  if (model == 0) { // If LT model, we need to create distributions for each nodes
+    original_graph.build_lt_distribution(INFLUENCE_MED);
+    //model_graph.build_lt_distribution(INFLUENCE_MED); (not for model graph as it is used only by expg that does not handle LT)
   }
   model_graph.set_prior(alpha, beta);
   return edges;
