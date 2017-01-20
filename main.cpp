@@ -54,14 +54,15 @@ void real(int argc, const char * argv[],
           std::vector<std::unique_ptr<Evaluator>>& evaluators) {
   if (argc < 6) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --real <graph> "
-              << "<exploit> <budget> <k> [<model>]" << std::endl;
+              << "<exploit> <budget> <k> [<model> <samples>]" << std::endl;
     exit(1);
   }
   Graph original_graph;
   unsigned int exploit = atoi(argv[3]);
+  std::cerr << exploit << std::endl;
   unsigned int budget = atoi(argv[4]);
   unsigned int k = atoi(argv[5]);
-  int samples = 100;
+  int samples = 1; // TODO change that to take the actual parameter given as input
   int model = (argc > 6) ? atoi(argv[6]) : 1;
   load_original_graph(argv[2], original_graph, model);
   OriginalGraphStrategy strategy(original_graph, *evaluators.at(exploit),
