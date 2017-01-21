@@ -145,9 +145,9 @@ class SSAEvaluator : public Evaluator {
     unsigned int nb_rr_samples = rr_samples_.size();
     for (unsigned int i = 0; i < n_samples; i++) {
       unode_int source = dst_(gen_);
-      while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
-        source = dst_(gen_);
-      }
+      // while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
+      //   source = dst_(gen_);
+      // }
       shared_ptr<vector<unode_int>> rr_sample = sampler.perform_unique_sample(
             graph, nodes_activated, bool_activated, source, activated, true);
       rr_samples_.push_back(rr_sample);

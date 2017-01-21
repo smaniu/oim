@@ -59,7 +59,6 @@ void real(int argc, const char * argv[],
   }
   Graph original_graph;
   unsigned int exploit = atoi(argv[3]);
-  std::cerr << exploit << std::endl;
   unsigned int budget = atoi(argv[4]);
   unsigned int k = atoi(argv[5]);
   int samples = 1; // TODO change that to take the actual parameter given as input
