@@ -162,9 +162,9 @@ class DivRankReduction : public GraphReduction {
         q.push(std::pair<double, T>(-vec[i], i));
       }
     }
-    std::vector<T> result;
-    while (!q.empty()) {
-      result.push_back(q.top().second);
+    std::vector<T> result(k, 0);
+    for (int i = k - 1; i >= 0; i--) {
+      result[i] = q.top().second;
       q.pop();
     }
     return result;
