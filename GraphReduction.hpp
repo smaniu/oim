@@ -195,8 +195,6 @@ class DivRankReduction : public GraphReduction {
     for (unode_int i = 0; i < n; i++) {
       W[i] = std::vector<std::pair<unode_int, double>>();
       if (!model_graph.has_neighbours(i, true)) {
-        ///dangling_nodes.push_back(i);
-        ///W[i].push_back(std::make_pair(i, 1. - alpha_));
         W[i].push_back(std::make_pair(i, 1.));
         continue;
       }

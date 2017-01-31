@@ -123,8 +123,6 @@ class SpreadSampler : public Sampler {
     }
     std::shared_ptr<vector<unode_int>> rr_sample =
         std::make_shared<vector<unode_int>>(result);
-        // std::make_shared<vector<unode_int>>(vector<unode_int>(
-        // nodes_activated.begin(), nodes_activated.begin() + num_marked));
     for (unsigned int i = 0; i < num_marked; i++) {
       bool_activated[nodes_activated[i]] = false;
     }
