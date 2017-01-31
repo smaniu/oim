@@ -249,7 +249,7 @@ class Graph {
   /**
     Build the distribution on each node to sample incoming living edges for the
     LT model. It requires the graph has been entirely loaded. This method can
-    also be called after an update of
+    also be called after an update of weight estimations.
   */
   void build_lt_distribution(unsigned int type) {
     for (unode_int u = 0; u < num_nodes_; u++) {

@@ -47,7 +47,7 @@ class SSAEvaluator : public Evaluator {
   double epsilon_;
   double delta_;
   std::uniform_int_distribution<unode_int> dst_;
-  const unsigned int THRESHOLD = 10000000;      // To avoid too long computations
+  const unsigned int THRESHOLD = 30000000;      // To avoid too long computations
 
  public:
   SSAEvaluator(double epsilon) : gen_(seed_ns()), epsilon_(epsilon) {};
@@ -64,7 +64,7 @@ class SSAEvaluator : public Evaluator {
         const std::unordered_set<unode_int>& activated, unsigned int k) {
     hyper_graph_.clear();
     rr_samples_.clear();
-    delta_ = 5e-3; // 1. / graph.get_number_nodes();
+    delta_ = 1. / graph.get_number_nodes();
     dst_ = uniform_int_distribution<unode_int>(0, graph.get_number_nodes() - 1);
 
     for (unsigned int i = 0; i < graph.get_number_nodes(); i++) {

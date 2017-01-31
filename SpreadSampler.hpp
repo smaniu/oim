@@ -137,7 +137,7 @@ class SpreadSampler : public Sampler {
         const std::unordered_set<unode_int>& seeds) {
     std::unordered_set<unode_int> visited;
     std::queue<unode_int> queue;
-    if (model_ == 0) {
+    if (model_ == 0) {  // LT model
       std::unordered_map<unode_int, std::vector<unode_int>> live_edges;
       for (unode_int u = 0; u < graph.get_number_nodes(); u++) {
         int index = graph.sample_living_edge(u, gen_);
@@ -160,7 +160,7 @@ class SpreadSampler : public Sampler {
         }
         queue.pop();
       }
-    } else if (model_ == 1) {
+    } else if (model_ == 1) { // IC model
       for (auto source : seeds) {
         queue.push(source);
         visited.insert(source);
