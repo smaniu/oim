@@ -143,7 +143,10 @@ class SpreadSampler : public Sampler {
         int index = graph.sample_living_edge(u, gen_);
         if (index == -1)  // Unconnected node or sample with weights summing to less than 1
           continue;
-        live_edges[graph.get_neighbours(u, true)[index].target].push_back(u);
+        unode_int living_node = graph.get_neighbours(u, true)[index].target;
+        if (live_edges.find(living_node) == live_edges.end())
+          live_edges[living_node] = std::vector<unode_int>();
+        live_edges[living_node].push_back(u);
       }
       for (auto source : seeds) {
         queue.push(source);

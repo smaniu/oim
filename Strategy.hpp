@@ -99,9 +99,14 @@ class OriginalGraphStrategy : public Strategy {
           evaluator_.select(original_graph_, sampler, activated, k);
       // Evaluating the expected and real spread on the seeds
       double new_expected = 0;
-      for (unsigned int i = 0; i < samples_; i++) {
-        new_expected += sampler.perform_diffusion(original_graph_, seeds).size();
+      /*for (unsigned int i = 0; i < samples_; i++) {
+        auto spread = sampler.perform_diffusion(original_graph_, seeds);
+        for (auto& elt : spread)
+          if (activated.find(elt) == activated.end())
+            new_expected++;
       }
+      std::cerr << "Expected = " << new_expected / 100 << std::endl;*/
+
       expected += new_expected / samples_;
       auto diffusion = sampler.perform_diffusion(original_graph_, seeds);
       for (auto& node : diffusion)
@@ -213,6 +218,16 @@ class MissingMassStrategy : public Strategy {
       for (unsigned int chosen_expert : chosen_experts) {
         seeds.insert(experts[chosen_expert]); // We add the associated node
       }
+
+      /*double new_expected = 0;
+      for (unsigned int i = 0; i < 100; i++) {
+        auto spread = exploit_spread.perform_diffusion(original_graph_, seeds);
+        for (auto& elt : spread)
+          if (total_spread.find(elt) == total_spread.end())
+            new_expected++;
+      }
+      std::cerr << "Expected = " << new_expected / 100 << std::endl;*/
+
       auto stage_spread = exploit_spread.perform_diffusion(
           original_graph_, seeds);
       total_spread.insert(stage_spread.begin(), stage_spread.end());
