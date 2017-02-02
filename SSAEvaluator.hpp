@@ -119,7 +119,8 @@ class SSAEvaluator : public Evaluator {
     double cov = 0;
     for (unsigned int i = 0; i < T_max; i++) {
       unode_int source = dst_(gen_);
-      while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
+      while ((activated.find(source) != activated.end())
+             && (activated.size() < 0.9 * graph.get_number_nodes())) { // While the randomly sampled node was already activated
         source = dst_(gen_);
       }
       // We sample a new RR set
@@ -148,7 +149,8 @@ class SSAEvaluator : public Evaluator {
     unsigned int nb_rr_samples = rr_samples_.size();
     for (unsigned int i = 0; i < n_samples; i++) {
       unode_int source = dst_(gen_);
-      while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
+      while ((activated.find(source) != activated.end())
+             && (activated.size() < 0.9 * graph.get_number_nodes())) { // While the randomly sampled node was already activated
         source = dst_(gen_);
       }
       shared_ptr<vector<unode_int>> rr_sample = sampler.perform_unique_sample(
