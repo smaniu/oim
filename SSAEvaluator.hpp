@@ -119,6 +119,9 @@ class SSAEvaluator : public Evaluator {
     double cov = 0;
     for (unsigned int i = 0; i < T_max; i++) {
       unode_int source = dst_(gen_);
+      while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
+        source = dst_(gen_);
+      }
       // We sample a new RR set
       shared_ptr<vector<unode_int>> rr_sample = sampler.perform_unique_sample(
           graph, nodes_activated, bool_activated, source, activated, true);  // TODO can be improved because if we found a node from seed_set, we can stop diffusion
@@ -145,9 +148,9 @@ class SSAEvaluator : public Evaluator {
     unsigned int nb_rr_samples = rr_samples_.size();
     for (unsigned int i = 0; i < n_samples; i++) {
       unode_int source = dst_(gen_);
-      // while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
-      //   source = dst_(gen_);
-      // }
+      while (activated.find(source) != activated.end()) { // While the randomly sampled node was already activated
+        source = dst_(gen_);
+      }
       shared_ptr<vector<unode_int>> rr_sample = sampler.perform_unique_sample(
             graph, nodes_activated, bool_activated, source, activated, true);
       rr_samples_.push_back(rr_sample);

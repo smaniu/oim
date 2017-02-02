@@ -84,7 +84,7 @@ class SpreadSampler : public Sampler {
   std::shared_ptr<vector<unode_int>> perform_unique_sample(
         const Graph& graph, std::vector<unode_int>& nodes_activated,
         std::vector<bool>& bool_activated, unode_int source,
-        const std::unordered_set<unode_int>& activated, bool inv=false) {
+        const std::unordered_set<unode_int>&, bool inv=false) {
     unode_int cur = source;
     unode_int num_marked = 1, cur_pos = 0;
     bool_activated[cur] = true;
@@ -118,8 +118,8 @@ class SpreadSampler : public Sampler {
     }
     std::vector<unode_int> result;
     for (unode_int i = 0; i < num_marked; i++) {
-      if (activated.find(nodes_activated[i]) == activated.end())
-        result.push_back(nodes_activated[i]);
+      // if (activated.find(nodes_activated[i]) == activated.end())
+      result.push_back(nodes_activated[i]);
     }
     std::shared_ptr<vector<unode_int>> rr_sample =
         std::make_shared<vector<unode_int>>(result);
