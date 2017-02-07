@@ -32,7 +32,6 @@
 #include "InfluenceDistribution.hpp"
 #include "SingleInfluence.hpp"
 #include "BetaInfluence.hpp"
-#include "SpreadSampler.hpp"
 #include "CELFEvaluator.hpp"
 #include "TIMEvaluator.hpp"
 #include "SSAEvaluator.hpp"
@@ -41,6 +40,7 @@
 #include "DiscountDegreeEvaluator.hpp"
 #include "PMCEvaluator.hpp"
 #include "Strategy.hpp"
+#include "LogDiffusion.hpp"
 
 using namespace std;
 
@@ -54,7 +54,8 @@ void real(int argc, const char * argv[],
           std::vector<std::unique_ptr<Evaluator>>& evaluators) {
   if (argc < 6) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --real <graph> "
-              << "<exploit> <budget> <k> [<model> <samples>]" << std::endl;
+              << "<exploit> <budget> <k> [<model> <cascades> <samples>]"
+              << std::endl;
     exit(1);
   }
   Graph original_graph;
@@ -64,8 +65,14 @@ void real(int argc, const char * argv[],
   int samples = 1; // TODO change that to take the actual parameter given as input
   int model = (argc > 6) ? atoi(argv[6]) : 1;
   load_original_graph(argv[2], original_graph, model);
+  // Load cascades from logs if 11th parameter
+  std::unique_ptr<LogDiffusion> log_diffusion;
+  if (argc > 7) {
+    log_diffusion = std::make_unique<LogDiffusion>();
+    log_diffusion->load_cascades(argv[7]);
+  }
   OriginalGraphStrategy strategy(original_graph, *evaluators.at(exploit),
-                                 samples, model);
+                                 samples, model, std::move(log_diffusion));
   strategy.perform(budget, k);
 }
 
@@ -124,7 +131,7 @@ void expgr(int argc, const char * argv[],
   if (argc < 8) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --eg <graph> "
               << "<alpha> <beta> <exploit> <trials> <k> [<model> <update> "
-              << "<update_type>]" << std::endl;
+              << "<update_type> <cascades>]" << std::endl;
     exit(1);
   }
   // Take parameters
@@ -145,10 +152,16 @@ void expgr(int argc, const char * argv[],
   Graph original_graph, model_graph;
   load_model_and_original_graph(argv[2], alpha, beta, original_graph,
                                 model_graph, model);
+  // Load cascades from logs if 11th parameter
+  std::unique_ptr<LogDiffusion> log_diffusion;
+  if (argc > 11) {
+    log_diffusion = std::make_unique<LogDiffusion>();
+    log_diffusion->load_cascades(argv[11]);
+  }
   // Run experiment with Exponentiated Gradient strategy
   ExponentiatedGradientStrategy strategy(
       model_graph, original_graph, *evaluators.at(exploit),
-      update, learn, model);
+      update, learn, model, std::move(log_diffusion));
   strategy.perform(budget, k);
 }
 
@@ -162,7 +175,7 @@ void missing_mass(int argc, const char * argv[],
   if (argc < 8) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --missing_mass "
               << "<graph> <policy> <reduction> <budget> <k> <n_experts> "
-              << "[<model>]" << std::endl;
+              << "[<model> <cascades>]" << std::endl;
     exit(1);
   }
   // Policy to choose expert
@@ -182,10 +195,19 @@ void missing_mass(int argc, const char * argv[],
   int n_experts = atoi(argv[7]);
   int model = argc > 8 ? atoi(argv[8]) : 1;
 
+  // Load graph
   Graph original_graph;
   load_original_graph(argv[2], original_graph, model);
+
+  // Load real cascades
+  std::unique_ptr<LogDiffusion> log_diffusion;
+  if (argc > 9) {
+    log_diffusion = std::make_unique<LogDiffusion>();
+    log_diffusion->load_cascades(argv[9]);
+  }
   MissingMassStrategy strategy(
-      original_graph, *greduction.at(reduction), n_experts, n_policy, model);
+      original_graph, *greduction.at(reduction), n_experts, n_policy, model,
+      std::move(log_diffusion));
   // Give strategy the reduction method for output
   strategy.set_graph_reduction(reduction);
   strategy.perform(budget, k);

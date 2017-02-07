@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <ios>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <string>
 #include <cstdint>

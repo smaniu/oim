@@ -1,5 +1,6 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2017 Paul Lagrée (Université Paris-Sud), Siyu Lei, Silviu Maniu,
+ Luyi Mo (University of Hong Kong)
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +40,7 @@ using namespace std;
 
 
 /**
-  LT or Independent Cascade Model Sampler of the graph (does a *real* sample).
+  LT or Independent Cascade Model Sampler of the graph (does *real* samples).
 */
 class SpreadSampler : public Sampler {
  private:

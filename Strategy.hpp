@@ -31,6 +31,7 @@
 #include "SampleManager.hpp"
 #include "GraphReduction.hpp"
 #include "Policy.hpp"
+#include "LogDiffusion.hpp"
 
 #include <iostream>
 #include <unordered_set>
@@ -61,11 +62,13 @@ class Strategy {
   int model_;    // 0 for linear threshold, 1 for cascade model
   boost::mt19937 gen_;
   boost::uniform_01<boost::mt19937> dist_;
+  std::unique_ptr<LogDiffusion> log_diffusion_;
 
  public:
-  Strategy(Graph &original_graph, int model)
+  Strategy(Graph& original_graph, int model,
+           std::unique_ptr<LogDiffusion> diffusion)
       : original_graph_(original_graph), model_(model),
-        gen_(seed_ns()), dist_(gen_) {}
+        gen_(seed_ns()), dist_(gen_), log_diffusion_(std::move(diffusion)) {}
 
   virtual void perform(unsigned int budget, unsigned int k) = 0;
 };
@@ -82,9 +85,10 @@ class OriginalGraphStrategy : public Strategy {
 
  public:
   OriginalGraphStrategy(Graph& original_graph, Evaluator& evaluator,
-                        double n_samples, int model=1)
-      : Strategy(original_graph, model), evaluator_(evaluator),
-        samples_(n_samples) {}
+                        double n_samples, int model=1,
+                        std::unique_ptr<LogDiffusion> diffusion=nullptr)
+      : Strategy(original_graph, model, std::move(diffusion)),
+        evaluator_(evaluator), samples_(n_samples) {}
 
   void perform(unsigned int budget, unsigned int k) {
     SpreadSampler sampler(INFLUENCE_MED, model_);
@@ -97,36 +101,26 @@ class OriginalGraphStrategy : public Strategy {
       // Select seeds using explore or exploit
       std::unordered_set<unode_int> seeds =
           evaluator_.select(original_graph_, sampler, activated, k);
+
       // Evaluating the expected and real spread on the seeds
       double new_expected = 0;
-      /*for (unsigned int i = 0; i < samples_; i++) {
-        auto spread = sampler.perform_diffusion(original_graph_, seeds);
+      for (unsigned int i = 0; i < samples_; i++) {
+        std::unordered_set<unode_int> spread;
+        if (log_diffusion_ == nullptr)  // We sample a diffusion according to a model
+          spread = sampler.perform_diffusion(original_graph_, seeds);
+        else    // We sample a cascade from the seeds at random (cascdes from the LOGS)
+          spread = log_diffusion_->perform_diffusion(seeds);
         for (auto& elt : spread)
           if (activated.find(elt) == activated.end())
             new_expected++;
       }
-      std::cerr << "Expected = " << new_expected / 100 << std::endl;*/
-
       expected += new_expected / samples_;
+
+      // Perform real diffusion
       auto diffusion = sampler.perform_diffusion(original_graph_, seeds);
       for (auto& node : diffusion)
         activated.insert(node);
       real = activated.size();
-
-      // Updating the model graph
-      std::unordered_set<unode_int> nodes_to_update;
-      for (unode_int node : seeds) {
-        nodes_to_update.insert(node);
-      }
-      unsigned int hits = 0, misses = 0;
-      for (TrialType tt : sampler.get_trials()) {
-        nodes_to_update.insert(tt.target);
-        if (tt.trial == 1) {
-          hits++;
-        } else {
-          misses++;
-        }
-      }
 
       t1 = get_timestamp();
       // Printing results
@@ -164,9 +158,10 @@ class MissingMassStrategy : public Strategy {
     {RandomPolicy, GoodUCBPolicy}).
   */
   MissingMassStrategy(Graph& original_graph, GraphReduction& g_reduction,
-                      int n_experts, unsigned int n_policy=1, int model=1)
-      : Strategy(original_graph, model), g_reduction_(g_reduction),
-        n_experts_(n_experts), n_policy_(n_policy) {}
+                      int n_experts, unsigned int n_policy=1, int model=1,
+                      std::unique_ptr<LogDiffusion> diffusion=nullptr)
+      : Strategy(original_graph, model, std::move(diffusion)),
+        g_reduction_(g_reduction), n_experts_(n_experts), n_policy_(n_policy) {}
 
   /**
     Performs the experiment with the missing mass strategy (good-UCB estimator).
@@ -218,26 +213,22 @@ class MissingMassStrategy : public Strategy {
       for (unsigned int chosen_expert : chosen_experts) {
         seeds.insert(experts[chosen_expert]); // We add the associated node
       }
-
-      /*double new_expected = 0;
-      for (unsigned int i = 0; i < 100; i++) {
-        auto spread = exploit_spread.perform_diffusion(original_graph_, seeds);
-        for (auto& elt : spread)
-          if (total_spread.find(elt) == total_spread.end())
-            new_expected++;
+      std::unordered_set<unode_int> spread;
+      if (log_diffusion_ == nullptr) {  // We sample a diffusion according to a model
+        spread = exploit_spread.perform_diffusion(original_graph_, seeds);
+        std::cerr << "OK" << std::endl;
       }
-      std::cerr << "Expected = " << new_expected / 100 << std::endl;*/
-
-      auto stage_spread = exploit_spread.perform_diffusion(
-          original_graph_, seeds);
-      total_spread.insert(stage_spread.begin(), stage_spread.end());
+      else    // We sample a cascade from the seeds at random (cascdes from the LOGS)
+        spread = log_diffusion_->perform_diffusion(seeds);
+      exit(1);
+      total_spread.insert(spread.begin(), spread.end());
 
       // 3. (c) Update statistics of experts
       std::vector<unode_int> expert_nodes;  // For each expert, the associated node in the graph
       for (unsigned int chosen_expert : chosen_experts)
         expert_nodes.push_back(experts[chosen_expert]);
       auto expert_spreads = extract_expert_spreads(
-            stage_spread, expert_nodes, k);  // Spread associated to each expert
+            spread, expert_nodes, k);  // Spread associated to each expert
       int n_expert = 0;
       for (unsigned int expert : chosen_experts) {
         policy->updateState(expert, expert_spreads[n_expert]);
@@ -512,9 +503,11 @@ class ExponentiatedGradientStrategy : public Strategy {
  public:
   ExponentiatedGradientStrategy(Graph& model_graph, Graph& original_graph,
                                 Evaluator& evaluator, bool update=true,
-                                unsigned int learn=0, int model=1)
-      : Strategy(original_graph, model), model_graph_(model_graph),
-        evaluator_(evaluator), update_(update), learn_(learn) {}
+                                unsigned int learn=0, int model=1,
+                                std::unique_ptr<LogDiffusion> diffusion=nullptr)
+      : Strategy(original_graph, model, std::move(diffusion)),
+        model_graph_(model_graph), evaluator_(evaluator), update_(update),
+        learn_(learn) {}
 
   void perform(unsigned int budget, unsigned int k) {
     std::vector<double> p(3, 0.333);

@@ -37,16 +37,16 @@ The following methods are currently supported:
 2. *exponentiated gradient*, which is run as follows:
 
         ./oim --eg <graph> <alpha> <beta> <exploit> <trials> <k> [<model>
-        <update> <update_type>]
+        <update> <update_type> <cascades> <cascades>]
 
 3. *missing mass*, which runs as follows:
 
         ./oim --missing_mass <graph> <policy> <reduction> <budget> <k>
-        <n_experts> [<model>]
+        <n_experts> [<model> <cascades>]
 
 4. *real graph*, which executes on the real graph:
 
-        ./oim --real <graph> <exploit> <trials> <k> [<model>]
+        ./oim --real <graph> <exploit> <trials> <k> [<model> <cascades>]
 
 ## Parameters
 
@@ -66,6 +66,7 @@ The parameters are set as follows:
 * *policy* can take the following values: **0** random, **1** Good-UCB
 * *model* can take the following values: **0** Linear Threshold, **1**
   Independent Cascade
+* *cascades* contains the path to the file containing **real** cascades (logs)
 
 ## Output
 
