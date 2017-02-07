@@ -62,7 +62,7 @@ class Strategy {
   int model_;    // 0 for linear threshold, 1 for cascade model
   boost::mt19937 gen_;
   boost::uniform_01<boost::mt19937> dist_;
-  std::unique_ptr<LogDiffusion> log_diffusion_;
+  std::unique_ptr<LogDiffusion> log_diffusion_; // Pointer to the structure handling cascades (nullptr if we don't use logs)
 
  public:
   Strategy(Graph& original_graph, int model,
@@ -76,7 +76,10 @@ class Strategy {
 /**
   Strategy using the influence maximization algorithm (Evaluator) on the *known*
   graph. This strategy isn't an online version that doesn't know the original
-  graph, but only a baseline.
+  graph, but only a (oracle) baseline.
+
+  Note, we also use this strategy for Random and HighestDegree evaluators (but
+  it does not use the extra knowledge then)
 */
 class OriginalGraphStrategy : public Strategy {
  private:
@@ -117,7 +120,12 @@ class OriginalGraphStrategy : public Strategy {
       expected += new_expected / samples_;
 
       // Perform real diffusion
-      auto diffusion = sampler.perform_diffusion(original_graph_, seeds);
+      std::unordered_set<unode_int> diffusion;
+      if (log_diffusion_ == nullptr)  // We sample a diffusion according to a model
+        diffusion = sampler.perform_diffusion(original_graph_, seeds);
+      else    // We sample a cascade from the seeds at random (cascdes from the LOGS)
+        diffusion = log_diffusion_->perform_diffusion(seeds);
+      // auto diffusion = sampler.perform_diffusion(original_graph_, seeds);
       for (auto& node : diffusion)
         activated.insert(node);
       real = activated.size();
@@ -216,7 +224,6 @@ class MissingMassStrategy : public Strategy {
       std::unordered_set<unode_int> spread;
       if (log_diffusion_ == nullptr) {  // We sample a diffusion according to a model
         spread = exploit_spread.perform_diffusion(original_graph_, seeds);
-        std::cerr << "OK" << std::endl;
       }
       else    // We sample a cascade from the seeds at random (cascdes from the LOGS)
         spread = log_diffusion_->perform_diffusion(seeds);
