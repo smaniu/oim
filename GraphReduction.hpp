@@ -86,7 +86,10 @@ class HighestDegreeReduction : public GraphReduction {
     std::vector<std::pair<unode_int, int>> users(graph.get_number_nodes());
     for (auto& node : graph.get_nodes()) {
       users[node].first = node;
-      users[node].second = graph.get_neighbours(node).size();
+      if (graph.has_neighbours(node))
+        users[node].second = graph.get_neighbours(node).size();
+      else
+        users[node].second = 0;
     }
     std::sort(users.begin(), users.end(), [](auto& v1, auto& v2) -> bool {
         return v1.second > v2.second; // Inversed sort
