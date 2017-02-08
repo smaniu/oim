@@ -149,7 +149,7 @@ class DivRankReduction : public GraphReduction {
   double node_error_ = 1e-6;
 
   /**
-    Get the `k` largest elements of a vector and returns them as unordered_set.
+    Get the `k` largest elements of a vector and returns them as a vector.
     Trick with negative weights to get the lowest element of the priority_queue.
   */
   template<typename T>
