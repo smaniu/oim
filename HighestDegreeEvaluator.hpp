@@ -36,7 +36,7 @@ class HighestDegreeEvaluator : public Evaluator {
   */
   template<typename T>
   std::unordered_set<T> get_k_largest_arguments(
-       std::vector<unsigned int>& vec, unsigned int k) {
+       std::vector<int>& vec, unsigned int k) {
    std::priority_queue<std::pair<float, T>> q;
    for (T i = 0; i < k; ++i) {
      q.push(std::pair<float, T>(-vec[i], i));
@@ -59,11 +59,11 @@ class HighestDegreeEvaluator : public Evaluator {
   std::unordered_set<unode_int> select(
         const Graph& graph, Sampler&,
         const std::unordered_set<unode_int>& activated, unsigned int k) {
-    std::vector<unsigned int> current_degree(graph.get_number_nodes(), 0);
+    std::vector<int> current_degree(graph.get_number_nodes(), 0);
     for (unode_int u = 0; u < graph.get_number_nodes(); u++) {
       if (!graph.has_neighbours(u))
         continue;
-      unsigned int cur_u_deg = 0;
+      int cur_u_deg = 0;
       for (auto& edge : graph.get_neighbours(u)) {
         if (activated.find(edge.target) == activated.end()) {
           cur_u_deg++;
