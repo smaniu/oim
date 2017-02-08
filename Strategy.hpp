@@ -62,13 +62,13 @@ class Strategy {
   int model_;    // 0 for linear threshold, 1 for cascade model
   boost::mt19937 gen_;
   boost::uniform_01<boost::mt19937> dist_;
-  std::unique_ptr<LogDiffusion> log_diffusion_; // Pointer to the structure handling cascades (nullptr if we don't use logs)
+  std::shared_ptr<LogDiffusion> log_diffusion_; // Pointer to the structure handling cascades (nullptr if we don't use logs)
 
  public:
   Strategy(Graph& original_graph, int model,
-           std::unique_ptr<LogDiffusion> diffusion)
+           std::shared_ptr<LogDiffusion> diffusion)
       : original_graph_(original_graph), model_(model),
-        gen_(seed_ns()), dist_(gen_), log_diffusion_(std::move(diffusion)) {}
+        gen_(seed_ns()), dist_(gen_), log_diffusion_(diffusion) {}
 
   virtual void perform(unsigned int budget, unsigned int k) = 0;
 };
@@ -89,8 +89,8 @@ class OriginalGraphStrategy : public Strategy {
  public:
   OriginalGraphStrategy(Graph& original_graph, Evaluator& evaluator,
                         double n_samples, int model=1,
-                        std::unique_ptr<LogDiffusion> diffusion=nullptr)
-      : Strategy(original_graph, model, std::move(diffusion)),
+                        std::shared_ptr<LogDiffusion> diffusion=nullptr)
+      : Strategy(original_graph, model, diffusion),
         evaluator_(evaluator), samples_(n_samples) {}
 
   void perform(unsigned int budget, unsigned int k) {
@@ -167,9 +167,9 @@ class MissingMassStrategy : public Strategy {
   */
   MissingMassStrategy(Graph& original_graph, GraphReduction& g_reduction,
                       int n_experts, unsigned int n_policy=1, int model=1,
-                      std::unique_ptr<LogDiffusion> diffusion=nullptr)
-      : Strategy(original_graph, model, std::move(diffusion)),
-        g_reduction_(g_reduction), n_experts_(n_experts), n_policy_(n_policy) {}
+                      std::shared_ptr<LogDiffusion> diffusion=nullptr)
+      : Strategy(original_graph, model, diffusion), g_reduction_(g_reduction),
+        n_experts_(n_experts), n_policy_(n_policy) {}
 
   /**
     Performs the experiment with the missing mass strategy (good-UCB estimator).
@@ -227,7 +227,6 @@ class MissingMassStrategy : public Strategy {
       }
       else    // We sample a cascade from the seeds at random (cascdes from the LOGS)
         spread = log_diffusion_->perform_diffusion(seeds);
-      exit(1);
       total_spread.insert(spread.begin(), spread.end());
 
       // 3. (c) Update statistics of experts
@@ -511,10 +510,9 @@ class ExponentiatedGradientStrategy : public Strategy {
   ExponentiatedGradientStrategy(Graph& model_graph, Graph& original_graph,
                                 Evaluator& evaluator, bool update=true,
                                 unsigned int learn=0, int model=1,
-                                std::unique_ptr<LogDiffusion> diffusion=nullptr)
-      : Strategy(original_graph, model, std::move(diffusion)),
-        model_graph_(model_graph), evaluator_(evaluator), update_(update),
-        learn_(learn) {}
+                                std::shared_ptr<LogDiffusion> diffusion=nullptr)
+      : Strategy(original_graph, model, diffusion), model_graph_(model_graph),
+        evaluator_(evaluator), update_(update), learn_(learn) {}
 
   void perform(unsigned int budget, unsigned int k) {
     std::vector<double> p(3, 0.333);

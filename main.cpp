@@ -200,19 +200,25 @@ void missing_mass(int argc, const char * argv[],
   load_original_graph(argv[2], original_graph, model);
 
   // Load real cascades
-  std::unique_ptr<LogDiffusion> log_diffusion;
+  std::shared_ptr<LogDiffusion> log_diffusion;
   if (argc > 9) {
     std::cerr << "Cascades loading..." << std::endl;
     log_diffusion = std::make_unique<LogDiffusion>();
     log_diffusion->load_cascades(argv[9]);
   }
-  MissingMassStrategy strategy(
-      original_graph, *greduction.at(reduction), n_experts, n_policy, model,
-      std::move(log_diffusion));
-  // Give strategy the reduction method for output
-  strategy.set_graph_reduction(reduction);
-  std::cerr << "Perform" << std::endl;
-  strategy.perform(budget, k);
+  std::vector<int> vec_experts = {10, 20, 50, 100, 200};
+  for (auto n_exp : vec_experts) {
+    for (int red = 0; red < 3; red++) {
+      MissingMassStrategy strategy(
+          original_graph, *greduction.at(red), n_exp, n_policy, model,
+          log_diffusion);
+      // Give strategy the reduction method for output
+      strategy.set_graph_reduction(red);
+      std::cerr << "Perform" << std::endl;
+      strategy.perform(budget, k);
+      exit(1);
+    }
+  }
 }
 
 int main(int argc, const char * argv[]) {
