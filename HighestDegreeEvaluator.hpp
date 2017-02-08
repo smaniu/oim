@@ -30,48 +30,32 @@
 
 class HighestDegreeEvaluator : public Evaluator {
  private:
-  /**
-   Get the `k` largest elements of a vector and returns them as unordered_set.
-   Trick with negative weights to get the lowest element of the priority_queue.
-  */
-  template<typename T>
-  std::unordered_set<T> get_k_largest_arguments(
-       std::vector<int>& vec, unsigned int k) {
-   std::priority_queue<std::pair<float, T>> q;
-   for (T i = 0; i < k; ++i) {
-     q.push(std::pair<float, T>(-vec[i], i));
-   }
-   for (T i = k; i < vec.size(); ++i) {
-     if (q.top().first > -vec[i]) {
-       q.pop();
-       q.push(std::pair<float, T>(-vec[i], i));
-     }
-   }
-   std::unordered_set<T> result;
-   while (!q.empty()) {
-     result.insert(q.top().second);
-     q.pop();
-   }
-   return result;
-  }
+  std::unordered_set<unode_int> seed_sets_;
 
- public:
   std::unordered_set<unode_int> select(
         const Graph& graph, Sampler&,
-        const std::unordered_set<unode_int>& activated, unsigned int k) {
-    std::vector<int> current_degree(graph.get_number_nodes(), 0);
-    for (unode_int u = 0; u < graph.get_number_nodes(); u++) {
-      if (!graph.has_neighbours(u))
-        continue;
-      int cur_u_deg = 0;
-      for (auto& edge : graph.get_neighbours(u)) {
-        if (activated.find(edge.target) == activated.end()) {
-          cur_u_deg++;
-        }
-      }
-      current_degree[u] = cur_u_deg;
+        const std::unordered_set<unode_int>&, unsigned int k) {
+    std::unordered_set<unode_int> set;
+    boost::heap::fibonacci_heap<NodeType> queue;
+    for (unode_int node : graph.get_nodes()) {
+      NodeType nstruct;
+      nstruct.id = node;
+      nstruct.deg = 0;
+      if(graph.has_neighbours(node))
+        nstruct.deg = graph.get_neighbours(node).size();
+      queue.push(nstruct);
     }
-    return get_k_largest_arguments<unode_int>(current_degree, k);
+    while (set.size() < k && !queue.empty()) {
+      NodeType nstruct = queue.top();
+      //if(activated.find(nstruct.id)==activated.end())
+      if (seed_sets_.find(nstruct.id) == seed_sets_.end()) {
+        // Guarantee no duplicate nodes in the seed set for all trials
+        set.insert(nstruct.id);
+        seed_sets_.insert(nstruct.id);
+      }
+      queue.pop();
+    }
+    return set;
   }
 };
 
