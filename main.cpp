@@ -202,6 +202,7 @@ void missing_mass(int argc, const char * argv[],
   // Load real cascades
   std::unique_ptr<LogDiffusion> log_diffusion;
   if (argc > 9) {
+    std::cerr << "Cascades loading..." << std::endl;
     log_diffusion = std::make_unique<LogDiffusion>();
     log_diffusion->load_cascades(argv[9]);
   }
@@ -210,6 +211,7 @@ void missing_mass(int argc, const char * argv[],
       std::move(log_diffusion));
   // Give strategy the reduction method for output
   strategy.set_graph_reduction(reduction);
+  std::cerr << "Perform" << std::endl;
   strategy.perform(budget, k);
 }
 
