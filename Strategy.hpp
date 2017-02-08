@@ -209,7 +209,7 @@ class MissingMassStrategy : public Strategy {
 
     // 2. Sequentially select the best k nodes from missing mass estimator ucb
     std::unordered_set<unode_int> spread;
-    std::cerr << "Start diffusions" << std::endl;
+    std::cerr << "Start the diffusions" << std::endl;
     for (unsigned int stage = 0; stage < budget; stage++) {
       // 2. (a) Select k experts for this round
       timestamp_t t2;
