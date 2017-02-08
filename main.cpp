@@ -216,7 +216,6 @@ void missing_mass(int argc, const char * argv[],
       strategy.set_graph_reduction(red);
       std::cerr << "Perform" << std::endl;
       strategy.perform(budget, k);
-      exit(1);
     }
   }
 }

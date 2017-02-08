@@ -108,6 +108,7 @@ class HighestDegreeReduction : public GraphReduction {
 class GreedyMaxCoveringReduction : public GraphReduction {
  public:
   std::vector<unode_int> extractExperts(const Graph& graph, int n_experts) {
+    std:cerr << "Extract experts in GreedyMaxCover" << std::endl;
     std::vector<unode_int> result(n_experts, 0);
     Graph copy_graph(graph); // Copy the graph
     for (int i = 0; i < n_experts; i++) {

@@ -189,6 +189,7 @@ class MissingMassStrategy : public Strategy {
     // 1. (a) Extract experts from graph
     timestamp_t t0, t1;
     t0 = get_timestamp();
+    std::cerr << "Extract experts with method " << n_graph_reduction_ << std::endl;
     std::vector<unode_int> experts = g_reduction_.extractExperts(
         original_graph_, n_experts_); // So far, we do not give children of experts
     t1 = get_timestamp();
@@ -208,6 +209,7 @@ class MissingMassStrategy : public Strategy {
 
     // 2. Sequentially select the best k nodes from missing mass estimator ucb
     std::unordered_set<unode_int> spread;
+    std::cerr << "Start diffusions" << std::endl;
     for (unsigned int stage = 0; stage < budget; stage++) {
       // 2. (a) Select k experts for this round
       timestamp_t t2;
@@ -221,7 +223,6 @@ class MissingMassStrategy : public Strategy {
       for (unsigned int chosen_expert : chosen_experts) {
         seeds.insert(experts[chosen_expert]); // We add the associated node
       }
-      std::unordered_set<unode_int> spread;
       if (log_diffusion_ == nullptr) {  // We sample a diffusion according to a model
         spread = exploit_spread.perform_diffusion(original_graph_, seeds);
       }
