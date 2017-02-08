@@ -66,14 +66,16 @@ void real(int argc, const char * argv[],
   int model = (argc > 6) ? atoi(argv[6]) : 1;
   load_original_graph(argv[2], original_graph, model);
   // Load cascades from logs if 11th parameter
-  std::unique_ptr<LogDiffusion> log_diffusion;
+  std::shared_ptr<LogDiffusion> log_diffusion;
   if (argc > 7) {
     log_diffusion = std::make_unique<LogDiffusion>();
     log_diffusion->load_cascades(argv[7]);
   }
-  OriginalGraphStrategy strategy(original_graph, *evaluators.at(exploit),
-                                 samples, model, std::move(log_diffusion));
-  strategy.perform(budget, k);
+  for (int i = 0; i < 20; i++) {
+    OriginalGraphStrategy strategy(original_graph, *evaluators.at(exploit),
+                                   samples, model, log_diffusion);
+    strategy.perform(budget, k);
+  }
 }
 
 void epsgreedy(int argc, const char * argv[]) {
@@ -207,15 +209,17 @@ void missing_mass(int argc, const char * argv[],
     log_diffusion->load_cascades(argv[9]);
   }
   std::vector<int> vec_experts = {10, 20, 50, 100, 200};
-  for (auto n_exp : vec_experts) {
-    for (int red = 0; red < 3; red++) {
-      MissingMassStrategy strategy(
-          original_graph, *greduction.at(red), n_exp, n_policy, model,
-          log_diffusion);
-      // Give strategy the reduction method for output
-      strategy.set_graph_reduction(red);
-      std::cerr << "Perform" << std::endl;
-      strategy.perform(budget, k);
+  for (int i = 0; i < 20; i++) {
+    for (auto n_exp : vec_experts) {
+      for (int red = 0; red < 2; red++) {
+        MissingMassStrategy strategy(
+            original_graph, *greduction.at(red), n_exp, n_policy, model,
+            log_diffusion);
+        // Give strategy the reduction method for output
+        strategy.set_graph_reduction(red);
+        std::cerr << "Perform" << std::endl;
+        strategy.perform(budget, k);
+      }
     }
   }
 }
