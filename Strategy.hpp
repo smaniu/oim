@@ -232,6 +232,7 @@ class MissingMassStrategy : public Strategy {
 
       // 3. (c) Update statistics of experts
       std::vector<unode_int> expert_nodes;  // For each expert, the associated node in the graph
+      std::cerr << "Update statistics of experts" << std::endl;
       for (unsigned int chosen_expert : chosen_experts)
         expert_nodes.push_back(experts[chosen_expert]);
       auto expert_spreads = extract_expert_spreads(
@@ -245,7 +246,9 @@ class MissingMassStrategy : public Strategy {
       updatingtime = (double)(t2 - t1) / 1000000.;
       roundtime = (double)(t2 - t0) / 1000000;
       totaltime += roundtime;
-      memory = disp_mem_usage();
+      // memory = disp_mem_usage();
+      std::cerr << "Diffusion " << stage << " done" << std::endl;
+      std::cerr << std::flush;
 
       // 4. Printing results
       std::cout << stage << "\t" << total_spread.size() << '\t'
