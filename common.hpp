@@ -1,16 +1,16 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
- 
+ Copyright (c) 2015-2017 Paul Lagrée, Siyu Lei, Silviu Maniu, Luyi Mo
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,69 +23,58 @@
 #ifndef oim_common_h
 #define oim_common_h
 
-#define MAX_R 10000000
-
 #include <random>
 #include <sys/time.h>
-#include <boost/random.hpp>
-#include <boost/generator_iterator.hpp>
 #include <memory>
 #include <unistd.h>
 #include <ios>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <string>
+#include <cstdint>
 
-#include "InfluenceDistribution.h"
 
 #define THETA_OFFSET 5
+#define MAX_R 10000000
 
 extern double sampling_time;
 extern double choosing_time;
 extern double reused_ratio;
 
-typedef long long int64;
+typedef uint32_t unode_int; // Type for node ids (can be changed into 32 or 64 bits)
 
-class edge_type{
-public:
-  unsigned long source;
-  unsigned long target;
-  std::shared_ptr<InfluenceDistribution> dist;
-  edge_type(unsigned long src, unsigned long tgt,\
-            std::shared_ptr<InfluenceDistribution> dst) :\
-            source(src), target(tgt), dist(dst) {};
-};
-
-typedef struct{
-  unsigned long source;
-  unsigned long target;
+typedef struct {
+  unode_int source;
+  unode_int target;
   unsigned int trial;
-} trial_type;
+} TrialType;
 
-struct celf_node_type{
-  unsigned long id;
-  double spr;
-  bool operator<(const celf_node_type &a) const{
-    return spr<a.spr?true:(spr>a.spr?false:id>a.id);
-  }
-};
+/**
+  Builds a seed using nanoseconds to avoid same results.
+*/
+int seed_ns() {
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (int)ts.tv_nsec;
+}
 
-typedef unsigned long long timestamp_t;
+typedef unode_int long timestamp_t;
 
-static timestamp_t get_timestamp ()
-{
+/**
+  Returns number of microseconds since the Epoch.
+*/
+static timestamp_t get_timestamp() {
   struct timeval now;
-  gettimeofday (&now, NULL);
+  gettimeofday(&now, NULL);
   return  now.tv_usec + (timestamp_t)now.tv_sec * 1000000;
 }
 
-double sqr(double t)
-{
-    return t*t;
+double sqr(double t) {
+  return t * t;
 }
 
-void process_mem_usage(double& vm_usage, double& resident_set)
-{
+void process_mem_usage(double &vm_usage, double &resident_set) {
    using std::ios_base;
    using std::ifstream;
    using std::string;
@@ -94,19 +83,16 @@ void process_mem_usage(double& vm_usage, double& resident_set)
    resident_set = 0.0;
 
    // 'file' stat seems to give the most reliable results
-   //
-   ifstream stat_stream("/proc/self/stat",ios_base::in);
+   ifstream stat_stream("/proc/self/stat", ios_base::in);
 
    // dummy vars for leading entries in stat that we don't care about
-   //
    string pid, comm, state, ppid, pgrp, session, tty_nr;
    string tpgid, flags, minflt, cminflt, majflt, cmajflt;
    string utime, stime, cutime, cstime, priority, nice;
    string O, itrealvalue, starttime;
 
    // the two fields we want
-   //
-   unsigned long vsize;
+   unode_int vsize;
    long rss;
 
    stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
@@ -121,5 +107,12 @@ void process_mem_usage(double& vm_usage, double& resident_set)
    resident_set = rss * page_size_kb;
 }
 
+double disp_mem_usage() {
+  double vm, rss;
+  process_mem_usage(vm, rss);
+  vm /= 1024;
+  rss /= 1024;
+  return rss;
+}
 
 #endif

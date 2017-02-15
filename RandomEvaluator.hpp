@@ -1,16 +1,16 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
- 
+ Copyright (c) 2017 Paul Lagrée
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,21 +20,36 @@
  THE SOFTWARE.
  */
 
-#ifndef __oim__Evaluator__
-#define __oim__Evaluator__
+#ifndef __oim__RandomEvaluator__
+#define __oim__RandomEvaluator__
 
-#include <unordered_set>
+#include "common.hpp"
+#include "Evaluator.hpp"
 
-#include "Graph.h"
-#include "Sampler.h"
+#include <sys/time.h>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
-class Evaluator{
-public:
-  virtual std::unordered_set<unsigned long> select(const Graph& graph,\
-                                                   Sampler& sampler,\
-           const std::unordered_set<unsigned long>& activated, unsigned int k,\
-                                                   unsigned long samples) = 0;
-  virtual void setIncremental(bool inc) {}
+class RandomEvaluator : public Evaluator {
+ private:
+  std::mt19937 gen_;
+  std::uniform_int_distribution<unode_int> dst_;
+
+ public:
+  RandomEvaluator() : gen_(seed_ns()) {};
+
+  std::unordered_set<unode_int> select(
+      const Graph& graph, Sampler&,
+      const std::unordered_set<unode_int>&, unsigned int k) {
+    dst_ = std::uniform_int_distribution<unode_int>(
+        0, graph.get_number_nodes() - 1);
+    std::unordered_set<unode_int> seeds;
+    while (seeds.size() < k) {
+      unode_int seed = dst_(gen_);
+      seeds.insert(seed);
+    }
+    return seeds;
+  }
 };
 
-#endif /* defined(__oim__Evaluator__) */
+#endif /* defined(__oim__RandomEvaluator__) */
