@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -30,19 +30,14 @@
 
 class HighestDegreeEvaluator : public Evaluator {
  private:
-  static std::unordered_set<unsigned long> seedSets;
+  std::unordered_set<unode_int> seed_sets_;
 
- public:
-  static void init() {
-    seedSets.clear();
-  }
-
-  std::unordered_set<unsigned long> select(
-        const Graph& graph, Sampler& sampler,
-        const std::unordered_set<unsigned long>& activated, unsigned int k) {
-    std::unordered_set<unsigned long> set;
+  std::unordered_set<unode_int> select(
+        const Graph& graph, Sampler&,
+        const std::unordered_set<unode_int>&, unsigned int k) {
+    std::unordered_set<unode_int> set;
     boost::heap::fibonacci_heap<NodeType> queue;
-    for (unsigned long node : graph.get_nodes()) {
+    for (unode_int node : graph.get_nodes()) {
       NodeType nstruct;
       nstruct.id = node;
       nstruct.deg = 0;
@@ -52,19 +47,15 @@ class HighestDegreeEvaluator : public Evaluator {
     }
     while (set.size() < k && !queue.empty()) {
       NodeType nstruct = queue.top();
-      //if(activated.find(nstruct.id)==activated.end())
-      if (seedSets.find(nstruct.id) == seedSets.end()) {
+      if (seed_sets_.find(nstruct.id) == seed_sets_.end()) {
         // Guarantee no duplicate nodes in the seed set for all trials
         set.insert(nstruct.id);
-        seedSets.insert(nstruct.id);
+        seed_sets_.insert(nstruct.id);
       }
       queue.pop();
     }
     return set;
   }
 };
-
-std::unordered_set<unsigned long> HighestDegreeEvaluator::seedSets
-    = std::unordered_set<unsigned long>();
 
 #endif /* defined(__oim__HighestDegreeEvaluator__) */

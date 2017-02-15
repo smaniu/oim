@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016 Paul Lagrée (Université Paris Sud)
+ Copyright (c) 2016-2017 Paul Lagrée
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -66,15 +66,13 @@ class Policy {
     This method does not necessarly need to be overloaded by classes inheriting
     Policy (e.g. RandomPolicy).
   */
-  virtual void updateState(unsigned int expert,
-                   const std::unordered_set<unsigned long>& stage_spread) {}
+  virtual void updateState(unsigned int,
+                           const std::unordered_set<unode_int>&) {}
 
   /**
     Reinitialize the object to start parameters.
   */
   virtual void init() {}
-
-  virtual void printdebug() {}
 };
 
 /**
@@ -112,44 +110,19 @@ enum Sigma {
 */
 class GoodUcbPolicy : public Policy {
  private:
-  std::vector<unsigned long>& nb_neighbours_; // Number of reachable nodes for each expert
+  std::vector<unode_int>& nb_neighbours_; // Number of reachable nodes for each expert
   unsigned int t_;                            // Number of rounds played
   std::vector<float> n_plays_;                // Number of times experts were played
   // For each expert, hashmap {node : #activations}
-  std::vector<std::unordered_map<unsigned long, unsigned int>> n_rewards_;
+  std::vector<std::unordered_map<unode_int, unsigned int>> n_rewards_;
   std::vector<std::vector<double>> spreads_;  // List of sampled spreads for each experts
   Sigma sigma_type_;        // Type of estimation of expert expected diffusion
 
  public:
-  GoodUcbPolicy(unsigned int n_experts, std::vector<unsigned long>& nb_neighbours,
+  GoodUcbPolicy(unsigned int n_experts, std::vector<unode_int>& nb_neighbours,
                 Sigma type=MEAN)
       : Policy(n_experts), nb_neighbours_(nb_neighbours),
         sigma_type_(type) { init(); }
-
-  /**
-    TODO Handle this remaining stuff I don't remember why I did that.
-  */
-  void printdebug() {
-    std::unordered_map<unsigned long, std::vector<int>> activations;  // {user: [expert 1, expert 2]}
-    for (unsigned int i = 0; i < n_experts_; i++) {
-      for (auto& elt : n_rewards_[i]) {
-        if (activations.count(elt.first) == 0)
-          activations[elt.first] = std::vector<int>();
-        for (unsigned int a = 0; a < elt.second; a++)
-          activations[elt.first].push_back(i);
-      }
-    }
-    std::cerr << "Number of plays\n===============" << std::endl;
-    for (unsigned long i = 0; i < n_experts_; i++)
-      std::cerr << i << "\t" << n_plays_[i] << std::endl;
-    std::cerr << "\nNumber of activations\n===============" << std::endl;
-    for (auto& elt : activations) {
-      std::cerr << elt.first << "\t";
-      for (auto item : elt.second)
-        std::cerr << item << " ";
-      std::cerr << std::endl;
-    }
-  }
 
   /**
     Selects `k` experts whose Good-UCB indices are the largest.
@@ -187,14 +160,14 @@ class GoodUcbPolicy : public Policy {
         sigma += elt.second;
       sigma /= n_plays_[i];
       if (sigma_type_ == SAMPLE_STD) {  // If we estimate sum of p(x) by the sample mean + std
-        double empirical_variance = 0;
+        double empirical_std = 0;
         for (auto elt : spreads_[i])
-          empirical_variance += (elt - sigma) * (elt - sigma);
+          empirical_std += (elt - sigma) * (elt - sigma);
         if (n_plays_[i] == 1)
-          empirical_variance = sigma;
+          empirical_std = sigma;
         else
-          empirical_variance = sqrt(empirical_variance / (n_plays_[i] - 1));
-        sigma += empirical_variance;
+          empirical_std = sqrt(empirical_std / (n_plays_[i] - 1));
+        sigma += empirical_std;
       } else if (sigma_type_ == INTERSECTING_SUPPORT) {
         missing_mass_i = 0;
         for (auto& elt : n_rewards_[i]) {
@@ -223,7 +196,7 @@ class GoodUcbPolicy : public Policy {
     Update statistics on the chosen expert (k == 1).
   */
   void updateState(unsigned int expert,
-                   const std::unordered_set<unsigned long>& stage_spread) {
+                   const std::unordered_set<unode_int>& stage_spread) {
     t_++;
     for (auto& activated_node : stage_spread) {
       if (n_rewards_[expert].count(activated_node) == 0)
@@ -243,7 +216,7 @@ class GoodUcbPolicy : public Policy {
     n_plays_ = std::vector<float>(n_experts_, 0);
     spreads_ = std::vector<std::vector<double>>(n_experts_);
     for (unsigned int k = 0; k < n_experts_; k++) {
-      n_rewards_.push_back(std::unordered_map<unsigned long, unsigned int>());
+      n_rewards_.push_back(std::unordered_map<unode_int, unsigned int>());
     }
   }
 };

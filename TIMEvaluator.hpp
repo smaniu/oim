@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -37,28 +37,28 @@ using namespace std;
 
 class TIMEvaluator : public Evaluator {
  private:
-  std::unordered_set<unsigned long> activated_;
+  std::unordered_set<unode_int> activated_;
   unsigned int k_;
-  unsigned long n_;
-  unsigned long n_max_;
-  unsigned long m_;
+  unode_int n_;
+  unode_int n_max_;
+  unode_int m_;
   double epsilon_;
 
-  std::unordered_set<unsigned long> seed_set_;
-  std::vector<std::shared_ptr<std::vector<unsigned long>>> rr_sets_;
-  std::vector<unsigned long> graph_nodes_;
-  std::vector<std::shared_ptr<std::vector<unsigned long>>> hyper_g_;
-  int64 hyper_id_;
-  int64 total_r_;
+  std::unordered_set<unode_int> seed_set_;
+  std::vector<std::shared_ptr<std::vector<unode_int>>> rr_sets_;
+  std::vector<unode_int> graph_nodes_;
+  std::vector<std::shared_ptr<std::vector<unode_int>>> hyper_g_;
+  unode_int hyper_id_;
+  unode_int total_r_;
   std::random_device rd_;
   std::mt19937 gen_;
 
  public:
   TIMEvaluator() : gen_(rd_()) {};
 
-  std::unordered_set<unsigned long> select(
+  std::unordered_set<unode_int> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated, unsigned int k) {
+      const std::unordered_set<unode_int>& activated, unsigned int k) {
 
     timestamp_t t0, t1, t2;
 
@@ -117,7 +117,7 @@ class TIMEvaluator : public Evaluator {
                      std::uniform_int_distribution<int>& dst) {
     double lb = 1 / 2.0;
     double c = 0;
-    int64 last_r = 0;
+    unode_int last_r = 0;
 
     double return_value = 1;
     int steps = 1;  // added for algorithm 2 line 1
@@ -127,11 +127,11 @@ class TIMEvaluator : public Evaluator {
       last_r = loop;
 
       for (int i = 0; i < loop; i++) {
-        std::shared_ptr<std::vector<unsigned long>>
-            rr(new std::vector<unsigned long>());
+        std::shared_ptr<std::vector<unode_int>>
+            rr(new std::vector<unode_int>());
         if (!incremental_) {
-          std::unordered_set<unsigned long> seeds;
-          unsigned long u = graph_nodes_[dst(gen_)];
+          std::unordered_set<unode_int> seeds;
+          unode_int u = graph_nodes_[dst(gen_)];
           seeds.insert(u);
           rr->push_back(u);
           sampler.trial(graph, activated_, seeds, true);
@@ -162,7 +162,7 @@ class TIMEvaluator : public Evaluator {
     return return_value;
   }
 
-  void buildSamples(int64& R, const Graph& graph, Sampler& sampler,
+  void buildSamples(unode_int R, const Graph& graph, Sampler& sampler,
                     std::uniform_int_distribution<int>& dst) {
     total_r_ += R;
 
@@ -173,8 +173,8 @@ class TIMEvaluator : public Evaluator {
     hyper_g_.clear();
     hyper_g_.reserve(n_);
     for (unsigned int i = 0; i < n_; ++i) {
-      hyper_g_.push_back(std::shared_ptr<std::vector<unsigned long>>(
-          new std::vector<unsigned long>()));
+      hyper_g_.push_back(std::shared_ptr<std::vector<unode_int>>(
+          new std::vector<unode_int>()));
     }
 
     rr_sets_.clear();
@@ -183,12 +183,12 @@ class TIMEvaluator : public Evaluator {
     double totTime = 0.0;
     double totInDegree = 0;
 
-    for (int i = 0; i < R; i++) {
+    for (unsigned int i = 0; i < R; i++) {
       if (!incremental_) {
-        std::shared_ptr<std::vector<unsigned long>> rr(
-            new std::vector<unsigned long>());
-        std::unordered_set<unsigned long> seeds;
-        unsigned long nd = graph_nodes_[dst(gen_)]; // Only RR set samples from unreached nodes
+        std::shared_ptr<std::vector<unode_int>> rr(
+            new std::vector<unode_int>());
+        std::unordered_set<unode_int> seeds;
+        unode_int nd = graph_nodes_[dst(gen_)]; // Only RR set samples from unreached nodes
         seeds.insert(nd);
         rr->push_back(nd);
 
@@ -212,8 +212,8 @@ class TIMEvaluator : public Evaluator {
       }
     }
 
-    for (int i = 0; i < R; i++) {
-      for (unsigned long t : (*rr_sets_[i])) {
+    for (unsigned int i = 0; i < R; i++) {
+      for (unode_int t : (*rr_sets_[i])) {
         hyper_g_[t]->push_back(i);
       }
     }
@@ -246,7 +246,7 @@ class TIMEvaluator : public Evaluator {
   }
 
   double InfluenceHyperGraph() {
-    unordered_set<unsigned long> s;
+    unordered_set<unode_int> s;
     for(auto t : seed_set_) {
       for(auto tt : (*hyper_g_[t])) {
         s.insert(tt);
@@ -259,7 +259,7 @@ class TIMEvaluator : public Evaluator {
   void BuildHyperGraph2(double epsilon_, double ept, const Graph& graph,
                         Sampler& sampler,
                         std::uniform_int_distribution<int>& dst) {
-    int64 R = (8 + 2 * epsilon_) * (n_ * log(n_) + n_ * log(2)) /
+    unode_int R = (8 + 2 * epsilon_) * (n_ * log(n_) + n_ * log(2)) /
         (epsilon_ * epsilon_ * ept) / 4;
     buildSamples(R, graph, sampler, dst);
   }
@@ -268,11 +268,11 @@ class TIMEvaluator : public Evaluator {
                         Sampler& sampler,
                         std::uniform_int_distribution<int>& dst) {
     double logCnk = 0.0;
-    for (unsigned long i = n_, j = 1; j <= k_; --i, ++j) {
+    for (unode_int i = n_, j = 1; j <= k_; --i, ++j) {
       logCnk += log10(i) - log10(j);
     }
-    int64 R = (8 + 2 * epsilon_) * (n_ * log(n_) + n_ * log(2) + n_ * logCnk) /
-        (epsilon_ * epsilon_ * opt);
+    unode_int R = (8 + 2 * epsilon_) * (n_ * log(n_) + n_ * log(2) +
+        n_ * logCnk) / (epsilon_ * epsilon_ * opt);
     buildSamples(R, graph, sampler, dst);
   }
 

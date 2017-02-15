@@ -41,8 +41,8 @@
 #include "Graph.hpp"
 
 
-typedef std::unordered_map<unsigned long, unsigned long> cc_map;
-typedef std::unordered_map<unsigned int, std::unordered_set<unsigned long>>
+typedef std::unordered_map<unode_int, unode_int> cc_map;
+typedef std::unordered_map<unsigned int, std::unordered_set<unode_int>>
     cc_node_map;
 
 /**
@@ -55,20 +55,20 @@ class OhsakaEvaluator : public Evaluator {
   std::vector<cc_map> cc;
   std::vector<cc_node_map> cc_list;
   std::vector<Graph> graphs;
-  std::vector<std::unordered_set<unsigned long>> A;
-  std::vector<std::unordered_set<unsigned long>> D;
-  std::vector<unsigned long> h;
-  std::vector<std::unordered_map<unsigned long, bool>> latest;
-  std::vector<std::unordered_map<unsigned long, float>> delta;
+  std::vector<std::unordered_set<unode_int>> A;
+  std::vector<std::unordered_set<unode_int>> D;
+  std::vector<unode_int> h;
+  std::vector<std::unordered_map<unode_int, bool>> latest;
+  std::vector<std::unordered_map<unode_int, float>> delta;
   unsigned int R_;  // Number of MC simulations
 
   // For Tarjan's algorithm
-  std::unordered_map<unsigned long, unsigned long> lowlink;
-  std::unordered_map<unsigned long, unsigned long> index;
-  std::unordered_map<unsigned long, unsigned long> pred;
-  std::unordered_set<unsigned long> visited;
-  std::stack<unsigned long> vis_stack;
-  unsigned long cur_index;
+  std::unordered_map<unode_int, unode_int> lowlink;
+  std::unordered_map<unode_int, unode_int> index;
+  std::unordered_map<unode_int, unode_int> pred;
+  std::unordered_set<unode_int> visited;
+  std::stack<unode_int> vis_stack;
+  unode_int cur_index;
 
   // random devices
   std::random_device rd;
@@ -78,25 +78,25 @@ class OhsakaEvaluator : public Evaluator {
 public:
   OhsakaEvaluator(unsigned int R) : R_(R), gen(rd()), dist(0, 1) {};
 
-  std::unordered_set<unsigned long> select(
+  std::unordered_set<unode_int> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated, unsigned int k) {
+      const std::unordered_set<unode_int>& activated, unsigned int k) {
 
     A.clear(); D.clear(); h.clear(); latest.clear(); delta.clear();
     graphs.clear(); cc.clear(); cc_list.clear();
-    std::unordered_set<unsigned long> set;
+    std::unordered_set<unode_int> set;
 
     // Sample the graphs and create DAGs and supporting structures
     for (unsigned int i = 0; i < R_; i++) {
       tarjan(sampler, graph); // samples and creates the DAG at the same time
-      unsigned long max_node = 0;
-      unsigned long max_val = 0;
-      std::unordered_set<unsigned long> cur_A;
-      std::unordered_set<unsigned long> cur_D;
+      unode_int max_node = 0;
+      unode_int max_val = 0;
+      std::unordered_set<unode_int> cur_A;
+      std::unordered_set<unode_int> cur_D;
       A.push_back(cur_A); D.push_back(cur_D);
       //find the highest degree node (only outgoing)
       for (auto node : graphs[i].get_nodes()) {
-        unsigned long deg = 0;
+        unode_int deg = 0;
         if (graphs[i].has_neighbours(node))
           deg = graphs[i].get_neighbours(node).size();
         if (deg >= max_val) {
@@ -117,8 +117,8 @@ public:
       for (auto node : graphs[i].get_nodes())
         if (node != h[i] && (D[i].find(node) == D[i].end()))
           bfs(node, i, A[i], true, h[i]);
-      std::unordered_map<unsigned long, bool> cur_latest;
-      std::unordered_map<unsigned long, float> cur_delta;
+      std::unordered_map<unode_int, bool> cur_latest;
+      std::unordered_map<unode_int, float> cur_delta;
       for (auto node : graphs[i].get_nodes()) {
         cur_latest[node] = false;
         cur_delta[node] = 0.0;
@@ -128,7 +128,7 @@ public:
     }
     // Main loop for computing the seed set
     while (set.size() < k) {
-      unsigned long t = 0;
+      unode_int t = 0;
       float val_max = 0;
       for (auto v : graph.get_nodes()) {
         if (activated.find(v) == activated.end()) {
@@ -177,7 +177,7 @@ public:
     while (vis_stack.size() != 0) vis_stack.pop();
   }
 
-  void scc(unsigned long node, Sampler& sampler, const Graph& graph,
+  void scc(unode_int node, Sampler& sampler, const Graph& graph,
            cc_map& cur_cc, cc_node_map& cur_cc_list, unsigned int& cur_num_cc) {
     index[node] = cur_index;
     lowlink[node] = cur_index;
@@ -202,7 +202,7 @@ public:
     }
     // If found the root, create SCC
     if (lowlink[node] == index[node]) {
-      unsigned long cur_node;
+      unode_int cur_node;
       do {
         cur_node = vis_stack.top();
         vis_stack.pop();
@@ -214,14 +214,14 @@ public:
     }
   }
 
-  void bfs(unsigned long node, int i, std::unordered_set<unsigned long>& col,
-           bool to=false, unsigned long to_node=0) {
-    std::queue<unsigned long> q;
-    std::unordered_set<unsigned long> visited;
+  void bfs(unode_int node, int i, std::unordered_set<unode_int>& col,
+           bool to=false, unode_int to_node=0) {
+    std::queue<unode_int> q;
+    std::unordered_set<unode_int> visited;
     q.push(node);
     visited.insert(node);
     while (q.size() != 0) {
-      unsigned long cur_node = q.front();
+      unode_int cur_node = q.front();
       q.pop();
       visited.insert(cur_node);
       if (graphs[i].has_neighbours(cur_node)) {
@@ -241,9 +241,9 @@ public:
     }
   }
 
-  float gain(int i, unsigned long node,
-             std::unordered_set<unsigned long>& set) {
-    unsigned long v = cc[i][node];
+  float gain(int i, unode_int node,
+             std::unordered_set<unode_int>& set) {
+    unode_int v = cc[i][node];
     if (!graphs[i].has_node(v)) return 0.0;
     if (latest[i][v]) return delta[i][v];
     latest[i][v] = true;
@@ -255,11 +255,11 @@ public:
       delta[i][v] = 0.0;
     }
 
-    std::queue<unsigned long> Q;
-    std::unordered_set<unsigned long> X;
+    std::queue<unode_int> Q;
+    std::unordered_set<unode_int> X;
     Q.push(v); X.insert(v);
     while(Q.size()!=0){
-      unsigned long u = Q.front();
+      unode_int u = Q.front();
       Q.pop();
       if((A[i].find(v)!=A[i].end())&&(D[i].find(u)!=D[i].end())&&\
          (set.size()==0))
@@ -277,14 +277,14 @@ public:
     return delta[i][v];
   }
 
-  void update_dag(int i, unsigned long node){
-    unsigned long t = cc[i][node];
-    std::unordered_set<unsigned long> desc;
+  void update_dag(int i, unode_int node){
+    unode_int t = cc[i][node];
+    std::unordered_set<unode_int> desc;
     bfs(t,i,desc);
     for(auto v:graphs[i].get_nodes()){
       if(latest[i][v]){
         for(auto u:desc){
-          std::unordered_set<unsigned long> reach;
+          std::unordered_set<unode_int> reach;
           bfs(v,i,reach,true,u);
           if(reach.size()!=0){
             latest[i][v] = false;

@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015-2017 Paul Lagrée, Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ class BetaInfluence: public InfluenceDistribution {
     update_quartiles();
   }
 
-  void update(unsigned long hit, unsigned long miss) {
+  void update(unode_int hit, unode_int miss) {
     alpha_ += (double)hit;
     beta_ += (double)miss;
     hits_ += hit;

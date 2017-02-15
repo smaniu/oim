@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2016-2017 Paul Lagrée
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -32,13 +32,15 @@
 #include "Graph.hpp"
 
 
-// Load the graph from file and returns the number of nodes
-unsigned long load_original_graph(
+/**
+  Load the graph from file and returns the number of nodes
+*/
+unode_int load_original_graph(
       std::string filename, Graph& graph, int model=1) {
   std::ifstream file(filename);
-  unsigned long src, tgt;
+  unode_int src, tgt;
   double prob;
-  unsigned long edges = 0;
+  unode_int edges = 0;
   while (file >> src >> tgt >> prob) {
     std::shared_ptr<InfluenceDistribution> dst_original(
         new SingleInfluence(prob));
@@ -55,13 +57,13 @@ unsigned long load_original_graph(
   graph) (b) model graph (graph estimation).
   Returns the number of nodes.
 */
-unsigned long load_model_and_original_graph(
+unode_int load_model_and_original_graph(
       std::string filename, double alpha, double beta,
       Graph& original_graph, Graph& model_graph, int model=1) {
   std::ifstream file(filename);
-  unsigned long src, tgt;
+  unode_int src, tgt;
   double prob;
-  unsigned long edges = 0;
+  unode_int edges = 0;
   while (file >> src >> tgt >> prob) {
     std::shared_ptr<InfluenceDistribution> dst_original(
         new SingleInfluence(prob));
@@ -69,11 +71,11 @@ unsigned long load_model_and_original_graph(
         new BetaInfluence(alpha, beta, prob));
     original_graph.add_edge(src, tgt, dst_original);
     model_graph.add_edge(src, tgt, dst_model);
-    if (model == 0) { // If LT model, we need to create distributions for each nodes
-      original_graph.build_lt_distribution(INFLUENCE_MED);
-      model_graph.build_lt_distribution(INFLUENCE_MED);
-    }
     edges++;
+  }
+  if (model == 0) { // If LT model, we need to create distributions for each nodes
+    original_graph.build_lt_distribution(INFLUENCE_MED);
+    // Not for model graph as it is used only by expg that does not handle LT
   }
   model_graph.set_prior(alpha, beta);
   return edges;

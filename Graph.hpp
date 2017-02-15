@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015-2017 Paul Lagrée, Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -36,10 +36,10 @@
 
 class EdgeType {
  public:
-  unsigned long source;
-  unsigned long target;
+  unode_int source;
+  unode_int target;
   std::shared_ptr<InfluenceDistribution> dist;
-  EdgeType(unsigned long src, unsigned long tgt,
+  EdgeType(unode_int src, unode_int tgt,
            std::shared_ptr<InfluenceDistribution> dst)
       : source(src), target(tgt), dist(dst) {};
 };
@@ -50,15 +50,15 @@ class EdgeType {
 */
 class Graph {
  private:
-  std::unordered_map<unsigned long, std::vector<EdgeType>> adj_list_;
-  std::unordered_map<unsigned long, std::vector<EdgeType>> inv_adj_list_;
+  std::unordered_map<unode_int, std::vector<EdgeType>> adj_list_;
+  std::unordered_map<unode_int, std::vector<EdgeType>> inv_adj_list_;
   // For each node, if LT model was activated in graph loading, we have the
   // distribution to sample an incoming edge according to its weight.
   std::unordered_map<
-      unsigned long, std::discrete_distribution<>> mutable lt_dist_;
-  std::unordered_set<unsigned long> node_set_;
-  unsigned long num_edges_ = 0;
-  unsigned long num_nodes_ = 0;
+      unode_int, std::discrete_distribution<>> mutable lt_dist_;
+  std::unordered_set<unode_int> node_set_;
+  unode_int num_edges_ = 0;
+  unode_int num_nodes_ = 0;
 
  public:
   double alpha_prior, beta_prior;
@@ -84,7 +84,7 @@ class Graph {
   /**
     Adds an edge and the corresponding inversed edge to the Graph.
   */
-  void add_edge(unsigned long source, unsigned long target,
+  void add_edge(unode_int source, unode_int target,
                 std::shared_ptr<InfluenceDistribution> dist) {
     add_node(source);
     add_node(target);
@@ -98,7 +98,7 @@ class Graph {
   /**
     Adds a node to the Graph.
   */
-  void add_node(unsigned long node) {
+  void add_node(unode_int node) {
     node_set_.insert(node);
     num_nodes_ = node_set_.size();
   }
@@ -121,9 +121,8 @@ class Graph {
   /**
     Remove node from graph, remove all the corresponding data (neighbours,
     appearances in neighours' neighbours).
-    TODO Renumber last node to removed node number
   */
-  void remove_node(unsigned long node) {
+  void remove_node(unode_int node) {
     // 1. Remove node
     node_set_.erase(node);
     num_nodes_ = node_set_.size();
@@ -161,7 +160,7 @@ class Graph {
     }
   }
 
-  void update_edge(unsigned long src, unsigned long tgt, unsigned int trial) {
+  void update_edge(unode_int src, unode_int tgt, unsigned int trial) {
     if (adj_list_.find(src) != adj_list_.end()) {
       for (EdgeType edge : adj_list_[src]) {
         if (edge.target == tgt) {
@@ -180,7 +179,7 @@ class Graph {
       }
   }
 
-  double get_mse(){
+  double get_mse() {
     double edges = 0.0;
     double tse = 0.0;
     for (auto lst : adj_list_)
@@ -199,7 +198,7 @@ class Graph {
     }
   }
 
-  bool has_neighbours(unsigned long node, bool inv=false) const {
+  bool has_neighbours(unode_int node, bool inv=false) const {
     if (!inv)
       return adj_list_.find(node) != adj_list_.end();
     else
@@ -211,7 +210,7 @@ class Graph {
     reversed neighbors for TIM-like algorithms, set inv to `true`.
   */
   const std::vector<EdgeType>& get_neighbours(
-      unsigned long node, bool inv=false) const {
+      unode_int node, bool inv=false) const {
     if (!inv)
       return (adj_list_.find(node))->second;
     else
@@ -221,38 +220,38 @@ class Graph {
   /**
     Get the set of nodes.
   */
-  const std::unordered_set<unsigned long>& get_nodes() const {
+  const std::unordered_set<unode_int>& get_nodes() const {
     return node_set_;
   }
 
   /**
     Test if a node is in the graph.
   */
-  bool has_node(unsigned long node) {
+  bool has_node(unode_int node) {
     return node_set_.find(node) != node_set_.end();
   }
 
   /**
     Get number of nodes in the graph.
   */
-  unsigned long get_number_nodes() const {
+  unode_int get_number_nodes() const {
     return num_nodes_;
   }
 
   /**
     Get number of edges in the graph.
   */
-  unsigned long get_number_edges() const {
+  unode_int get_number_edges() const {
     return num_edges_;
   }
 
   /**
     Build the distribution on each node to sample incoming living edges for the
     LT model. It requires the graph has been entirely loaded. This method can
-    also be called after an update of
+    also be called after an update of weight estimations.
   */
   void build_lt_distribution(unsigned int type) {
-    for (unsigned long u = 0; u < num_nodes_; u++) {
+    for (unode_int u = 0; u < num_nodes_; u++) {
       if (has_neighbours(u, true)) {  // Only reversed edges are interesting
         auto& neighbours = get_neighbours(u, true);
         std::vector<double> w(neighbours.size() + 1, 0);
@@ -266,6 +265,7 @@ class Graph {
           w[neighbours.size()] = 1 - total;
         }
         // Note, the UCB-like case is handled automatically by discrete_distribution
+        // because one can have weights > 1
         lt_dist_[u] = std::discrete_distribution<>(w.begin(), w.end());
       }
     }
@@ -277,7 +277,7 @@ class Graph {
     neighbours of `node`. If weights do not sum to 1, we can return -1 for no
     sample.
   */
-  int sample_living_edge(unsigned long node, boost::mt19937& gen) const {
+  int sample_living_edge(unode_int node, boost::mt19937& gen) const {
     if (has_neighbours(node, true)) {
       int index = lt_dist_[node](gen);
       if (index < (int)get_neighbours(node, true).size())
@@ -290,7 +290,7 @@ class Graph {
     Display graph edges for debug purposes.
   */
   void write_err(int type) {
-    for (unsigned long i = 0; i < get_number_nodes(); i++) {
+    for (unode_int i = 0; i < get_number_nodes(); i++) {
       if (!has_neighbours(i))
         continue;
       for (auto& edge : get_neighbours(i))

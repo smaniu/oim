@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016 Paul Lagrée (Université Paris Sud)
+ Copyright (c) 2015 Naoto Ohsaka
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,7 @@ using namespace std;
 
 class PrunedEstimator {
  private:
-	int n, n1;
+	unsigned int n, n1;
 	std::vector<int> weight, comp, sigmas;
 	std::vector<int> pmoc;
 	std::vector<int> at_p;
@@ -58,7 +58,7 @@ class PrunedEstimator {
 
   void first() {
   	hub = 0;
-  	for (int i = 0; i < n; i++) {
+  	for (unsigned int i = 0; i < n; i++) {
   		if ((at_e[i + 1] - at_e[i]) + (at_r[i + 1] - at_r[i])
   				> (at_e[hub + 1] - at_e[hub]) + (at_r[hub + 1] - at_r[hub])) {
   			hub = i;
@@ -98,13 +98,13 @@ class PrunedEstimator {
   	}
   	ancestor[hub] = false;
 
-  	for (int i = 0; i < n; i++) {
+  	for (unsigned int i = 0; i < n; i++) {
   		sigma(i);
   	}
   	ancestor.assign(n, false);
   	descendant.assign(n, false);
 
-  	for (int i = 0; i < n1; i++) {
+  	for (unsigned int i = 0; i < n1; i++) {
   		up.push_back(i);
   	}
   }
@@ -157,7 +157,7 @@ class PrunedEstimator {
   					}
   				}
   			}
-  			for (int i = 0; i < (int) vec.size(); i++) {
+  			for (unsigned int i = 0; i < vec.size(); i++) {
   				visited[vec[i]] = false;
   			}
   			return sigmas[v0] = delta;
@@ -184,17 +184,18 @@ class PrunedEstimator {
   }
 
  public:
-  void init(const int _n, vector<pair<int, int>>& _es, vector<int>& _comp) {
+  void init(int _n, vector<pair<int, int>>& _es, vector<int>& _comp,
+            const unordered_set<unode_int>& activated) {
    	flag = true;
    	n = _n;
    	n1 = _comp.size();
 
    	visited.resize(n, false);
 
-   	int m = _es.size();
+   	unsigned int m = _es.size();
    	vector<int> outdeg(n), indeg(n);
 
-   	for (int i = 0; i < m; i++) {
+   	for (unsigned int i = 0; i < m; i++) {
    		int a = _es[i].first, b = _es[i].second;
    		outdeg[a]++;
    		indeg[b]++;
@@ -206,19 +207,19 @@ class PrunedEstimator {
    	at_r.resize(n + 1, 0);
 
    	at_e[0] = at_r[0] = 0;
-   	for (int i = 1; i <= n; i++) {
+   	for (unsigned int i = 1; i <= n; i++) {
    		at_e[i] = at_e[i - 1] + outdeg[i - 1];
    		at_r[i] = at_r[i - 1] + indeg[i - 1];
    	}
 
-   	for (int i = 0; i < m; i++) {
+   	for (unsigned int i = 0; i < m; i++) {
    		int a = _es[i].first, b = _es[i].second;
    		es[at_e[a]++] = b;
    		rs[at_r[b]++] = a;
    	}
 
    	at_e[0] = at_r[0] = 0;
-   	for (int i = 1; i <= n; i++) {
+   	for (unsigned int i = 1; i <= n; i++) {
    		at_e[i] = at_e[i - 1] + outdeg[i - 1];
    		at_r[i] = at_r[i - 1] + indeg[i - 1];
    	}
@@ -226,16 +227,16 @@ class PrunedEstimator {
    	sigmas.resize(n);
    	comp = _comp;
    	vector<pair<int, int> > ps;
-   	for (int i = 0; i < n1; i++) {
+   	for (unsigned int i = 0; i < n1; i++) {
    		ps.push_back(make_pair(comp[i], i));
    	}
    	sort(ps.begin(), ps.end());
    	at_p.resize(n + 1);
-   	for (int i = 0; i < n1; i++) {
+   	for (unsigned int i = 0; i < n1; i++) {
    		pmoc.push_back(ps[i].second);
    		at_p[ps[i].first + 1]++;
    	}
-   	for (int i = 1; i <= n; i++) {
+   	for (unsigned int i = 1; i <= n; i++) {
    		at_p[i] += at_p[i - 1];
    	}
 
@@ -243,8 +244,9 @@ class PrunedEstimator {
    	removed.resize(n);
 
    	weight.resize(n1, 0);
-   	for (int i = 0; i < n1; i++) {
-   		weight[comp[i]]++;
+   	for (unsigned int i = 0; i < n1; i++) {
+      if (activated.find((unode_int)i) == activated.end())
+   		 weight[comp[i]]++;
    	}
 
    	first();
@@ -313,7 +315,7 @@ class PrunedEstimator {
   	}
   }
 
-  void update(vector<long long> &sums) {
+  void update(vector<long long>& sums) {
   	for (int i = 0; i < (int) up.size(); i++) {
   		int v = up[i];
   		if (!flag) {
@@ -329,67 +331,32 @@ class PrunedEstimator {
 };
 
 /**
-  Random Number Generator
-*/
-class Xorshift {
- public:
-	Xorshift(unsigned int seed) {
-		x_ = _(seed, 0);
-		y_ = _(x_, 1);
-		z_ = _(y_, 2);
-		w_ = _(z_, 3);
-	}
-
-	int _(int s, int i) {
-		return 1812433253 * (s ^ (s >> 30)) + i + 1;
-	}
-
-	inline int gen_int() {
-		unsigned int t = x_ ^ (x_ << 11);
-		x_ = y_;
-		y_ = z_;
-		z_ = w_;
-		return w_ = w_ ^ (w_ >> 19) ^ t ^ (t >> 8);
-	}
-
-	inline int gen_int(int n) {
-		return (int) (n * gen_double());
-	}
-
-	inline double gen_double() {
-		unsigned int a = ((unsigned int) gen_int()) >> 5, b =
-				((unsigned int) gen_int()) >> 6;
-		return (a * 67108864.0 + b) * (1.0 / (1LL << 53));
-	}
-
- private:
-	unsigned int x_, y_, z_, w_;
-};
-
-/**
   Implementation of PMC algorithm introduced in `Fast and Accurate Influence
   Maximization on Large Networks with Pruned Monte-Carlo Simulations` by Naoto
   Ohsaka et al., AAAI 2014.
 */
 class PMCEvaluator : public Evaluator {
  private:
-  std::unordered_set<unsigned long> seed_set_;  // Set of k selected nodes
-  std::vector<unsigned long> es1_;
-  std::vector<unsigned long> rs1_;
-  std::vector<unsigned long> at_e_;
-  std::vector<unsigned long> at_r_;
+  std::unordered_set<unode_int> seed_set_;  // Set of k selected nodes
+  std::vector<unode_int> es1_;
+  std::vector<unode_int> rs1_;
+  std::vector<unode_int> at_e_;
+  std::vector<unode_int> at_r_;
   std::random_device rd_;
   unsigned int R_;  // Number of DAGs (Directed Acyclic Graphs)
   unsigned int type_;
-  unsigned long n_; // Number of vertices
-  unsigned long m_; // Number of edges
+  unode_int n_; // Number of vertices
+  unode_int m_; // Number of edges
 
+  /**
+    Compute Strongly Connected Components
+  */
   int scc(vector<int>& comp) {
   	std::vector<bool> vis(n_);
   	std::stack<pair<int, int>> S;
   	std::vector<int> lis;
   	int k = 0;
-  	for (unsigned long i = 0; i < n_; i++) {
+  	for (unode_int i = 0; i < n_; i++) {
   		S.push(make_pair(i, 0));
   	}
   	for (; !S.empty();) {
@@ -401,15 +368,15 @@ class PMCEvaluator : public Evaluator {
   			}
   			vis[v] = true;
   			S.push(make_pair(v, 1));
-  			for (unsigned long i = at_e_[v]; i < at_e_[v + 1]; i++) {
-  				unsigned long u = es1_[i];
+  			for (unode_int i = at_e_[v]; i < at_e_[v + 1]; i++) {
+  				unode_int u = es1_[i];
   				S.push(make_pair(u, 0));
   			}
   		} else {
   			lis.push_back(v);
   		}
   	}
-  	for (unsigned long i = 0; i < n_; i++) {
+  	for (unode_int i = 0; i < n_; i++) {
   		S.push(make_pair(lis[i], -1));
   	}
   	vis.assign(n_, false);
@@ -421,8 +388,8 @@ class PMCEvaluator : public Evaluator {
   		}
   		vis[v] = true;
   		comp[v] = arg == -1 ? k++ : arg;
-  		for (unsigned long i = at_r_[v]; i < at_r_[v + 1]; i++) {
-  			unsigned long u = rs1_[i];
+  		for (unode_int i = at_r_[v]; i < at_r_[v + 1]; i++) {
+  			unode_int u = rs1_[i];
   			S.push(make_pair(u, comp[v]));
   		}
   	}
@@ -433,18 +400,17 @@ class PMCEvaluator : public Evaluator {
   PMCEvaluator(unsigned int R)
       : R_(R) {};
 
-  std::unordered_set<unsigned long> select(
+  std::unordered_set<unode_int> select(
         const Graph& graph, Sampler& sampler,
-        const std::unordered_set<unsigned long>& activated, unsigned int k) {
+        const std::unordered_set<unode_int>& activated, unsigned int k) {
   	n_ = graph.get_number_nodes();
   	m_ = graph.get_number_edges();
     type_ = sampler.get_type();
 
-  	// sort(es.begin(), es.end()); TODO sort the graph edges
     seed_set_.clear();
 
   	es1_.resize(m_);
-  	rs1_.resize(m_);
+  	rs1_.resize(m_);   // List of activated nodes
   	at_e_.resize(n_ + 1);
   	at_r_.resize(n_ + 1);
 
@@ -452,17 +418,17 @@ class PMCEvaluator : public Evaluator {
 
   	for (unsigned int t = 0; t < R_; t++) {
   		Xorshift xs = Xorshift(t + seed_ns());
-  		unsigned int mp = 0;
-  		at_e_.assign(n_ + 1, 0);
-  		at_r_.assign(n_ + 1, 0);
-  		std::vector<pair<unsigned long, unsigned long>> ps;
+  		unsigned int mp = 0;      // Number of living edges
+  		at_e_.assign(n_ + 1, 0);  // For each node, number of outgoing living edges (cumsum, dont know why)
+  		at_r_.assign(n_ + 1, 0);  // For each node, number of incoming living edges (cumsum)
+  		std::vector<pair<unode_int, unode_int>> ps; // List of reversed living edges
 
-  		for (unsigned long i = 0; i < n_; i++) {
+  		for (unode_int i = 0; i < n_; i++) {
         if (!graph.has_neighbours(i))
           continue;
         for (auto& edge : graph.get_neighbours(i)) {
     			if (xs.gen_double() < edge.dist->sample(type_)) {
-    				es1_[mp++] = edge.target;
+    				es1_[mp++] = edge.target;   // Lists of activated nodes (targets)
     				at_e_[edge.source + 1]++;
     				ps.push_back(make_pair(edge.target, edge.source));
     			}
@@ -476,7 +442,7 @@ class PMCEvaluator : public Evaluator {
   			rs1_[i] = ps[i].second;
   			at_r_[ps[i].first + 1]++;
   		}
-  		for (unsigned long i = 1; i <= n_; i++) {
+  		for (unode_int i = 1; i <= n_; i++) {
   			at_e_[i] += at_e_[i - 1];
   			at_r_[i] += at_r_[i - 1];
   		}
@@ -490,11 +456,11 @@ class PMCEvaluator : public Evaluator {
 
   		int nscc = scc(comp);
 
-  		vector<pair<int, int>> es2;
-  		for (unsigned long u = 0; u < n_; u++) {
+  		vector<pair<int, int>> es2; // List of edges in SCC graph
+  		for (unode_int u = 0; u < n_; u++) {
   			unsigned int a = comp[u];
-  			for (unsigned long i = at_e_[u]; i < at_e_[u + 1]; i++) {
-  				unsigned long b = comp[es1_[i]];
+  			for (unode_int i = at_e_[u]; i < at_e_[u + 1]; i++) {
+  				unode_int b = comp[es1_[i]];
   				if (a != b) {
   					es2.push_back(make_pair(a, b));
   				}
@@ -504,12 +470,13 @@ class PMCEvaluator : public Evaluator {
   		sort(es2.begin(), es2.end());
   		es2.erase(unique(es2.begin(), es2.end()), es2.end());
 
-  		infs[t].init(nscc, es2, comp);
+  		infs[t].init(nscc, es2, comp, activated);
   	}
 
   	vector<long long> gain(n_);
   	vector<int> S;
 
+    // Selects greedily seeds
   	for (unsigned int t = 0; t < k; t++) {
   		for (unsigned int j = 0; j < R_; j++) {
   			infs[j].update(gain);

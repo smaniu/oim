@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,7 @@ using namespace std;
 class PathSampler : public Sampler {
  private:
   struct NodeType {
-    unsigned long id;
+    unode_int id;
     double prob;
     bool operator<(const NodeType& a) const {
       return (prob < a.prob) ? true : ((prob > a.prob) ? false : id > a.id);
@@ -55,41 +55,42 @@ class PathSampler : public Sampler {
       : Sampler(type, model) {};
 
   double sample(const Graph& graph,
-                const std::unordered_set<unsigned long>& activated,
-                const std::unordered_set<unsigned long>& seeds,
-                unsigned long samples) {
+                const std::unordered_set<unode_int>& activated,
+                const std::unordered_set<unode_int>& seeds,
+                unode_int samples) {
     return perform_sample(graph, activated, seeds, samples, false);
   }
 
   double trial(const Graph& graph,
-               const std::unordered_set<unsigned long>& activated,
-               const std::unordered_set<unsigned long>& seeds, bool inv) {
+               const std::unordered_set<unode_int>& activated,
+               const std::unordered_set<unode_int>& seeds, bool inv) {
     return perform_sample(graph, activated, seeds, 1, true, inv);
   }
 
-  std::shared_ptr<vector<unsigned long>> perform_unique_sample(
-      const Graph& graph, vector<unsigned long>& nodes_activated,
-      vector<bool>& bool_activated, const unsigned long source, bool inv=false) {
-    return shared_ptr<vector<unsigned long>>(NULL);
+  std::shared_ptr<vector<unode_int>> perform_unique_sample(
+      const Graph&, vector<unode_int>&,
+      vector<bool>&, const unode_int,
+      const std::unordered_set<unode_int>&, bool) {
+    return shared_ptr<vector<unode_int>>(NULL);
   }
 
-  std::unordered_set<unsigned long> perform_diffusion(
-      const Graph& graph, const std::unordered_set<unsigned long>& seeds) {
-    return std::unordered_set<unsigned long>();
+  std::unordered_set<unode_int> perform_diffusion(
+      const Graph&, const std::unordered_set<unode_int>&) {
+    return std::unordered_set<unode_int>();
   }
 
 private:
   double perform_sample(const Graph& graph,
-                        const std::unordered_set<unsigned long>& activated,
-                        const std::unordered_set<unsigned long>& seeds,
-                        unsigned long samples, bool trial, bool inv=false) {
+                        const std::unordered_set<unode_int>& activated,
+                        const std::unordered_set<unode_int>& seeds,
+                        unode_int, bool trial, bool inv=false) {
     trials_.clear();
     boost::heap::fibonacci_heap<NodeType> queue;
-    std::unordered_map<unsigned long,
+    std::unordered_map<unode_int,
         boost::heap::fibonacci_heap<NodeType>::handle_type> queue_nodes;
-    std::unordered_set<unsigned long> visited;
+    std::unordered_set<unode_int> visited;
     double spread = 0.0;
-    for (unsigned long seed : seeds) {
+    for (unode_int seed : seeds) {
       NodeType node;
       node.id = seed;
       node.prob = 1.0;
@@ -123,10 +124,10 @@ private:
   }
 
   void sample_outgoing_edges(
-      const Graph& graph, unsigned long node,
+      const Graph& graph, unode_int node,
       boost::heap::fibonacci_heap<NodeType>& queue,
-      std::unordered_set<unsigned long>& visited,
-      std::unordered_map<unsigned long,
+      std::unordered_set<unode_int>& visited,
+      std::unordered_map<unode_int,
           boost::heap::fibonacci_heap<NodeType>::handle_type>& queue_nodes,
       bool inv=false) {
 
@@ -141,9 +142,9 @@ private:
   }
 
   void relax(
-      unsigned long src, unsigned long tgt, double dst,
+      unode_int src, unode_int tgt, double dst,
       boost::heap::fibonacci_heap<NodeType>& queue,
-      std::unordered_map<unsigned long,
+      std::unordered_map<unode_int,
           boost::heap::fibonacci_heap<NodeType>::handle_type>& queue_nodes) {
 
     double new_prob = (*queue_nodes[src]).prob * dst;

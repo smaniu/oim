@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015-2017 Paul Lagrée, Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -29,26 +29,24 @@
 #include <unistd.h>
 #include <ios>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <string>
-
-#include "InfluenceDistribution.hpp"
-#include "SingleInfluence.hpp"
+#include <cstdint>
 
 
 #define THETA_OFFSET 5
 #define MAX_R 10000000
-#define NUM_THREADS_MAX 4
 
 extern double sampling_time;
 extern double choosing_time;
 extern double reused_ratio;
 
-typedef long long int64;
+typedef uint32_t unode_int; // Type for node ids (can be changed into 32 or 64 bits)
 
 typedef struct {
-  unsigned long source;
-  unsigned long target;
+  unode_int source;
+  unode_int target;
   unsigned int trial;
 } TrialType;
 
@@ -61,7 +59,7 @@ int seed_ns() {
   return (int)ts.tv_nsec;
 }
 
-typedef unsigned long long timestamp_t;
+typedef unode_int long timestamp_t;
 
 /**
   Returns number of microseconds since the Epoch.
@@ -94,7 +92,7 @@ void process_mem_usage(double &vm_usage, double &resident_set) {
    string O, itrealvalue, starttime;
 
    // the two fields we want
-   unsigned long vsize;
+   unode_int vsize;
    long rss;
 
    stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr

@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 class CELFEvaluator : public Evaluator {
  private:
   struct celf_node_type {
-    unsigned long id;
+    unode_int id;
     double spr;
     bool operator<(const celf_node_type &a) const {
       return (spr < a.spr) ? true : ((spr > a.spr) ? false : id > a.id);
@@ -42,25 +42,25 @@ class CELFEvaluator : public Evaluator {
  public:
   CELFEvaluator(unsigned int samples) : samples_(samples) {}
 
-  std::unordered_set<unsigned long> select(
+  std::unordered_set<unode_int> select(
       const Graph& graph, Sampler& sampler,
-      const std::unordered_set<unsigned long>& activated, unsigned int k) {
+      const std::unordered_set<unode_int>& activated, unsigned int k) {
     boost::heap::fibonacci_heap<celf_node_type> queue;
-    std::unordered_map<unsigned long,
+    std::unordered_map<unode_int,
       boost::heap::fibonacci_heap<celf_node_type>::handle_type> queue_nodes;
-    std::unordered_set<unsigned long> set;
+    std::unordered_set<unode_int> set;
 
-    //initial loop
-    for (unsigned long node : graph.get_nodes()) {
+    // Initial loop
+    for (unode_int node : graph.get_nodes()) {
       celf_node_type u;
       u.id = node;
-      std::unordered_set<unsigned long> seeds;
+      std::unordered_set<unode_int> seeds;
       seeds.insert(node);
       u.spr = sampler.sample(graph, activated, seeds, samples_);
       queue_nodes[node] = queue.push(u);
     }
 
-    //main loop
+    // Main loop
     set.insert(queue.top().id);
     queue.pop();
     while ((set.size() < k) && (queue.size() > 0)) {
@@ -68,8 +68,8 @@ class CELFEvaluator : public Evaluator {
       while (!found) {
         celf_node_type u = queue.top();
         queue.pop();
-        std::unordered_set<unsigned long> seeds;
-        for (unsigned long node : set) seeds.insert(node);
+        std::unordered_set<unode_int> seeds;
+        for (unode_int node : set) seeds.insert(node);
         seeds.insert(u.id);
         double prev_val = u.spr;
         u.spr = sampler.sample(graph, activated, seeds, samples_) - prev_val;
