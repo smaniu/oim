@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016 Paul Lagrée (Université Paris Sud)
+ Copyright (c) 2016-2017 Paul Lagrée
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -80,19 +80,14 @@ class SSAEvaluator : public Evaluator {
     // Algorithm here
     do {
       buildSamples(n_samples, graph, sampler, activated);
-      // std::cerr << "Samples = " << rr_samples_.size() << " => " << "t = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() / 1000000. << std::endl;
       n_samples *= 2;
       double biased_estimator = buildSeedSet(graph, k);
-      // std::cerr << "biased_estimator = " << biased_estimator << std::endl;
-      // std::cerr << "lambda 1 = " << lambda_1 << ", coverage = " << (biased_estimator * rr_samples_.size() / graph.get_number_nodes()) << std::endl;
       if (biased_estimator * rr_samples_.size() / graph.get_number_nodes() >= lambda_1) {
         unsigned int T_max = (unsigned int)(2 * rr_samples_.size() *
               (1 + epsilon_2) / (1 - epsilon_2) * epsilon_3 * epsilon_3 /
               (/*k * */epsilon_2 * epsilon_2));   // k dropped like in the paper
         double unbiased_estimator = estimateInf(graph, sampler, epsilon_2,
                                                 k, T_max, activated);
-        // std::cerr << "Tmax = " << T_max << " => " << "t = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() / 1000000. << std::endl;
-        // std::cerr << "Unbiased estimator " << unbiased_estimator << ", biased_estimator = " << biased_estimator << std::endl;
         if (biased_estimator <= (1 + epsilon_1) * unbiased_estimator) {
           return seed_set_;
         }

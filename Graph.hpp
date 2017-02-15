@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015-2017 Paul Lagrée, Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -121,7 +121,6 @@ class Graph {
   /**
     Remove node from graph, remove all the corresponding data (neighbours,
     appearances in neighours' neighbours).
-    TODO Renumber last node to removed node number
   */
   void remove_node(unode_int node) {
     // 1. Remove node

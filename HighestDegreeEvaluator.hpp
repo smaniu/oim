@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -47,7 +47,6 @@ class HighestDegreeEvaluator : public Evaluator {
     }
     while (set.size() < k && !queue.empty()) {
       NodeType nstruct = queue.top();
-      //if(activated.find(nstruct.id)==activated.end())
       if (seed_sets_.find(nstruct.id) == seed_sets_.end()) {
         // Guarantee no duplicate nodes in the seed set for all trials
         set.insert(nstruct.id);

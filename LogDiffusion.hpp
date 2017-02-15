@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017 Paul Lagrée (Université Paris-Sud)
+ Copyright (c) 2017 Paul Lagrée
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,8 @@ class LogDiffusion {
 
   /**
     Performs the real diffusion from selected seeds.
-    It selects randomly cascades from the logs started by the seeds.
+    It selects randomly cascades from the logs triggered by seeds given in
+    parameter.
   */
   std::unordered_set<unode_int> perform_diffusion(
         const std::unordered_set<unode_int>& seeds) {

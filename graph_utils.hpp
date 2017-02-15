@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2016-2017 Paul Lagrée
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,9 @@
 #include "Graph.hpp"
 
 
-// Load the graph from file and returns the number of nodes
+/**
+  Load the graph from file and returns the number of nodes
+*/
 unode_int load_original_graph(
       std::string filename, Graph& graph, int model=1) {
   std::ifstream file(filename);
@@ -73,7 +75,7 @@ unode_int load_model_and_original_graph(
   }
   if (model == 0) { // If LT model, we need to create distributions for each nodes
     original_graph.build_lt_distribution(INFLUENCE_MED);
-    //model_graph.build_lt_distribution(INFLUENCE_MED); (not for model graph as it is used only by expg that does not handle LT)
+    // Not for model graph as it is used only by expg that does not handle LT
   }
   model_graph.set_prior(alpha, beta);
   return edges;

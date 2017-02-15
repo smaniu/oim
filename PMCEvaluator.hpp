@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016 Paul Lagrée (Université Paris Sud), Naoto Ohsaka
+ Copyright (c) 2015 Naoto Ohsaka
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal

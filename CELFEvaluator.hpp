@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ class CELFEvaluator : public Evaluator {
       boost::heap::fibonacci_heap<celf_node_type>::handle_type> queue_nodes;
     std::unordered_set<unode_int> set;
 
-    //initial loop
+    // Initial loop
     for (unode_int node : graph.get_nodes()) {
       celf_node_type u;
       u.id = node;
@@ -60,7 +60,7 @@ class CELFEvaluator : public Evaluator {
       queue_nodes[node] = queue.push(u);
     }
 
-    //main loop
+    // Main loop
     set.insert(queue.top().id);
     queue.pop();
     while ((set.size() < k) && (queue.size() > 0)) {

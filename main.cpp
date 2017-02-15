@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015 Siyu Lei, Silviu Maniu, Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015-2017 Paul Lagrée, Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,8 @@ using namespace std;
 
 /**
   Function performing diffusion with *known* graph. The seeds are selected with
-  one of the Evaluators.
+  one of the Evaluators. This function is also used for Random and HighestDegree
+  baselines, without using actual diffusion probability values.
 
   Ex. usage: ./oim --real graph.txt 5 20 2 1
 */
@@ -54,7 +55,7 @@ void real(int argc, const char * argv[],
           std::vector<std::unique_ptr<Evaluator>>& evaluators) {
   if (argc < 6) {
     std::cerr << "Wrong number of arguments.\n\tUsage ./oim --real <graph> "
-              << "<exploit> <budget> <k> [<model> <cascades> <samples>]"
+              << "<exploit> <budget> <k> [<model> <samples> <cascades>]"
               << std::endl;
     exit(1);
   }
@@ -62,65 +63,18 @@ void real(int argc, const char * argv[],
   unsigned int exploit = atoi(argv[3]);
   unsigned int budget = atoi(argv[4]);
   unsigned int k = atoi(argv[5]);
-  int samples = 1; // TODO change that to take the actual parameter given as input
   int model = (argc > 6) ? atoi(argv[6]) : 1;
+  int samples = (argc > 7) ? atoi(argv[7]) : 1;
   load_original_graph(argv[2], original_graph, model);
   // Load cascades from logs if 11th parameter
   std::shared_ptr<LogDiffusion> log_diffusion;
-  if (argc > 7) {
+  if (argc > 8) {
     log_diffusion = std::make_unique<LogDiffusion>();
     log_diffusion->load_cascades(argv[7]);
   }
-  for (int i = 0; i < 20; i++) {
-    OriginalGraphStrategy strategy(original_graph, *evaluators.at(exploit),
-                                   samples, model, log_diffusion);
-    strategy.perform(budget, k);
-  }
-}
-
-void epsgreedy(int argc, const char * argv[]) {
-  std::string file_name_graph(argv[2]);
-  double alpha = atof(argv[3]);
-  double beta = atof(argv[4]);
-  std::ifstream file(file_name_graph);
-  Graph original_graph, model_graph;
-  unode_int src, tgt;
-  double prob;
-  unode_int edges = 0;
-  while (file >> src >> tgt >> prob) {
-    std::shared_ptr<InfluenceDistribution> dst_original(new SingleInfluence(prob));
-    std::shared_ptr<InfluenceDistribution> dst_model(new BetaInfluence(alpha, beta, prob));
-    original_graph.add_edge(src, tgt, dst_original);
-    model_graph.add_edge(src, tgt, dst_model);
-    edges++;
-  }
-
-  SampleManager::setInstance(model_graph);
-  model_graph.set_prior(alpha, beta);
-
-  unsigned int exploit = atoi(argv[5]);
-  unsigned int explore = atoi(argv[6]);
-  unsigned int budget = atoi(argv[7]);
-  unsigned int k = atoi(argv[8]);
-  double eps = atof(argv[9]);
-  bool update = (argc > 10) ? (atoi(argv[10]) == 1) : true;
-  unsigned int learn = (argc > 11) ? atoi(argv[11]) : 0;
-  unsigned int int_exploit = (argc > 12) ? atoi(argv[12]) : INFLUENCE_MED;
-  unsigned int int_explore = (argc > 13) ? atoi(argv[13]) : INFLUENCE_MED;
-  int inc = (argc > 14) ? atoi(argv[14]) : 0;
-  int samples = (argc > 15) ? atoi(argv[15]) : 1000;
-
-  std::vector<std::unique_ptr<Evaluator>> evals;
-  evals.push_back(std::unique_ptr<Evaluator>(new CELFEvaluator(samples)));
-  evals.push_back(std::unique_ptr<Evaluator>(new RandomEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new DiscountDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new TIMEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new HighestDegreeEvaluator()));
-  evals.push_back(std::unique_ptr<Evaluator>(new SSAEvaluator(0.1)));
-  EpsilonGreedyStrategy strategy(model_graph, original_graph,
-                                 *evals.at(explore), *evals.at(exploit),
-                                 samples, eps, inc);
-  strategy.perform(budget, k, update, learn, int_exploit, int_explore);
+  OriginalGraphStrategy strategy(original_graph, *evaluators.at(exploit),
+                                 samples, model, log_diffusion);
+  strategy.perform(budget, k);
 }
 
 /**
@@ -146,7 +100,6 @@ void expgr(int argc, const char * argv[],
   unsigned int budget = atoi(argv[6]);
   unsigned int k = atoi(argv[7]);
   int model = (argc > 8) ? atoi(argv[8]) : 1;
-  // TODO Check that the selected Evaluator implemented the LT if chosen
   bool update = (argc > 9) ? (atoi(argv[9]) == 1) : true;
   unsigned int learn = (argc > 10) ? atoi(argv[10]) : 0;
 
@@ -204,24 +157,16 @@ void missing_mass(int argc, const char * argv[],
   // Load real cascades
   std::shared_ptr<LogDiffusion> log_diffusion;
   if (argc > 9) {
-    std::cerr << "Cascades loading..." << std::endl;
+    std::cerr << "Loading of cascades from logs..." << std::endl;
     log_diffusion = std::make_unique<LogDiffusion>();
     log_diffusion->load_cascades(argv[9]);
   }
-  std::vector<int> vec_experts = {10, 20, 50, 100, 200};
-  for (int i = 0; i < 20; i++) {
-    for (auto n_exp : vec_experts) {
-      for (int red = 0; red < 2; red++) {
-        MissingMassStrategy strategy(
-            original_graph, *greduction.at(red), n_exp, n_policy, model,
-            log_diffusion);
-        // Give strategy the reduction method for output
-        strategy.set_graph_reduction(red);
-        std::cerr << "Perform" << std::endl;
-        strategy.perform(budget, k);
-      }
-    }
-  }
+
+  MissingMassStrategy strategy(original_graph, *greduction.at(reduction),
+                               n_experts, n_policy, model, log_diffusion);
+  // Give strategy the reduction method for output
+  strategy.set_graph_reduction(reduction);
+  strategy.perform(budget, k);
 }
 
 int main(int argc, const char * argv[]) {
@@ -233,7 +178,7 @@ int main(int argc, const char * argv[]) {
       new HighestDegreeReduction()));
   std::unique_ptr<Evaluator> evaluator(new PMCEvaluator(200));
   greductions.push_back(std::unique_ptr<GraphReduction>(
-      new EvaluatorReduction(0.01, *evaluator, 1)));  // TODO allow change on the model expected to select experts
+      new EvaluatorReduction(0.01, *evaluator, 1)));
   greductions.push_back(std::unique_ptr<GraphReduction>(
       new DivRankReduction(0.25, 0.05, 100)));
 
@@ -248,8 +193,7 @@ int main(int argc, const char * argv[]) {
   evaluators.push_back(std::unique_ptr<Evaluator>(new PMCEvaluator(200)));
 
   std::string experiment(argv[1]);
-  if  (experiment == "--egreedy") epsgreedy(argc, argv);
-  else if (experiment == "--real") real(argc, argv, evaluators);
+  if (experiment == "--real") real(argc, argv, evaluators);
   else if (experiment == "--eg") expgr(argc, argv, evaluators);
   else if (experiment == "--missing_mass") missing_mass(argc, argv, greductions);
 }

@@ -1,6 +1,5 @@
 /*
- Copyright (c) 2017 Paul Lagrée (Université Paris-Sud), Siyu Lei, Silviu Maniu,
- Luyi Mo (University of Hong Kong)
+ Copyright (c) 2015-2017 Paul Lagrée, Siyu Lei, Silviu Maniu, Luyi Mo
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -119,7 +118,6 @@ class SpreadSampler : public Sampler {
     }
     std::vector<unode_int> result;
     for (unode_int i = 0; i < num_marked; i++) {
-      // if (activated.find(nodes_activated[i]) == activated.end())
       result.push_back(nodes_activated[i]);
     }
     std::shared_ptr<vector<unode_int>> rr_sample =
@@ -180,7 +178,7 @@ class SpreadSampler : public Sampler {
 
  private:
   /**
-    Performs `n_samples` samples starting from `seeds`. // TODO depreciated, remove its use everywhere
+    [depreciated] Performs `n_samples` samples starting from `seeds`.
   */
   double perform_sample(const Graph& graph,
                         const std::unordered_set<unode_int>& activated,
@@ -206,7 +204,7 @@ class SpreadSampler : public Sampler {
           reached_round++;
       }
       double os = spread;
-      spread += (reached_round - os) / (double)sample;  // TODO Don't understand this line ERROR
+      spread += (reached_round - os) / (double)sample;
       outspread += reached_round;
       stdev_ += (reached_round - os) * (reached_round - spread);
     }

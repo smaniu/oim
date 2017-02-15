@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2016 Paul Lagrée (Université Paris Sud)
+ Copyright (c) 2016-2017 Paul Lagrée
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -73,8 +73,6 @@ class Policy {
     Reinitialize the object to start parameters.
   */
   virtual void init() {}
-
-  virtual void printdebug() {}
 };
 
 /**
@@ -125,31 +123,6 @@ class GoodUcbPolicy : public Policy {
                 Sigma type=MEAN)
       : Policy(n_experts), nb_neighbours_(nb_neighbours),
         sigma_type_(type) { init(); }
-
-  /**
-    TODO Handle this remaining stuff I don't remember why I did that.
-  */
-  void printdebug() {
-    std::unordered_map<unode_int, std::vector<int>> activations;  // {user: [expert 1, expert 2]}
-    for (unsigned int i = 0; i < n_experts_; i++) {
-      for (auto& elt : n_rewards_[i]) {
-        if (activations.count(elt.first) == 0)
-          activations[elt.first] = std::vector<int>();
-        for (unsigned int a = 0; a < elt.second; a++)
-          activations[elt.first].push_back(i);
-      }
-    }
-    std::cerr << "Number of plays\n===============" << std::endl;
-    for (unode_int i = 0; i < n_experts_; i++)
-      std::cerr << i << "\t" << n_plays_[i] << std::endl;
-    std::cerr << "\nNumber of activations\n===============" << std::endl;
-    for (auto& elt : activations) {
-      std::cerr << elt.first << "\t";
-      for (auto item : elt.second)
-        std::cerr << item << " ";
-      std::cerr << std::endl;
-    }
-  }
 
   /**
     Selects `k` experts whose Good-UCB indices are the largest.
