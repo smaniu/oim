@@ -122,7 +122,6 @@ class OriginalGraphStrategy : public Strategy {
         diffusion = sampler.perform_diffusion(original_graph_, seeds);
       else    // We sample a cascade from the seeds at random (cascdes from the LOGS)
         diffusion = log_diffusion_->perform_diffusion(seeds);
-      // auto diffusion = sampler.perform_diffusion(original_graph_, seeds);
       for (auto& node : diffusion)
         activated.insert(node);
       real = activated.size();
@@ -346,7 +345,7 @@ class ExponentiatedGradientStrategy : public Strategy {
     for (unsigned int stage = 0; stage < budget; stage++) {
       timestamp_t t0, t1, t2;
       t0 = get_timestamp();
-      // sampling the distribution
+      // Sampling the distribution
       std::discrete_distribution<int> prob(p.begin(), p.end());
       cur_theta = prob(gen_) + THETA_OFFSET;
 
