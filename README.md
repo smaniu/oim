@@ -1,6 +1,6 @@
 This folder contains the source code for the Online Influence Maximization with
-Influence algorithms, as described in [our paper][6]. The source code is
-header-only.
+Persistence algorithms, as described in this [paper][1] and the model-free
+[extension][6]. The source code is header-only.
 
 # Compiling
 
@@ -103,7 +103,7 @@ The different methods write on the standard output with the following format:
 # License
 
 The source code is provided as-is under an MIT License. If it is useful to you,
-please cite [our paper][6].
+please cite the seminal [paper][1] and the model-free [extension][6].
 
 [1]: <http://arxiv.org/pdf/1506.01188v1.pdf> "S. Lei, S. Maniu, L. Mo, R. Cheng, P. Senellart. Online Influence Maximization. KDD 2015"
 
