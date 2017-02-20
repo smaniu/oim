@@ -19,6 +19,12 @@ present in */usr/local/include*. If your Boost installation is someplace else,
 you have to modify the *INCLUDE_DIRS* directive in *Makefile*. The binary
 library does not need to be linked.
 
+# Datasets
+
+The networks used in the experimental section of [our paper][6] are available
+[here](https://drive.google.com/open?id=0B6peHJJcM5GvQnZGdHU1U1owa0U). We
+provide scripts to generate your own datasets in the `graph/` folder.
+
 # Methods and usage
 
 The program expects as input a tab delimited graph file of the following format:
@@ -109,4 +115,4 @@ please cite [our paper][6].
 
 [5]: <https://www.aaai.org/ocs/index.php/AAAI/AAAI14/paper/download/8455/8411> "N. Ohsaka, T. Akiba, Y. Yoshida and K. Kawarabayashi. Fast and Accurate Influence Maximization on Large Networks with Pruned Monte-Carlo Simulations. AAAI 2014"
 
-[6]: <http://arxiv.org/pdf/XXXX.XXXXX.pdf> "P. Lagrée, O. Cappé, B. Cautis, S. Maniu. When Less is More: Online Model-Free Influence Maximization."
+[6]: <http://arxiv.org/pdf/1702.05354.pdf> "P. Lagrée, O. Cappé, B. Cautis, S. Maniu. Online Model-Free Influence Maximization with Persistence."
