@@ -2,7 +2,7 @@ EXECUTABLE := ./oim
 
 CXX := g++
 
-CXX_SRCS := $(wildcard ./*.cpp)
+CXX_SRCS := $(wildcard src/*.cpp)
 OBJS := ${CXX_SRCS:.cpp=.o}
 
 INCLUDE_DIRS := ./ /usr/local/include/

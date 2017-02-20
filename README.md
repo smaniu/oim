@@ -1,6 +1,6 @@
 This folder contains the source code for the Online Influence Maximization with
-Influence algorithms, as described in [our paper][6]. The source code is
-header-only.
+Persistence algorithms, as described in this [paper][1] and the model-free
+[extension][6]. The source code is header-only.
 
 # Compiling
 
@@ -18,6 +18,12 @@ The code needs the Boost C++ library headers. It assumes the include files are
 present in */usr/local/include*. If your Boost installation is someplace else,
 you have to modify the *INCLUDE_DIRS* directive in *Makefile*. The binary
 library does not need to be linked.
+
+# Datasets
+
+The networks used in the experimental section of [our paper][6] are available
+[here](https://drive.google.com/open?id=0B6peHJJcM5GvQnZGdHU1U1owa0U). We
+provide scripts to generate your own datasets in the `graph/` folder.
 
 # Methods and usage
 
@@ -97,7 +103,7 @@ The different methods write on the standard output with the following format:
 # License
 
 The source code is provided as-is under an MIT License. If it is useful to you,
-please cite [our paper][6].
+please cite the seminal [paper][1] and the model-free [extension][6].
 
 [1]: <http://arxiv.org/pdf/1506.01188v1.pdf> "S. Lei, S. Maniu, L. Mo, R. Cheng, P. Senellart. Online Influence Maximization. KDD 2015"
 
@@ -109,4 +115,4 @@ please cite [our paper][6].
 
 [5]: <https://www.aaai.org/ocs/index.php/AAAI/AAAI14/paper/download/8455/8411> "N. Ohsaka, T. Akiba, Y. Yoshida and K. Kawarabayashi. Fast and Accurate Influence Maximization on Large Networks with Pruned Monte-Carlo Simulations. AAAI 2014"
 
-[6]: <http://arxiv.org/pdf/XXXX.XXXXX.pdf> "P. Lagrée, O. Cappé, B. Cautis, S. Maniu. When Less is More: Online Model-Free Influence Maximization."
+[6]: <http://arxiv.org/pdf/1702.05354.pdf> "P. Lagrée, O. Cappé, B. Cautis, S. Maniu. Online Model-Free Influence Maximization with Persistence."
